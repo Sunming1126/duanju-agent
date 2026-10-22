@@ -13,6 +13,10 @@ git config user.email "你的 GitHub 提交邮箱"
 
 用 Codex 打开这个克隆目录。每次任务会由根目录 AGENTS.md 引导读取 AGENT.md。不要复制另一台电脑的 .git、node_modules、虚拟环境、私钥或真实配置。
 
+Windows 也可以使用 HTTPS 克隆地址 `https://github.com/Sunming1126/duanju-agent.git`，同步工具同样支持。若已安装 Git Credential Manager，可执行 `git credential-manager github login` 完成 GitHub 授权；能拉取公开仓库不代表已有推送权限。凭据由本机凭据管理器保存，不写进仓库。提交署名与 GitHub 登录凭据分别配置，Codex 登录账号不影响 GitHub 仓库协作。
+
+当前 Windows 已接入的实际仓库目录为 `C:/Users/sun/Desktop/duanju-agent-plus/duanju-agent`。外层 `duanju-agent-plus` 为本机容器，已有 AGENTS.md 指向本仓库规则；直接在 Codex 中打开实际仓库目录也可使用标准入口。
+
 如果 SSH 22 端口不可用，可先用以下地址克隆，再将 origin 设回项目标准地址，并仅为该仓库设置 443 端口：
 
 ```text
