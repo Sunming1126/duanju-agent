@@ -1,0 +1,188 @@
+[
+  {
+    "file": "/sites/storyplay/logo.png",
+    "source": "https://storyplay.cn/assets/logo-white-en-Duoshdyn.png",
+    "content_type": "image/png",
+    "bytes": 7764
+  },
+  {
+    "file": "/sites/storyplay/new.png",
+    "source": "https://storyplay.cn/material/home-lapian-new.png?v2",
+    "content_type": "image/png",
+    "bytes": 1899
+  },
+  {
+    "file": "/sites/storyplay/hot.png",
+    "source": "https://storyplay.cn/material/home-lapian-hot.png?v2",
+    "content_type": "image/png",
+    "bytes": 2012
+  },
+  {
+    "file": "/sites/storyplay/footer-bg.png",
+    "source": "https://storyplay.cn/material/home-bg.png",
+    "content_type": "image/png",
+    "bytes": 700652
+  },
+  {
+    "file": "/sites/storyplay/cover-01.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-09-07/13500009404/31600967a5a2487c864b165594abf9d9.jpg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 149731
+  },
+  {
+    "file": "/sites/storyplay/cover-02.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-09-07/13500009404/f60960e306de472ca626199d6cd3ed31.jpg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 152223
+  },
+  {
+    "file": "/sites/storyplay/cover-03.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-09-07/13500009404/80b0ab8331ec411d9887f6db2c174c48.jpg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 139183
+  },
+  {
+    "file": "/sites/storyplay/cover-04.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-09-07/13500009404/65b3f328e8114aa78f4bb30aca216675.jpg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 155337
+  },
+  {
+    "file": "/sites/storyplay/cover-05.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-09-07/13500009404/de986a95490b44308df047740f5f1075.jpg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 149684
+  },
+  {
+    "file": "/sites/storyplay/cover-06.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-08-22/13500009404/f229d9991ef8405a8c51baf3efe8e55b.jpeg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 78886
+  },
+  {
+    "file": "/sites/storyplay/cover-07.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-08-22/13500009404/81cc4c96458346e497695b6136082df1.jpeg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 120765
+  },
+  {
+    "file": "/sites/storyplay/cover-08.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-08-22/13500009404/d39803c9c7864011a99fee63814e643d.jpeg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 82075
+  },
+  {
+    "file": "/sites/storyplay/cover-09.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-08-22/13500009404/335d0724e6a847048c83f903ef8bc43a.jpeg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 69436
+  },
+  {
+    "file": "/sites/storyplay/cover-10.jpg",
+    "source": "https://storyplay-admin.oss-cn-hangzhou.aliyuncs.com/lapian/2026-08-22/13500009404/f720ea7f96ee479d878a282d0e86d846.jpeg?x-oss-process=image/resize,w_880",
+    "content_type": "image/jpeg",
+    "bytes": 118701
+  },
+  {
+    "file": "/sites/storyplay/provider-01.webp",
+    "source": "https://storyplay.cn/material/provider/ap-01.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 54646
+  },
+  {
+    "file": "/sites/storyplay/provider-02.webp",
+    "source": "https://storyplay.cn/material/provider/ap-02.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 41334
+  },
+  {
+    "file": "/sites/storyplay/provider-03.webp",
+    "source": "https://storyplay.cn/material/provider/ap-03.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 16520
+  },
+  {
+    "file": "/sites/storyplay/provider-04.webp",
+    "source": "https://storyplay.cn/material/provider/ap-04.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 60406
+  },
+  {
+    "file": "/sites/storyplay/provider-05.webp",
+    "source": "https://storyplay.cn/material/provider/ap-05.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 31144
+  },
+  {
+    "file": "/sites/storyplay/provider-06.webp",
+    "source": "https://storyplay.cn/material/provider/ap-06.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 14458
+  },
+  {
+    "file": "/sites/storyplay/provider-07.webp",
+    "source": "https://storyplay.cn/material/provider/ap-07.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 15350
+  },
+  {
+    "file": "/sites/storyplay/provider-08.webp",
+    "source": "https://storyplay.cn/material/provider/ap-08.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 68632
+  },
+  {
+    "file": "/sites/storyplay/provider-09.webp",
+    "source": "https://storyplay.cn/material/provider/ap-09.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 18534
+  },
+  {
+    "file": "/sites/storyplay/provider-10.webp",
+    "source": "https://storyplay.cn/material/provider/ap-10.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 20480
+  },
+  {
+    "file": "/sites/storyplay/provider-11.webp",
+    "source": "https://storyplay.cn/material/provider/ap-11.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 22292
+  },
+  {
+    "file": "/sites/storyplay/provider-12.webp",
+    "source": "https://storyplay.cn/material/provider/ap-12.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 71498
+  },
+  {
+    "file": "/sites/storyplay/provider-13.webp",
+    "source": "https://storyplay.cn/material/provider/ap-13.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 6186
+  },
+  {
+    "file": "/sites/storyplay/provider-14.webp",
+    "source": "https://storyplay.cn/material/provider/ap-14.webp?v2",
+    "content_type": "image/webp",
+    "bytes": 16578
+  },
+  {
+    "file": "/sites/storyplay/avatar-10.webp",
+    "source": "https://storyplay.cn/avatar/10.webp",
+    "content_type": "image/webp",
+    "bytes": 6854
+  },
+  {
+    "file": "/sites/storyplay/avatar-23.webp",
+    "source": "https://storyplay.cn/avatar/23.webp",
+    "content_type": "image/webp",
+    "bytes": 7246
+  },
+  {
+    "file": "/sites/storyplay/avatar-06.webp",
+    "source": "https://storyplay.cn/avatar/06.webp",
+    "content_type": "image/webp",
+    "bytes": 8606
+  }
+]

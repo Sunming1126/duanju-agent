@@ -1,0 +1,5 @@
+{
+  "api_base": "https://ark.cn-beijing.volces.com/api/coding/v3",
+  "model": "doubao-seed-2.0-pro",
+  "api_key": "ark-xxxxxxxx（你的火山方舟 API Key）"
+}

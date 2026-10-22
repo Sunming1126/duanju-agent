@@ -1,0 +1,43 @@
+# 密钥与本地配置（只同步示例）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
+
+# Python / Node / 构建缓存
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+node_modules/
+.next/
+dist/
+build/
+*.egg-info/
+*.tsbuildinfo
+
+# 本机运行数据、任务、日志与历史仓库备份
+/data/*
+!/data/corpus.json
+!/data/llm_config.example.json
+/agent_tasks/
+/generated_dramas/
+/.local-repositories/
+*.log
+*.bak
+*.zip
+*.tar.gz
+
+# 系统和编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

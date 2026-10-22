@@ -1,0 +1,12 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name jubencn.onesay.top;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/jubencn-acme;
+        default_type text/plain;
+    }
+
+    location / { return 404; }
+}

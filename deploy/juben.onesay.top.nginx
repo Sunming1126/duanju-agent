@@ -1,0 +1,35 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name juben.onesay.top;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/juben-acme;
+        default_type text/plain;
+    }
+
+    location / { return 301 https://juben.onesay.top$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name juben.onesay.top;
+
+    ssl_certificate /etc/letsencrypt/live/juben.onesay.top/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/juben.onesay.top/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 12m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+}

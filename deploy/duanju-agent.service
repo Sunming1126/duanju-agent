@@ -1,0 +1,28 @@
+[Unit]
+Description=Duanju private script-writing workbench
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=duanju-agent
+Group=duanju-agent
+WorkingDirectory=/opt/duanju-agent/app
+EnvironmentFile=/opt/duanju-agent/service.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/duanju-agent/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8765 --workers 1
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/duanju-agent/app/data
+MemoryMax=512M
+CPUQuota=50%
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

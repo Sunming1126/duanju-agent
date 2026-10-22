@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短剧与小说创作平台 · Agent</title>
+    <link rel="stylesheet" href="/static/style.css?v=20261022-ui4">
+  <meta name="theme-color" content="#dcebf4">
+<meta name="description" content="短剧与小说创作工作台 · Script and novel workspace">
+<link rel="stylesheet" href="/static/workspace.css?v=20261022-ui4">
+</head>
+<body>
+  <a href="#mainContent" class="skip-link" data-i18n="skipContent">跳转到内容</a><header class="topbar glass">
+<a class="brand" href="#mainContent" aria-label="Short drama and novel studio"><span class="brand-mark" aria-hidden="true">▤</span><span><strong data-i18n="brandName">短剧与小说创作平台</strong><small data-i18n="brandCaption">故事，从这里开始</small></span></a>
+<nav class="mainnav" id="mainnav" aria-label="Main navigation">
+<button class="navtab active" data-view="studio" data-i18n="navCreate">创作</button>
+<button class="navtab" data-view="hub" data-i18n="navLibrary">资源库</button>
+<button class="navtab" data-view="inspire" data-i18n="navIdeas">灵感</button>
+<button class="navtab" data-view="graph" data-i18n="navGraph">知识图谱</button>
+</nav>
+<div class="header-actions">
+<div class="status" id="svcStatus" role="status">
+<span class="dot" id="statusDot"></span><span id="statusText" data-i18n="connecting">连接中…</span>
+</div>
+<details class="menu" id="toolsMenu"><summary class="header-button" data-i18n="toolsSettings">工具与设置</summary><div class="menu-panel glass">
+<button class="navtab tool-link" data-view="hooks" data-i18n="hooks">钩子工作台</button><button class="navtab tool-link" data-view="cats" data-i18n="cats">类别管理</button>
+<hr>
+<button id="btnTraceList" data-i18n="traces">溯源记录</button><button id="btnStats" data-i18n="stats">系统指标</button><button id="btnLlmCfgNav" data-i18n="llmCfg">AI 配置</button>
+</div></details>
+<div class="background-control">
+<button class="header-button" id="btnBackground" aria-expanded="false" aria-controls="backgroundPopover" data-i18n="background">背景</button>
+<div class="background-popover glass hidden" id="backgroundPopover" role="dialog" aria-labelledby="backgroundTitle">
+<div class="popover-head">
+<strong id="backgroundTitle" data-i18n="chooseBackground">选择背景</strong><button class="icon-button" id="closeBackground" aria-label="Close" data-i18n-title="close">✕</button>
+</div>
+<div class="background-options" role="group" aria-labelledby="backgroundTitle">
+<button class="background-option" data-background="water" aria-pressed="true"><span class="background-preview scene-water"></span><span data-i18n="bgWater">水面雾蓝</span><span class="selection-mark" aria-hidden="true">✓</span></button>
+<button class="background-option" data-background="cloud" aria-pressed="false"><span class="background-preview scene-cloud"></span><span data-i18n="bgCloud">云朵暖白</span><span class="selection-mark" aria-hidden="true">✓</span></button>
+<button class="background-option" data-background="dune" aria-pressed="false"><span class="background-preview scene-dune"></span><span data-i18n="bgDune">沙丘米色</span><span class="selection-mark" aria-hidden="true">✓</span></button>
+<button class="background-option" data-background="plain" aria-pressed="false"><span class="background-preview scene-plain"></span><span data-i18n="bgPlain">纯色</span><span class="selection-mark" aria-hidden="true">✓</span></button>
+</div>
+<p class="small dim" data-i18n="backgroundSaved">自动保存在当前浏览器</p>
+</div>
+</div>
+<div class="global-switcher">
+<span class="global-switcher-label" id="siteMarketLabel" data-i18n="marketHint">日本市場</span><select id="globalLocaleSelect" aria-label="Interface language"><option value="zh-CN">中文</option>
+<option value="en">English</option>
+<option value="ja-JP">日本語</option></select>
+</div>
+</div></header><div class="page-heading" id="mainContent" tabindex="-1">
+<div>
+<p class="eyebrow" data-i18n="workspaceLabel">STORY WORKSPACE</p>
+<h1 id="pageTitle" data-i18n="navCreate">创作</h1>
+<p id="pageDescription" data-i18n="introCreate">从一个想法，写到完整故事。</p>
+</div>
+<div class="page-actions">
+<div class="creation-modes glass" id="creationModes" role="group" aria-label="Creation mode">
+<button class="active" data-mode="studio" aria-pressed="true" data-i18n="quickMode">快速生成</button><button data-mode="writer" aria-pressed="false" data-i18n="stagedMode">分阶段编剧</button>
+</div>
+<button class="secondary context-button" id="btnContext" aria-expanded="false" aria-controls="studioReference" data-i18n="referenceMaterials">参考资料</button>
+</div>
+</div>
+<!-- ============ 视图0：资源库（剧本库 + 灵感库 + 导入） ============ -->
+  <main class="layout hidden library-layout" id="view-hub">
+    <aside class="panel left drawer glass hidden" id="resourceImport" role="dialog" aria-labelledby="resourceImportTitle" tabindex="-1">
+      <div class="drawer-head">
+<h2 id="resourceImportTitle" data-i18n="importRes">importRes</h2>
+<button class="icon-button" data-close-drawer="" data-i18n-title="close" aria-label="Close">✕</button>
+</div>
+<div class="tabs" id="hubTargetTabs">
+        <button class="tab active" data-target="script" data-i18n="kindRef">参考剧本库</button>
+        <button class="tab" data-target="inspiration" data-i18n="libInsp">灵感库</button>
+      </div>
+      <div class="drop-zone" id="hubDropZone" title="点击选择或拖拽文件到此处" role="button" tabindex="0" data-i18n-title="dzText">
+        <div class="dz-icon">⬆</div>
+        <div class="dz-text" data-i18n="dzText">点击或拖拽文件到此处</div>
+        <div class="dz-hint" id="hubDzHint" data-i18n="dzHintScript">支持 .txt / .md / .csv，可多选</div>
+      </div>
+      <input type="file" id="hubFileInput" multiple accept=".txt,.md,.markdown,.json,.csv" class="hidden" data-i18n-aria-label="importRes">
+      <div id="hubFileList" class="file-list"></div>
+      <button id="btnHubImport" class="primary" disabled data-i18n="startImport">开始导入</button>
+      <div id="hubImportResult"></div>
+      <div class="hint" data-i18n="importHelp">剧本支持 .txt / .md / .csv；灵感支持 .json / .md / .txt / .csv。导入内容按标题去重保存。</div></aside>
+
+    <section class="panel center library-surface">
+      <div class="library-toolbar">
+        <input id="hubSearch" placeholder="搜索标题/标签/题材…" class="inline-input" data-i18n-placeholder="searchPh" aria-label="Search works" data-i18n-aria-label="searchPh">
+          <div class="tabs">
+          <button class="tab active" data-libtab="script"><span data-i18n="hubScriptLib">📚 剧本库</span> <span id="hubScriptCount"></span></button>
+          <button class="tab" data-libtab="inspiration"><span data-i18n="hubInspLib">💡 灵感库</span> <span id="hubInspCount"></span></button>
+        </div>
+        <span class="toolbar">
+          <button id="hubLangBtn" class="hidden" data-i18n-title="marketEntry" title="中文 / 日本語 / English">🌐 中文</button>
+          <button id="btnHubRefresh" class="ghost sm" data-i18n="refresh">刷新</button>
+        </span>
+      <details class="filters-menu"><summary data-i18n="filters">筛选</summary><div class="filter-options">
+<span class="tabs" id="hubKindTabs" style="margin-right:6px">
+            <button class="tab active" data-kind="" data-i18n="kindAll">全部</button>
+            <button class="tab" data-kind="reference" data-i18n="kindRef">参考</button>
+            <button class="tab" data-kind="generated" data-i18n="kindGen">生成</button>
+          </span>
+          <select id="hubContentType" class="inline-input" data-i18n-aria-label="ctAll"><option value="" data-i18n="ctAll">内容：全部</option>
+<option value="short_drama" data-i18n="drama">短剧</option>
+<option value="novel" data-i18n="novel">小说</option>
+<option value="inspiration" data-i18n="inspiration">灵感</option></select>
+          <select id="hubLocale" class="inline-input" data-i18n-aria-label="localeAll"><option value="" data-i18n="localeAll">语言：全部</option>
+<option value="zh-CN" data-i18n="localeZh">中文</option>
+<option value="en" data-i18n="localeEn">English</option>
+<option value="ja-JP" data-i18n="localeJa">日本語</option></select>
+          <select id="hubSource" class="inline-input" data-i18n-aria-label="srcAll"><option value="" data-i18n="srcAll">来源：全部</option>
+<option value="hongguo" data-i18n="srcHongguo">红果</option>
+<option value="jjwxc" data-i18n="srcJjwxc">晋江</option>
+<option value="jp" data-i18n="srcJapan">日本源</option>
+<option value="manual" data-i18n="srcManual">导入</option></select>
+          </div></details>
+</div>
+      <div id="hubLibList" class="hub-list"></div>
+      <div id="hubInspList" class="hub-list hidden"></div>
+    </section>
+  </main>
+
+  <!-- ============ 视图1：生成工作台 ============ -->
+  <main class="layout creation-layout" id="view-studio">
+    <aside class="panel left glass brief-panel">
+      <h2 data-i18n="workshop">创意工坊</h2>
+      <label data-i18n="labelContentType" for="contentTypeSelect">内容类型 / Content / コンテンツ</label>
+      <select id="contentTypeSelect"><option value="short_drama" data-i18n="drama">短剧 / Short drama / ショートドラマ</option>
+<option value="novel" data-i18n="novel">小说 / Novel / 小説</option></select>
+      <div id="novelOpts" class="hidden" style="display:flex;flex-direction:column;gap:6px;">
+        <label data-i18n="novelLength" for="novelLengthSelect">篇幅</label>
+        <select id="novelLengthSelect"><option value="long" data-i18n="novelLong">长篇</option>
+<option value="short" data-i18n="novelShort">短篇</option></select>
+        <label data-i18n="audience" for="audienceSelect">受众</label>
+        <select id="audienceSelect"><option value="general" data-i18n="audGeneral">一般向</option>
+<option value="male" data-i18n="audMale">男性向</option>
+<option value="female" data-i18n="audFemale">女性向</option></select>
+        <label data-i18n="worldview" for="worldview">世界观设定</label>
+        <textarea id="worldview" rows="2" placeholder="描述故事世界的规则与背景…" data-i18n-placeholder="worldviewPh"></textarea>
+        <label data-i18n="wpc" for="wordsPerChapter">每章字数</label>
+        <input type="number" id="wordsPerChapter" min="800" max="6000" step="200" placeholder="2000" data-i18n-aria-label="wpc">
+      </div>
+      <label data-i18n="labelOutputLocale" for="outputLocaleSelect">输出语言 / Output language</label>
+      <select id="outputLocaleSelect"><option value="zh-CN">中文</option>
+<option value="en">English</option>
+<option value="ja-JP">日本語</option></select>
+      <label data-i18n="labelGenre" for="genre">题材方向</label>
+      <select id="genre"><option value="">—</option></select>
+      <label data-i18n="labelIdea" for="idea">一句话创意</label>
+      <textarea id="idea" rows="4" placeholder="写下人物、目标与核心冲突" data-i18n-placeholder="ideaPh"></textarea>
+      <label data-i18n="labelHero" for="hero">主角设定（名字/人设）</label>
+      <input id="hero" placeholder="人物姓名、身份与动机" data-i18n-placeholder="heroPh" value="">
+      <label><span data-i18n="labelEpisodes">规划集数</span>：<span id="epVal">12</span> <span data-i18n="unitEps">集</span></label>
+      <input type="range" id="episodes" min="6" max="80" step="2" value="12" data-i18n-aria-label="labelEpisodes">
+      <button id="btnGen" class="primary" data-i18n="startGen">▶ 启动生成 Agent</button>
+      <button id="btnRandom" class="ghost" data-i18n="btnRandom">🎲 随机一个爆款创意</button>
+      <div class="hint" data-i18n="pipelineHelp">创意 → 参考 → 大纲 → 剧本 → 分场与分镜。生成完成后可查看引用来源。</div>
+    </aside>
+
+    <section class="panel center">
+      <div class="center-head">
+        <h2 data-i18n="generationResults">生成结果</h2>
+        <span class="chip" id="engineChip" data-i18n="engineIdle">引擎：待启动</span>
+        <button id="btnToWriter" class="primary sm hidden" data-i18n="toWriter" title="把刚生成的剧本转入 TRAE 编剧，续写完善后续内容">✍️ 转编剧续写</button>
+        <button id="btnLlmCfg" class="hidden" title="查看/修改 AI 方案与配置（API Base / 模型 / 密钥）">⚙️ AI 配置</button>
+      </div>
+      <div id="canvas" class="canvas">
+        <div class="canvas-empty" id="canvasEmpty">
+          <div class="empty-icon">⬡</div>
+          <p data-i18n="canvasEmpty">配置左侧创意参数，点击「启动生成 Agent」</p>
+          <p class="small" data-i18n="canvasEmptySub">节点将按流水线顺序逐个点亮</p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel right drawer glass hidden" id="studioReference" role="dialog" aria-labelledby="studioReferenceTitle" tabindex="-1">
+      <div class="drawer-head">
+<h2 id="studioReferenceTitle" data-i18n="referenceMaterials">referenceMaterials</h2>
+<button class="icon-button" data-close-drawer="" data-i18n-title="close" aria-label="Close">✕</button>
+</div>
+<div class="tabs">
+        <button class="tab active" data-tab="kb" data-i18n="tabKb">知识库</button>
+        <button class="tab" data-tab="lb" data-i18n="tabLb">红果热榜</button>
+      </div>
+
+      <div id="tab-kb" class="tab-body">
+        <div class="search-row">
+          <input id="kbQuery" placeholder="输入作品名、题材或关键词" data-i18n-placeholder="kbQueryPh">
+          <button id="btnKbSearch" class="ghost sm" data-i18n="kbSearchBtn">检索</button>
+        </div>
+        <div id="kbHits" class="hit-list"><p class="small dim" data-i18n="kbEmptyHint">输入关键词检索爆款语料库，或等待生成流程自动召回。</p></div>
+        <h3 data-i18n="kbOverview">语料库概览</h3>
+        <div id="kbSummary" class="small dim">
+<span data-i18n="loading">加载中…</span>
+</div>
+        <div class="kb-actions">
+          <button id="btnPolish" class="ghost sm" data-i18n="kbPolish">✨ AI 深加工语料</button>
+          <button id="btnImport" class="ghost sm" data-i18n="kbImport">📥 导入语料</button>
+          <span id="polishStatus" class="small dim"></span>
+        </div>
+        <div id="importBox" class="hidden">
+          <textarea id="importText" rows="6" data-i18n-placeholder="corpusImportPh" placeholder="CSV / JSON / Markdown"></textarea>
+          <div class="import-btns">
+            <button id="btnImportGo" class="primary sm" data-i18n="confirmImport">确认导入</button>
+            <button id="btnImportCancel" class="ghost sm" data-i18n="cancel">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-lb" class="tab-body hidden">
+        <div class="lb-head">
+          <button id="btnCollect" class="primary sm" data-i18n="collectLb">⬇ 采集实时榜单</button>
+          <span id="collectStatus" class="small dim"></span>
+        </div>
+        <div id="lbList" class="lb-list">
+<span data-i18n="loading">加载中…</span>
+</div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ============ 视图2：知识图谱 ============ -->
+  <main class="layout hidden graph-layout" id="view-graph">
+    <section class="panel" style="grid-column: 1 / -1; display:flex; flex-direction:column;">
+      <div class="center-head">
+        <h2>
+<span data-i18n="graph">知识图谱</span> <span class="small dim" id="graphMeta"></span>
+</h2>
+        <div class="toolbar">
+          <input id="graphSearch" placeholder="搜索节点…" class="inline-input" data-i18n-placeholder="graphSearchPh" data-i18n-aria-label="graphSearchPh">
+          <button id="btnGraphLoad" class="ghost sm" data-i18n="refresh">刷新</button>
+          <button id="btnGraphReset" class="ghost sm" data-i18n="graphReset">重置视图</button>
+          <span class="chip" id="zoomChip">缩放 1.0x</span>
+        <details class="menu graph-menu"><summary data-i18n="graphTools">图谱工具</summary><div class="menu-panel glass">
+<select id="graphArchive" style="width:auto;max-width:180px" data-i18n-aria-label="graphArchive">
+            <option value="" data-i18n="currentGraph">当前最新</option>
+          </select>
+          <button id="btnGraphExtract" class="primary sm" data-i18n="graphExtract">⚡ 知识抽取</button>
+          <button id="btnKbDaily" class="primary sm" data-i18n="kbDaily">📅 每日更新</button>
+          </div></details>
+</div>
+      </div>
+      <div class="stats-bar" id="graphStats"><span class="stat-item small dim"><span data-i18n="loading">加载中…</span></span></div>
+      <div class="type-filter" id="typeFilter"></div>
+      <div class="graph-wrap">
+        <canvas id="graphCanvas"></canvas>
+        <div id="graphTip" class="graph-tip hidden"></div>
+        <aside class="node-panel glass hidden" id="nodePanel" aria-live="polite">
+          <p class="small dim" data-i18n="nodePanelHint">点击节点查看详情：剧本实际内容 / 标准化简介 / 多级标签 / 关系邻居</p>
+        </aside>
+      </div>
+      <div class="cluster-bar" id="clusterBar"></div>
+    </section>
+  </main>
+
+  <!-- ============ 视图3：灵感索引（灵感发生器） ============ -->
+  <main class="layout hidden two-column-layout" id="view-inspire">
+    <aside class="panel left glass">
+      <h2 data-i18n="findRef">找参考</h2>
+      <label data-i18n="kw" for="insQ">关键词</label>
+      <input id="insQ" placeholder="输入故事关键词" data-i18n-placeholder="insQPh">
+      <label data-i18n="theme" for="insTheme">主题（题材）</label>
+      <select id="insTheme" data-i18n-aria-label="theme"><option value="" data-i18n="all">全部</option></select>
+      <label data-i18n="emotion" for="insEmotion">情感</label>
+      <select id="insEmotion" data-i18n-aria-label="emotion">
+        <option value="" data-i18n="all">全部</option>
+<option value="爽" data-i18n="emotion0">爽</option>
+<option value="虐" data-i18n="emotion1">虐</option>
+<option value="甜" data-i18n="emotion2">甜</option>
+        <option value="燃" data-i18n="emotion3">燃</option>
+<option value="治愈" data-i18n="emotion4">治愈</option>
+<option value="愤怒" data-i18n="emotion5">愤怒</option>
+<option value="委屈" data-i18n="emotion6">委屈</option>
+<option value="解气" data-i18n="emotion7">解气</option>
+      </select>
+      <label data-i18n="tag" for="insTag">标签</label>
+      <input id="insTag" placeholder="输入人物或关系标签" data-i18n-placeholder="insTagPh">
+      <button id="btnInspire" class="primary" data-i18n="inspireBtn">🔍 检索参考</button>
+      <div class="hint" data-i18n="inspirationHelp">组合灵感卡开始创作，也可检索参考、查看关联或选择两部作品比较。</div>
+    </aside>
+    <section class="panel center">
+      <div class="spark-toolbar">
+        <select id="sparkN" style="width:auto" data-i18n-aria-label="ideaCardCount">
+          <option value="3" data-i18n="sparkN3">3 张</option>
+          <option value="6" selected data-i18n="sparkN6">6 张</option>
+          <option value="9" data-i18n="sparkN9">9 张</option>
+        </select>
+        <input id="sparkHint" placeholder="给 AI 一点方向（可选）：如 悬疑 + 中年人" data-i18n-placeholder="sparkHintPh" data-i18n-aria-label="sparkHintPh">
+        <button id="btnSparkDraw" class="ghost sm" data-i18n="drawBtn">🎲 抽卡</button>
+        <button id="btnSparkAI" class="primary sm" data-i18n="aiBtn">✨ AI 生成</button>
+        <button id="btnSparkLib" class="ghost sm" data-i18n="sparkLibBtn">📚 灵感库</button>
+      </div>
+      <div id="sparkCards"><p class="empty-state" data-i18n="drawing">正在加载灵感…</p></div>
+      <div class="center-head">
+<h2 data-i18n="refResults">参考结果</h2>
+<span class="chip" id="insMeta"></span>
+</div>
+      <div id="insList" class="canvas"><p class="empty-state" data-i18n="inspirationEmpty">生成灵感卡，或检索同类作品作为参考。</p></div>
+    </section>
+    <aside class="panel right drawer glass hidden" id="inspirationRelated" role="dialog" aria-labelledby="inspirationRelatedTitle" tabindex="-1">
+      <div class="drawer-head">
+<h2 id="inspirationRelatedTitle" data-i18n="relatedAndCompare">relatedAndCompare</h2>
+<button class="icon-button" data-close-drawer="" data-i18n-title="close" aria-label="Close">✕</button>
+</div>
+<h2 data-i18n="related">关联推荐</h2>
+      <div id="insRelated"><p class="small dim" data-i18n="insRelatedHint">点击左侧结果的「关联」按钮。</p></div>
+      <h3 data-i18n="compareBar">对比栏（选 2 个）</h3>
+      <div id="compareBar" class="small dim" data-i18n="notSelected">未选择</div>
+      <button id="btnCompareGo" class="ghost" data-i18n="cmpGo">⚖ 开始对比</button>
+    </aside>
+  </main>
+
+  <!-- ============ 视图4：钩子工作台 ============ -->
+  <main class="layout hidden two-column-layout" id="view-hooks">
+    <aside class="panel left glass">
+      <h2 data-i18n="hookLib">钩子库</h2>
+      <div id="hookStats"></div>
+      <div class="tabs" id="hookFilter">
+        <button class="tab active" data-st="" data-i18n="all">全部</button>
+        <button class="tab" data-st="pending" data-i18n="hPending">待审核</button>
+        <button class="tab" data-st="approved" data-i18n="hApproved">已通过</button>
+        <button class="tab" data-st="rejected" data-i18n="hRejected">已拒绝</button>
+      </div>
+      <div id="hookList" class="hit-list"><p class="small dim"><span data-i18n="loading">加载中…</span></p></div>
+      <button id="btnHookNew" class="ghost sm" data-i18n="hookNew">＋ 新建钩子</button>
+    </aside>
+    <section class="panel center">
+      <div class="center-head">
+<h2 data-i18n="hookEdit">钩子编辑</h2>
+<span class="chip" id="hookChip" data-i18n="hNotSelected">未选中</span>
+</div>
+      <div id="hookEditor" class="editor-area"><p class="small dim" style="padding:16px" data-i18n="hookEmpty">选择钩子查看详情，或创建新钩子。</p></div>
+    </section>
+    <aside class="panel right drawer glass hidden" id="hookTools" role="dialog" aria-labelledby="hookToolsTitle" tabindex="-1">
+      <div class="drawer-head">
+<h2 id="hookToolsTitle" data-i18n="hookToolsTitle">hookToolsTitle</h2>
+<button class="icon-button" data-close-drawer="" data-i18n-title="close" aria-label="Close">✕</button>
+</div>
+<div class="tabs">
+        <button class="tab active" data-htab="extract" data-i18n="hExtract">智能抽取</button>
+        <button class="tab" data-htab="tpl" data-i18n="hTpl">结构模板</button>
+        <button class="tab" data-htab="conv" data-i18n="hConv">小说转化</button>
+        <button class="tab" data-htab="recipe" data-i18n="hRecipe">钩子配方</button>
+      </div>
+      <div id="htab-extract" class="tab-body">
+        <label data-i18n="extractHint" for="extText">粘贴文本，提取潜在钩子。</label>
+        <textarea id="extText" rows="6" placeholder="粘贴作品片段，提取悬念与转折…" data-i18n-placeholder="extTextPh"></textarea>
+        <button id="btnHookExtract" class="primary sm" data-i18n="hookExtractBtn">✂ 规则抽取并入库</button>
+        <button id="btnHookExtractAll" class="ghost sm" data-i18n="hookExtractAll">全库增量抽取（3条）</button>
+        <div id="extResult" class="small" style="margin-top:10px"></div>
+      </div>
+      <div id="htab-tpl" class="tab-body hidden">
+        <div id="tplList"></div>
+        <h3 data-i18n="newTemplate">新建自定义模板</h3>
+        <input id="tplName" placeholder="模板名称" data-i18n-placeholder="tplNamePh">
+        <textarea id="tplBeats" rows="5" placeholder='节拍 JSON：[{"beat":"开局炸点","ratio":0.05,"goal":"3秒抓人","hook_mechanism":["金句"]}]' data-i18n-placeholder="tplBeatsPh"></textarea>
+        <button id="btnTplCreate" class="ghost sm" data-i18n="tplCreateBtn">＋ 创建模板</button>
+      </div>
+      <div id="htab-conv" class="tab-body hidden">
+        <label data-i18n="novelTitle" for="convTitle">小说标题</label>
+        <input id="convTitle" placeholder="输入作品标题" data-i18n-placeholder="convTitlePh">
+        <label data-i18n="novelExcerpt" for="convText">小说内容（片段即可）</label>
+        <textarea id="convText" rows="8" placeholder="粘贴小说片段，自动分析高潮段/对话密度并转化为短剧元素…" data-i18n-placeholder="convTextPh"></textarea>
+        <label data-i18n="conversionMode" for="convMode">模式</label>
+        <select id="convMode">
+          <option value="auto" data-i18n="convModeAuto">auto：全自动转化（LLM）</option>
+          <option value="manual" data-i18n="convModeManual">manual：仅规则分析，供人工标注</option>
+        </select>
+        <button id="btnConvert" class="primary sm" data-i18n="convBtn">🔄 开始转化</button>
+        <div id="convResult" style="margin-top:10px"></div>
+      </div>
+      <div id="htab-recipe" class="tab-body hidden">
+        <p class="small dim" style="margin-bottom:8px" data-i18n="recipeEmpty">从已通过钩子库抽「开场 → 中段 → 结尾」三钩组合，每行可限定机制；抽出后一键带去工作台生成。</p>
+        <div class="recipe-row">
+          <span class="recipe-pos" data-i18n="rcOpen">开场</span>
+          <select id="rcpMechOpen" class="recipe-mech"><option value="" data-i18n="rcAny">不限机制</option></select>
+        </div>
+        <div class="recipe-row">
+          <span class="recipe-pos" data-i18n="rcMid">中段</span>
+          <select id="rcpMechMid" class="recipe-mech"><option value="" data-i18n="rcAny">不限机制</option></select>
+        </div>
+        <div class="recipe-row">
+          <span class="recipe-pos" data-i18n="rcTail">结尾</span>
+          <select id="rcpMechTail" class="recipe-mech"><option value="" data-i18n="rcAny">不限机制</option></select>
+        </div>
+        <button id="btnRecipeDraw" class="primary sm" data-i18n="recipeDrawBtn">🎲 抽一组</button>
+        <div id="recipeOut" style="margin-top:10px"><p class="small dim" data-i18n="recipeEmpty">抽取开场、中段和结尾钩子组合。</p></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ============ 视图5：类别管理 ============ -->
+  <main class="layout hidden two-column-layout" id="view-cats">
+    <aside class="panel left glass">
+      <h2 data-i18n="dims">维度</h2>
+      <div id="dimTabs" class="tabs"></div>
+      <div id="dimDesc" class="small dim" style="margin-bottom:8px"></div>
+      <div id="catList" class="hit-list"><p class="small dim"><span data-i18n="loading">加载中…</span></p></div>
+      <button id="btnCatNew" class="ghost sm" data-i18n="catNew">＋ 新增类别</button>
+    </aside>
+    <section class="panel center">
+      <div class="center-head">
+<h2 data-i18n="catEdit">类别编辑</h2>
+<span class="chip" id="catChip" data-i18n="hNotSelected">未选中</span>
+</div>
+      <div id="catEditor"><p class="small dim" style="padding:16px" data-i18n="categoryEmpty">选择一个类别查看详情，或创建新类别。</p></div>
+      <h3 data-i18n="categoryRelations">关联关系（related_ids 双向）</h3>
+      <div id="catRelated" class="small"></div>
+      <h3 data-i18n="linkedContent">挂接内容</h3>
+      <div id="catHooked" class="small dim" data-i18n="linkedContentHint">选中类别后展示其挂接的图谱实体与语料。</div>
+    </section>
+    <aside class="panel right drawer glass hidden" id="categoryInfo" role="dialog" aria-labelledby="categoryInfoTitle" tabindex="-1">
+      <div class="drawer-head">
+<h2 id="categoryInfoTitle" data-i18n="catHelpTitle">catHelpTitle</h2>
+<button class="icon-button" data-close-drawer="" data-i18n-title="close" aria-label="Close">✕</button>
+</div>
+<div class="small dim" id="catHelp">
+<span data-i18n="loading">加载中…</span>
+</div>
+      <h3 data-i18n="catCross">类别×内容交叉统计</h3>
+      <div id="extInfo" class="small dim">
+<span data-i18n="loading">加载中…</span>
+</div>
+    </aside>
+  </main>
+
+  <!-- ============ 视图6：Trae 对接 · AI 编剧 ============ -->
+  <main class="layout hidden creation-layout" id="view-writer">
+    <aside class="panel left glass brief-panel">
+      <h2 data-i18n="engineConnection">创作设置</h2>
+      <button id="btnTraeConn" class="secondary" data-i18n="wCheckConn">🔗 检查引擎连通</button>
+      <div id="traeStatus" class="small dim" style="margin:8px 0;" data-i18n="wConnecting">等待连接…</div>
+      <form id="writerForm" class="hidden" aria-label="Story brief">
+        <label data-i18n="wIdeaLabel" for="wIdea">创意/剧本标题</label>
+        <input id="wIdea" placeholder="如：外卖员读心术，发现客户全是商界大佬" data-i18n-placeholder="wIdeaPh">
+        <label data-i18n="wGenreLabel" for="wGenre">题材方向</label>
+        <select id="wGenre"><option value="">—</option></select>
+        <label data-i18n="wHeroLabel" for="wHero">主角设定</label>
+        <input id="wHero" placeholder="如：李快，27岁外卖骑手" data-i18n-placeholder="wHeroPh">
+        <label data-i18n="wTagsLabel" for="wHotTags">热点标签（逗号分隔）</label>
+        <input id="wHotTags" placeholder="输入故事标签" data-i18n-placeholder="wTagsPh">
+        <label data-i18n="labelOutputLocale" for="wLocale">输出语言 / Output language</label>
+        <select id="wLocale"><option value="zh-CN">中文</option>
+<option value="en">English</option>
+<option value="ja-JP">日本語</option></select>
+        <label data-i18n="labelContentType" for="wContentType">内容类型 / Content / コンテンツ</label>
+        <select id="wContentType"><option value="short_drama" data-i18n="drama">短剧 / Short drama</option>
+<option value="novel" data-i18n="novel">小说 / Novel</option></select>
+        <label><span data-i18n="wTargetLabel">规划总集数</span>：<span id="wTargetVal">10</span><span data-i18n="unitEps"> 集</span></label>
+        <input type="range" id="wTarget" min="5" max="50" step="1" value="10" data-i18n-aria-label="wTargetLabel">
+        <label><span data-i18n="wHalfLabel">生成前半部分集数</span>：<span id="wHalfVal">5</span><span data-i18n="unitEps"> 集</span></label>
+        <input type="range" id="wHalf" min="2" max="10" step="1" value="5" data-i18n-aria-label="wHalfLabel">
+        <div class="form-buttons">
+          <button type="button" id="btnWriterGen" class="primary" data-i18n="wGenFirst">▶ 生成前半部分</button>
+          <button type="button" id="btnWriterImport" class="ghost" data-i18n="wImportCont">📥 导入剧本并续写</button>
+        </div>
+      </form>
+      </aside>
+
+    <section class="panel center">
+      <div class="center-head">
+        <h2 data-i18n="generationResults">生成结果</h2>
+        <span class="chip" id="wChip" data-i18n="engineIdle">引擎待机</span>
+      </div>
+      <div id="wCanvas" class="canvas" style="min-height: 400px; margin-top:16px;">
+        <div class="canvas-empty" id="wCanvasEmpty">
+          <div class="empty-icon">⬡</div>
+          <p data-i18n="wEmpty">先申请 Trae 调用，然后填写创意或导入剧本</p>
+        </div>
+      </div>
+      <div id="wSatisfy" class="hidden" style="margin-top:16px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+        <h3 data-i18n="wStep3">③ 满意度确认</h3>
+        <div id="wSatisfyMeta" class="small dim"></div>
+        <div style="margin:8px 0;">
+          <label><input type="radio" name="wAnchor" value="outline"><span data-i18n="wAnchorOutline"> 只保留大纲，从第1集重新生成全剧</span></label>
+          <label><input type="radio" name="wAnchor" value="script"><span data-i18n="wAnchorScript"> 只保留第1集剧本，重新编排后续剧情</span></label>
+          <label><input type="radio" name="wAnchor" value="both" checked><span data-i18n="wAnchorBoth"> 保留大纲+第1集，接着往下续写</span></label>
+        </div>
+        <label data-i18n="wNoteLabel" for="wNote">编剧反馈（可空）</label>
+        <input id="wNote" placeholder="如：第1集钩子不够强，需要更爽的冲突" style="width:100%;" data-i18n-placeholder="wNotePh">
+        <label data-i18n="wContTarget" for="wContTarget">续写目标集数</label>
+        <input type="number" id="wContTarget" value="10" min="2" max="50">
+        <button id="btnWriterContinue" class="primary" style="margin-top:8px;" data-i18n="wConfirmCont">✅ 确认并继续生成后续</button>
+      </div>
+      <div id="wResult" class="hidden" style="margin-top:16px;"></div>
+    </section>
+
+    <aside class="panel right drawer glass hidden" id="writerResources" role="dialog" aria-labelledby="writerResourcesTitle" tabindex="-1">
+      <div class="drawer-head">
+<h2 id="writerResourcesTitle" data-i18n="historyAndLibrary">historyAndLibrary</h2>
+<button class="icon-button" data-close-drawer="" data-i18n-title="close" aria-label="Close">✕</button>
+</div>
+<h3 data-i18n="wHist">🕘 历史任务</h3>
+      <button id="btnHistRefresh" class="sm secondary" data-i18n="wRefreshList">刷新列表</button>
+      <div id="wHistList" style="max-height: 300px; overflow-y:auto; margin-top:8px;"></div>
+      <h3 style="margin-top:14px" data-i18n="wHelp">帮助说明</h3>
+      <div class="small dim" data-i18n="writerHelp">先检查引擎连接，再生成或导入剧本；确认大纲和首集后继续创作。历史任务可随时载入续写。</div>
+    <div class="panel-sub">
+        <h3 data-i18n="wLib">📚 剧本库</h3>
+        <div class="tabs" id="writerKindTabs" style="margin:6px 0">
+          <button class="tab active" data-kind="" data-i18n="kindAll">全部</button>
+          <button class="tab" data-kind="generated" data-i18n="kindGen">生成剧本库</button>
+          <button class="tab" data-kind="reference" data-i18n="kindRef">参考剧本库</button>
+        </div>
+        <button id="btnLibraryRefresh" class="sm secondary" data-i18n="wRefreshList">刷新列表</button>
+        <div id="libraryList" style="max-height: 300px; overflow-y:auto; margin-top:8px;"></div>
+      </div>
+      <div class="panel-sub">
+        <h3 data-i18n="wImportScript">📥 导入剧本</h3>
+        <textarea id="wImport" rows="5" placeholder="粘贴剧本内容，支持MD格式，包含标题、题材、主角、热点标签等" data-i18n-placeholder="wImportPh"></textarea>
+        <button id="btnLibraryImport" class="primary sm" data-i18n="wImportBtn">导入到剧本库</button>
+        <button id="btnWriterImportSheet" class="secondary sm" data-i18n="wImportCont">导入剧本并续写</button><button id="btnImportSample" class="hidden" data-i18n="wSample">填入示例（工地捡玉）</button>
+      </div>
+    </aside>
+  </main>
+
+  <div id="modalRoot"></div>
+
+  <script src="/static/i18n.js?v=20261022-ui4"></script>
+  <script src="/static/app.js?v=20261022-ui4"></script>
+  <script src="/static/hub.js?v=20261022-ui4"></script>
+  <script src="/static/graph.js?v=20261022-ui4"></script>
+  <script src="/static/hooks.js?v=20261022-ui4"></script>
+  <script src="/static/cats.js?v=20261022-ui4"></script>
+  <script src="/static/writer.js?v=20261022-ui4"></script>
+<div id="drawerBackdrop" class="drawer-backdrop hidden" aria-hidden="true"></div>
+<script src="/static/shell.js?v=20261022-ui4"></script>
+</body>
+</html>

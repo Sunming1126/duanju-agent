@@ -1,0 +1,6 @@
+# Web 服务必需依赖；MCP 与视频处理不在本次部署范围内。
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+httpx>=0.27,<1
+python-dotenv>=1,<2
+python-multipart>=0.0.18,<1
