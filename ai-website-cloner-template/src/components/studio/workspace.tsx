@@ -35,6 +35,7 @@ import {
   type Work,
   type World,
 } from "@/lib/studio/api";
+import { generateWorkCandidate } from "@/lib/studio/generation";
 import { legacyWorks } from "@/lib/studio/legacy";
 import { Header, Modal } from "@/components/sites/storyplay/shared";
 import { WorkForm } from "./work-form";
@@ -245,25 +246,36 @@ function WorkspaceSession({
       setBusy(false);
     }
   }
-  async function generate() {
-    if (!work || !ensureSaved()) return;
-    if (!work.premise.trim()) {
-      setNotice("请先填写并保存故事想法，再启动 AI 生成。");
-      return;
-    }
+  async function generate(source = work, action = tab, targetNumber = number) {
+    if (!source || busy || (pending && source.id === work?.id)) return;
     setBusy(true);
+    setNotice("正在提交 AI 生成，请稍候…");
     try {
-      await backendRequest(`/studio/works/${work.id}/generate`, {
-        method: "POST",
-        body: jsonBody({ action: tab, number, revision: work.revision }),
+      await generateWorkCandidate(source, {
+        action,
+        number: targetNumber,
+        dirty: source.id === work?.id && dirty,
+        onSaved: (saved) => {
+          setWork(saved);
+          setWorks((items) => [
+            saved,
+            ...items.filter((item) => item.id !== saved.id),
+          ]);
+          setDirty(false);
+        },
       });
       setRefreshCandidates((value) => value + 1);
-      setNotice("已启动生成。结果会先出现在候选区，确认采纳后才写入作品。");
+      setNotice(
+        "AI 已开始生成，结果将在下方显示。确认采纳后，可继续下一步创作。",
+      );
+      document
+        .getElementById("studio-candidates")
+        ?.scrollIntoView({ block: "start" });
     } catch (cause) {
       setNotice(
         cause instanceof Error
           ? cause.message
-          : "生成请求失败，请先刷新候选列表核对状态。",
+          : "生成请求失败，请刷新候选列表核对状态；作品仍保留。",
       );
       setRefreshCandidates((value) => value + 1);
     } finally {
@@ -664,7 +676,9 @@ function WorkspaceSession({
                 <div className="editor-panel-heading">
                   <div>
                     <h2>{actionLabel(tab, novel)}</h2>
-                    <p>手动编辑或生成候选，确认后采纳。</p>
+                    <p>
+                      点击 AI 生成，下方查看结果并确认采纳；有修改时会先保存。
+                    </p>
                   </div>
                   <div className="studio-generate-controls">
                     {tab === "chapter" && (
@@ -684,12 +698,16 @@ function WorkspaceSession({
                       </select>
                     )}
                     <button
-                      className="outline-button"
-                      disabled={busy || pending || dirty}
+                      className="pill light"
+                      disabled={busy || pending}
                       onClick={() => void generate()}
                     >
                       <Sparkles size={14} />
-                      {pending ? "生成中…" : "生成候选"}
+                      {pending
+                        ? "AI 生成中…"
+                        : busy
+                          ? "正在提交…"
+                          : `${dirty ? "保存并 " : ""}AI 生成${actionLabel(tab, novel)}`}
                     </button>
                   </div>
                 </div>
@@ -712,7 +730,11 @@ function WorkspaceSession({
                   <span>生成候选不会直接改写原文</span>
                 </div>
               </section>
-              <section className="studio-candidates" aria-label="创作候选">
+              <section
+                id="studio-candidates"
+                className="studio-candidates"
+                aria-label="创作候选"
+              >
                 <div className="studio-section-bar">
                   <h2>创作候选</h2>
                   <button
@@ -732,9 +754,25 @@ function WorkspaceSession({
                   </p>
                 )}
                 {!candidates.length && (
-                  <p className="studio-hint">
-                    还没有候选。先保存故事想法，再选择对应步骤生成。
-                  </p>
+                  <div className="studio-candidate">
+                    <p className="studio-hint">
+                      {pending
+                        ? "AI 正在创作，请稍候…"
+                        : "保存草稿不会自动生成。点击下面的按钮开始 AI 创作，结果会出现在这里。"}
+                    </p>
+                    <div className="studio-candidate-actions">
+                      <button
+                        className="pill light"
+                        disabled={busy || pending}
+                        onClick={() => void generate()}
+                      >
+                        <Sparkles size={14} />{" "}
+                        {busy
+                          ? "正在提交…"
+                          : `AI 生成${actionLabel(tab, novel)}`}
+                      </button>
+                    </div>
+                  </div>
                 )}
                 {candidates.map((candidate) => (
                   <article className="studio-candidate" key={candidate.id}>
@@ -828,7 +866,7 @@ function WorkspaceSession({
             mode={mode}
             worlds={worlds}
             reference={reference}
-            onCreated={(value) => {
+            onCreated={(value, autoGenerate) => {
               setWorks((items) => [value, ...items]);
               setWork(value);
               setDirty(false);
@@ -837,7 +875,12 @@ function WorkspaceSession({
               setNumber(1);
               setCandidates([]);
               setRefreshCandidates((value) => value + 1);
-              setNotice("作品已保存到本机后端。");
+              setNotice(
+                autoGenerate
+                  ? "作品已创建，正在启动 AI 生成…"
+                  : "草稿已保存。点击 AI 生成按钮即可开始创作。",
+              );
+              if (autoGenerate) void generate(value, "premise", 1);
             }}
             onClose={() => setMode(null)}
           />

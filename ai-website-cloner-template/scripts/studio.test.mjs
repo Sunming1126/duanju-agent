@@ -6,7 +6,7 @@ import { test } from "node:test";
 import vm from "node:vm";
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
-function load(name) {
+function load(name, dependencies = {}) {
   const source = readFileSync(
     new URL(`../src/lib/studio/${name}.ts`, import.meta.url),
     "utf8",
@@ -18,7 +18,14 @@ function load(name) {
     },
   }).outputText;
   const exports = {};
-  vm.runInThisContext(`(function(exports){${compiled}\n})`)(exports);
+  vm.runInThisContext(`(function(exports, require){${compiled}\n})`)(
+    exports,
+    (name) => {
+      if (!(name in dependencies))
+        throw new Error(`Unexpected dependency: ${name}`);
+      return dependencies[name];
+    },
+  );
   return exports;
 }
 const legacy = load("legacy");
@@ -126,4 +133,98 @@ test("export includes unsaved manuscript and save payload excludes server metada
   assert.match(api.localExport(work), /第1章/);
   assert.equal("id" in api.workPayload(work), false);
   assert.equal("revision" in api.workPayload(work), false);
+});
+
+const generation = load("generation", { "./api": api });
+
+test("generate saves edited draft first and uses returned revision exactly once", async () => {
+  const original = globalThis.fetch;
+  const calls = [];
+  let saved;
+  const work = {
+    id: "draft",
+    revision: 3,
+    premise: "新故事想法",
+    title: "故事",
+  };
+  try {
+    globalThis.fetch = async (path, init) => {
+      calls.push({ path, init });
+      const response =
+        init.method === "PUT"
+          ? { ...work, revision: 4 }
+          : { id: "candidate", status: "running" };
+      return new Response(JSON.stringify(response), {
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const result = await generation.generateWorkCandidate(work, {
+      action: "chapter",
+      number: 2,
+      dirty: true,
+      onSaved: (value) => {
+        saved = value;
+      },
+    });
+    assert.equal(saved.revision, 4);
+    assert.deepEqual(
+      calls.map((c) => c.init.method),
+      ["PUT", "POST"],
+    );
+    assert.deepEqual(JSON.parse(calls[1].init.body), {
+      action: "chapter",
+      number: 2,
+      revision: 4,
+    });
+    assert.equal(result.id, "candidate");
+    calls.length = 0;
+    await generation.generateWorkCandidate(work, {
+      action: "premise",
+      number: 1,
+      dirty: false,
+      onSaved: () => assert.fail("clean draft must not be saved again"),
+    });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].init.method, "POST");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("save conflict blocks generation and missing story never sends a request", async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  try {
+    globalThis.fetch = async () => {
+      calls++;
+      return new Response(JSON.stringify({ detail: "作品已更新" }), {
+        status: 409,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const options = {
+      action: "premise",
+      number: 1,
+      dirty: true,
+      onSaved: () => assert.fail("failed save must not replace local text"),
+    };
+    await assert.rejects(
+      generation.generateWorkCandidate(
+        { id: "draft", revision: 1, premise: "想法" },
+        options,
+      ),
+      /作品已更新/,
+    );
+    assert.equal(calls, 1);
+    await assert.rejects(
+      generation.generateWorkCandidate(
+        { id: "draft", revision: 1, premise: " " },
+        options,
+      ),
+      /请先填写故事想法/,
+    );
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
 });

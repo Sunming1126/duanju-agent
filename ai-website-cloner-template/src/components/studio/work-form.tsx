@@ -21,7 +21,7 @@ export function WorkForm({
   mode: string;
   worlds: World[];
   reference?: Reference;
-  onCreated: (work: Work) => void;
+  onCreated: (work: Work, generate: boolean) => void;
   onClose: () => void;
 }) {
   const [type, setType] = useState<ContentType>(
@@ -36,6 +36,11 @@ export function WorkForm({
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const generate = !(
+      submitter instanceof HTMLButtonElement && submitter.value === "draft"
+    );
     setError("");
     setBusy(true);
     const data = new FormData(event.currentTarget);
@@ -61,12 +66,18 @@ export function WorkForm({
       setBusy(false);
       return;
     }
+    if (generate && !payload.premise) {
+      setError("请先填写故事想法；如果想稍后再写，可以选择仅创建草稿。");
+      setBusy(false);
+      return;
+    }
     try {
       onCreated(
         await backendRequest<Work>("/studio/works", {
           method: "POST",
           body: jsonBody(payload),
         }),
+        generate,
       );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "创建失败");
@@ -77,7 +88,8 @@ export function WorkForm({
   return (
     <form className="create-form studio-form" onSubmit={submit}>
       <p className="modal-description">
-        创建后保存到本机后端。先建立设定，再生成候选并确认采纳；不会直接覆盖正文。
+        填写故事想法后，点击“创建并 AI 生成”，AI
+        会先完善故事设定。确认采纳后，可继续生成人物、大纲和正文。
       </p>
       <label>
         作品名称
@@ -215,8 +227,23 @@ export function WorkForm({
         <button type="button" className="text-button" onClick={onClose}>
           取消
         </button>
-        <button type="submit" className="pill light" disabled={busy}>
-          {busy ? "创建中…" : "创建作品"}
+        <button
+          type="submit"
+          name="intent"
+          value="generate"
+          className="pill light"
+          disabled={busy}
+        >
+          {busy ? "正在创建…" : "创建并 AI 生成"}
+        </button>
+        <button
+          type="submit"
+          name="intent"
+          value="draft"
+          className="outline-button"
+          disabled={busy}
+        >
+          仅创建草稿
         </button>
       </div>
     </form>
