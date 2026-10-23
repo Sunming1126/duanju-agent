@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 export function Logo() {
   return <Link href="/" className="brand" aria-label="Plotloom 首页"><span className="brand-wordmark">Plotloom</span></Link>;
@@ -10,11 +10,10 @@ export function Logo() {
 
 export function Header({ workspace = false }: { workspace?: boolean }) {
   return <header className="site-header"><div className="header-inner"><Logo />
-    <span className="preview-badge">本地前端预览</span>
+    <span className="preview-badge">中文创作空间</span>
     <nav aria-label="主导航">
       {workspace ? <Link href="/" className="text-link"><ArrowLeft size={14} /> 返回首页</Link> : <>
         <Link href="/corpus" className="text-link">语料参考</Link>
-        <a className="text-link tutorial-link" href="https://oi4bb2mpywg.feishu.cn/wiki/Q8ubwcxrEicmtNkyNvVcDNHLnFh" target="_blank" rel="noreferrer">使用教程 <ArrowUpRight size={12} /></a>
       </>}
       <Link className="pill light" href="/workspace">{workspace ? "我的作品" : "创作工作台"}</Link>
     </nav>

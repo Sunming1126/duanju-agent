@@ -77,12 +77,12 @@ test("world package browser checksum matches Python canonical JSON for all suppo
   };
   const payload = { schema: "onesay.world-draft", version: 1, world };
   const expected = spawnSync(
-    "python3",
+    process.env.PYTHON || (process.platform === "win32" ? "python" : "python3"),
     [
       "-c",
       'import sys,json,hashlib; print(hashlib.sha256(json.dumps(json.load(sys.stdin),ensure_ascii=False,sort_keys=True,separators=(",",":")).encode()).hexdigest())',
     ],
-    { input: JSON.stringify(payload), encoding: "utf8" },
+    { input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env, PYTHONIOENCODING: "utf-8" } },
   );
   assert.equal(expected.status, 0);
   assert.equal(await codec.worldDraftChecksum(payload), expected.stdout.trim());
