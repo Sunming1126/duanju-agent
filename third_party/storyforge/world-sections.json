@@ -1,0 +1,100 @@
+[
+  {
+    "id": "basics",
+    "label": "规则与起源",
+    "description": "建立世界规则、起源与力量体系。",
+    "fields": [
+      {
+        "key": "world_rules",
+        "label": "世界规则"
+      },
+      {
+        "key": "origin",
+        "label": "世界起源"
+      },
+      {
+        "key": "power_system",
+        "label": "力量体系"
+      }
+    ]
+  },
+  {
+    "id": "nature",
+    "label": "自然与地理",
+    "description": "编辑自然环境、资源、地点与地理设定。",
+    "fields": [
+      {
+        "key": "environment",
+        "label": "自然环境与资源"
+      },
+      {
+        "key": "locations",
+        "label": "地点与地理"
+      }
+    ]
+  },
+  {
+    "id": "society",
+    "label": "人文与社会",
+    "description": "管理种族、势力、城市、政治、文化、经济与物品。",
+    "fields": [
+      {
+        "key": "organizations",
+        "label": "组织与势力"
+      },
+      {
+        "key": "culture",
+        "label": "文化与制度"
+      },
+      {
+        "key": "items",
+        "label": "重要物品"
+      }
+    ]
+  },
+  {
+    "id": "characters",
+    "label": "人物与关系",
+    "description": "建立人物档案与关系网络。",
+    "fields": [
+      {
+        "key": "characters",
+        "label": "人物档案"
+      },
+      {
+        "key": "relations",
+        "label": "人物关系"
+      }
+    ]
+  },
+  {
+    "id": "history",
+    "label": "历史与事实",
+    "description": "维护历史事件、故事年表、事实及角色认知。",
+    "fields": [
+      {
+        "key": "history",
+        "label": "历史年表"
+      },
+      {
+        "key": "facts",
+        "label": "已确认事实"
+      }
+    ]
+  },
+  {
+    "id": "story",
+    "label": "故事与叙事",
+    "description": "可选地加入故事、主支线、伏笔、大纲、细纲和正文。",
+    "fields": [
+      {
+        "key": "storylines",
+        "label": "主线与支线"
+      },
+      {
+        "key": "foreshadows",
+        "label": "伏笔与回收"
+      }
+    ]
+  }
+]

@@ -1,4 +1,5 @@
 fastapi>=0.110
+pydantic>=2.6  # 中文创作工作台的字段和版本校验
 uvicorn>=0.29
 httpx>=0.27
 python-dotenv>=1.0

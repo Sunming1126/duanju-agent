@@ -15,10 +15,10 @@ export function Header({ workspace = false }: { workspace?: boolean }) {
     <span className="preview-badge">本地前端预览</span>
     <nav aria-label="主导航">
       {workspace ? <Link href="/" className="text-link"><ArrowLeft size={14} /> 返回首页</Link> : <>
-        <Link href="/lapian" className="text-link">短剧拉片</Link>
+        <Link href="/corpus" className="text-link">语料参考</Link>
         <a className="text-link tutorial-link" href="https://oi4bb2mpywg.feishu.cn/wiki/Q8ubwcxrEicmtNkyNvVcDNHLnFh" target="_blank" rel="noreferrer">使用教程 <ArrowUpRight size={12} /></a>
       </>}
-      <Link className="pill light" href={workspace ? "/lapian" : "/workspace"}>{workspace ? "浏览拉片" : "创作工作台"}</Link>
+      <Link className="pill light" href="/workspace">{workspace ? "我的作品" : "创作工作台"}</Link>
     </nav>
   </div></header>;
 }

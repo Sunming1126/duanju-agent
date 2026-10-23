@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowDown, ArrowRight, ChevronLeft, ChevronRight, FilePenLine, Sparkles, SquarePen, WandSparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, BookOpen, ChevronLeft, ChevronRight, Globe2, Sparkles, SquarePen } from "lucide-react";
 import { asset, dramas } from "./data";
 import { Header, Logo, SectionHeading } from "./shared";
 
@@ -22,20 +22,20 @@ export function StoryplayHome() {
   return <div className="storyplay-home"><Header />
     <main>
       <section className="hero">
-        <h2>短剧剧本创作平台</h2>
+        <h2>短剧与小说创作平台</h2>
         <h1>让AI辅助故事创作者成为超级个体</h1>
         <p>真人、AI短剧<span className="fire">🔥</span>剧本创作效率提升10倍！</p>
         <Link href="/workspace" className="pill light hero-cta">立即体验</Link>
         <div className="hero-tools" aria-label="主要创作功能">
           <Link href="/workspace?create=new"><SquarePen size={15} /> 新建剧本</Link><span />
-          <Link href="/workspace?create=adapt"><FilePenLine size={15} /> 小说改编</Link><span />
-          <Link href="/workspace?create=rewrite"><WandSparkles size={15} /> 剧本改写</Link>
+          <Link href="/workspace?create=novel"><BookOpen size={15} /> 小说创作</Link><span />
+          <Link href="/worlds"><Globe2 size={15} /> 世界设定</Link>
         </div>
       </section>
       <section className="lapian-section" aria-labelledby="lapian-heading">
         <header className="lapian-intro"><SectionHeading>短剧拉片</SectionHeading>
           <p id="lapian-heading">无需看短剧视频，整合各平台的累积播放量、热力值等实时数据，筛选热门题材下的优<br className="desktop-break" />质短剧，进行剧本拆解，为编剧实现一键拉片</p>
-          <Link className="gold-button" href="/lapian">查看更多拉片</Link>
+          <Link className="gold-button" href="/corpus">查看本机语料</Link>
         </header>
         <div ref={gallery} className="poster-stage"><div className="poster-grid" key={page}>
           {[...dramas.slice(page * 5), ...dramas.slice(0, page * 5)].map(drama => <Link className="poster" href={`/lapian?detail=${drama.id}`} key={drama.id} aria-label={`查看${drama.title}的拉片资料`}>
@@ -47,7 +47,7 @@ export function StoryplayHome() {
         <div className="gallery-paging"><button className="paging-arrow" disabled={page === 0} onClick={() => setPage(0)} aria-label="上一组海报"><ChevronLeft size={20} /></button>{[0,1].map(index => <button aria-label={`第${index + 1}组海报`} aria-pressed={page === index} key={index} className={`paging-dot ${page === index ? "active" : ""}`} onClick={() => setPage(index)} />)}<button className="paging-arrow" disabled={page === 1} onClick={() => setPage(1)} aria-label="下一组海报"><ChevronRight size={20} /></button></div>
       </section>
       <section className="feature-entries" aria-label="创作入口">
-        <Link href="/workspace?tool=evaluate"><span className="feature-icon violet"><FilePenLine size={22} /></span><h2>剧本评估</h2><ArrowRight size={20} /></Link>
+        <Link href="/workspace?create=novel"><span className="feature-icon violet"><BookOpen size={22} /></span><h2>小说创作</h2><ArrowRight size={20} /></Link>
         <Link href="/workspace?create=inspiration"><span className="feature-icon pink"><Sparkles size={22} /></span><h2>灵感策划</h2><ArrowRight size={20} /></Link>
         <Link href="/workspace?create=new"><span className="feature-icon cyan"><SquarePen size={22} /></span><h2>剧本创作</h2><ArrowRight size={20} /></Link>
       </section>

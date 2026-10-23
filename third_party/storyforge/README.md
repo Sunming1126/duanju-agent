@@ -1,0 +1,13 @@
+# StoryForge 适配来源
+
+上游：[yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge)，MIT 授权。
+固定参考提交：`c5a1cab7d7d02eb4382d13ecb9b3de2785037d88`。
+本机未找到已下载副本，研究用稀疏源码下载在 `/tmp/storyforge-reference`；该目录不是运行依赖。
+
+本次采用：
+
+- `src/components/world-engine/navigation.ts` 中的六类世界模块名称及描述，保存在本目录 `world-sections.json`。字段映射为本项目新增，用于规则、起源、环境、人物、关系、历史和伏笔等文本编辑。
+- 上游 `release-hash.ts` 的纯规范化 JSON 算法，适配在前端 `src/lib/studio/world-codec.ts`，保留来源和许可标注。
+- 世界与作品独立保存、生成冻结输入、候选经确认再采纳的分层思路。在本项目以 SQLite、后端事务和版本校验重新实现，没有引入 Dexie。
+
+这不是整个 StoryForge 应用的嵌入，也不包含其地图、游戏、插件或全部世界实体编辑器。本项目世界包格式为 `onesay.world-draft` v1，不宣称与 StoryForge WorldRelease 或全量备份兼容。完整上游 MIT 许可见 [LICENSE](LICENSE)。

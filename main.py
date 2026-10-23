@@ -42,18 +42,21 @@ from agent.extractor import run_extract, extract_text_hooks, EXTRACT_RULES
 from agent.market import normalize_market, normalize_locale, normalize_content_type, normalize_item, market_matches
 from agent.library import reference_from_corpus, stored_library_item
 from agent import localization as loc
+from agent.studio_api import router as studio_router, store as studio_store
 
 ROOT = Path(__file__).resolve().parent
 
 
 @asynccontextmanager
 async def lifespan(_app):
+    studio_store.recover_interrupted()  # 仅恢复本地创作候选，不自动重发模型请求
     hooks_mod.ensure_seed()  # 启动时幂等扩充钩子种子库（32条预审通过）
     _cleanup_stale_writer_tasks()  # 服务重启会中断 running 任务，统一标记为 error（suspended 任务保留可续跑）
     _sync_library_from_graph()  # 知识图谱剧本实体 → 参考剧本库（幂等）
     if os.environ.get("DUANJU_SCHEDULER_ENABLED", "true").lower() in {"1", "true", "yes"}:
         scheduler.start()  # 24h 数据新鲜度守护；私有部署可关闭自动采集
-    asyncio.create_task(_writer_auto_resume_loop())  # D: 挂起任务自动续跑守护
+    if os.environ.get("DUANJU_WRITER_AUTO_RESUME_ENABLED", "true").lower() in {"1", "true", "yes"}:
+        asyncio.create_task(_writer_auto_resume_loop())  # 本地测试可关闭旧任务的自动续跑
     yield
 
 
@@ -121,6 +124,7 @@ def _cleanup_stale_writer_tasks():
 
 
 app = FastAPI(title="短剧剧本生成 Agent Demo", version="0.6.0", lifespan=lifespan)
+app.include_router(studio_router)
 
 
 # 线上两个域名共用一个进程，市场边界由 Host 决定。未知 Host 仅保留本地
