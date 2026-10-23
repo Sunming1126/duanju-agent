@@ -152,9 +152,12 @@ img {
   flex-shrink: 0;
 }
 
-.brand img {
-  width: 168px;
-  height: 14px;
+.brand-wordmark {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1.2px;
 }
 
 .site-header nav {
@@ -280,6 +283,7 @@ img {
 
 .storyplay-home {
   overflow: clip;
+  padding-bottom: 80px;
 }
 
 .lapian-section {
@@ -456,41 +460,6 @@ img {
   background: white;
 }
 
-.feature-entries {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  max-width: 1104px;
-  margin: 115px auto 0;
-  border-top: 1px solid #262626;
-  border-bottom: 1px solid #262626;
-}
-
-.feature-entries>a {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 34px 25px;
-  transition: background .2s;
-}
-
-.feature-entries>a+a {
-  border-left: 1px solid #262626;
-}
-
-.feature-entries>a:hover {
-  background: #ffffff08;
-}
-
-.feature-entries h2 {
-  font-size: 22px;
-  font-weight: 600;
-}
-
-.feature-entries>a>svg {
-  margin-left: auto;
-  color: #888;
-}
-
 .feature-icon {
   width: 46px;
   height: 46px;
@@ -500,165 +469,6 @@ img {
   justify-content: center;
   background: color-mix(in srgb,currentColor 10%,transparent);
   flex-shrink: 0;
-}
-
-.provider-strip {
-  max-width: 1280px;
-  margin: 100px auto 70px;
-  overflow: hidden;
-  mask-image: linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
-}
-
-.provider-strip>div {
-  display: flex;
-  width: max-content;
-  align-items: center;
-  gap: 68px;
-  animation: providers-drift 55s linear infinite alternate;
-}
-
-.provider-strip:hover>div {
-  animation-play-state: paused;
-}
-
-.provider-strip img {
-  max-width: 150px;
-  width: auto;
-  height: 70px;
-  object-fit: contain;
-  opacity: .8;
-}
-
-.reviews {
-  max-width: 1198px;
-  margin: 95px auto 0;
-  padding: 0;
-}
-
-.review-grid {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 32px;
-  margin-top: 32px;
-}
-
-.review-grid article {
-  position: relative;
-  padding: 24px 24px 40px;
-  border: 1px solid #1b1b1b;
-  border-radius: 8px;
-  background: #1b20239e;
-  min-height: 540px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 34px;
-  overflow: hidden;
-}
-
-.review-grid article>p {
-  font-size: 21px;
-  line-height: 1.8;
-  font-weight: 500;
-  color: #999;
-}
-
-.review-grid strong {
-  font-weight: 500;
-  color: white;
-}
-
-.review-author {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-}
-
-.review-author img {
-  border-radius: 50%;
-  width: 64px;
-  height: 64px;
-  flex-shrink: 0;
-}
-
-.review-author h3 {
-  font-size: 19px;
-  font-weight: 500;
-}
-
-.review-author div>span {
-  color: #ffffffbf;
-  font-size: 14px;
-}
-
-.quote-mark {
-  position: absolute;
-  font-family: Georgia,serif;
-  line-height: 1;
-  font-size: 130px;
-  right: -28px;
-  bottom: -92px;
-  color: #40334680;
-}
-
-.source-caption {
-  text-align: center;
-  font-size: 11px;
-  color: #555;
-  margin-top: 20px;
-}
-
-.closing {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  padding: 140px 20px 90px;
-}
-
-.closing>span {
-  font-size: 25px;
-  letter-spacing: 1px;
-}
-
-.site-footer {
-  height: 440px;
-  background: url('/sites/storyplay/footer-bg.png') center 54%/1800px auto no-repeat;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 100px 40px 24px;
-}
-
-.site-footer>.brand img {
-  width: 504px;
-  height: auto;
-}
-
-.footer-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 30px;
-  width: 100%;
-  font-size: 12px;
-  color: #999;
-}
-
-.footer-bottom>a {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.footer-bottom a:hover {
-  color: white;
-}
-
-.rotate-arrow {
-  transform: rotate(180deg);
 }
 
 .workspace-page,.library-page {
@@ -1628,12 +1438,6 @@ img {
   padding: 9px 15px;
 }
 
-@keyframes providers-drift {
-  to {
-    transform: translateX(calc(-100% + 950px));
-  }
-}
-
 @keyframes poster-enter {
   from {
     opacity: .3;
@@ -1687,34 +1491,6 @@ img {
     width: 100%;
     height: auto;
     aspect-ratio: 400/572;
-  }
-  .feature-entries {
-    margin-left: 40px;
-    margin-right: 40px;
-  }
-  .reviews {
-    margin-left: 40px;
-    margin-right: 40px;
-  }
-  .review-grid {
-    gap: 20px;
-  }
-  .review-grid article {
-    min-height: 520px;
-    padding: 24px 20px 35px;
-  }
-  .review-grid article>p {
-    font-size: 18px;
-  }
-  .review-author img {
-    width: 48px;
-    height: 48px;
-  }
-  .review-author h3 {
-    font-size: 16px;
-  }
-  .review-author div>span {
-    font-size: 12px;
   }
   .studio-main {
     padding: 36px 28px;
@@ -1770,52 +1546,9 @@ img {
   .hero>p {
     font-size: 15px;
   }
-  .feature-entries {
-    margin: 85px 28px 0;
-  }
-  .feature-entries>a {
-    padding: 27px 18px;
-    gap: 12px;
-  }
-  .feature-entries h2 {
-    font-size: 18px;
-  }
   .feature-icon {
     width: 40px;
     height: 40px;
-  }
-  .review-grid {
-    gap: 15px;
-  }
-  .review-grid article {
-    padding: 22px 18px;
-    min-height: 530px;
-  }
-  .review-grid article>p {
-    font-size: 16px;
-  }
-  .review-author {
-    gap: 8px;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .review-author h3 {
-    font-size: 16px;
-  }
-  .reviews {
-    margin-left: 28px;
-    margin-right: 28px;
-  }
-  .footer-bottom {
-    flex-wrap: wrap;
-    font-size: 10px;
-  }
-  .site-footer {
-    height: 360px;
-    padding-top: 80px;
-  }
-  .site-footer>.brand img {
-    width: 380px;
   }
   .studio-sidebar {
     width: 68px;
@@ -1906,9 +1639,8 @@ img {
     margin: 0 20px;
     gap: 12px;
   }
-  .brand img {
-    width: 136px;
-    height: auto;
+  .brand-wordmark {
+    font-size: 24px;
   }
   .site-header nav {
     gap: 15px;
@@ -2017,92 +1749,6 @@ img {
   .paging-arrow {
     width: 30px;
     height: 30px;
-  }
-  .feature-entries {
-    margin: 65px 22px 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .feature-entries>a {
-    padding: 24px 5px;
-  }
-  .feature-entries>a+a {
-    border-left: 0;
-    border-top: 1px solid #262626;
-  }
-  .feature-entries h2 {
-    font-size: 20px;
-  }
-  .feature-entries>a>svg {
-    margin-right: 4px;
-  }
-  .provider-strip {
-    margin-top: 50px;
-    margin-bottom: 50px;
-  }
-  .provider-strip>div {
-    gap: 40px;
-  }
-  .provider-strip img {
-    height: 42px;
-    max-width: 110px;
-  }
-  .reviews {
-    margin: 60px 22px 0;
-  }
-  .review-grid {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 14px;
-    padding-bottom: 14px;
-    margin-top: 28px;
-  }
-  .review-grid article {
-    min-width: 290px;
-    min-height: 440px;
-    scroll-snap-align: center;
-    padding: 22px;
-  }
-  .review-grid article>p {
-    font-size: 17px;
-  }
-  .review-author {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-  .review-author img {
-    width: 48px;
-    height: 48px;
-  }
-  .review-author h3 {
-    font-size: 16px;
-  }
-  .quote-mark {
-    bottom: -65px;
-  }
-  .closing {
-    padding: 80px 20px 65px;
-  }
-  .closing>span {
-    font-size: 20px;
-  }
-  .site-footer {
-    height: 290px;
-    padding: 65px 22px 22px;
-    background-size: 1000px auto;
-  }
-  .site-footer>.brand img {
-    width: 265px;
-  }
-  .footer-bottom {
-    justify-content: center;
-    gap: 8px 25px;
-    text-align: center;
-  }
-  .footer-bottom p {
-    width: 100%;
   }
   .workspace-page .header-inner,.library-page .header-inner {
     margin: 0 18px;
@@ -2458,9 +2104,6 @@ img {
     left: auto;
     margin-left: auto;
     margin-right: auto;
-  }
-  .provider-strip>div {
-    transform: none;
   }
 }
 

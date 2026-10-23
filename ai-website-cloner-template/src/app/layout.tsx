@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "StoryPlay · 短剧剧本创作平台 · 前端预览",
-  description: "StoryPlay 公开首页的本地复刻与创作交互原型。",
+  title: {
+    default: "Plotloom · 短剧与小说创作平台",
+    template: "%s · Plotloom",
+  },
+  description: "Plotloom 短剧与小说创作平台，从灵感、世界设定到故事正文，让创作逐步成形。",
   robots: { index: false, follow: false },
 };
 

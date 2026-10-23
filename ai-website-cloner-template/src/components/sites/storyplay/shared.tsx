@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import { ArrowLeft, ArrowUpRight, X } from "lucide-react";
-import { asset } from "./data";
 
 export function Logo() {
-  return <Link href="/" className="brand" aria-label="StoryPlay 首页"><Image src={asset("logo.png")} alt="STORYPLAY" width={504} height={42} priority /></Link>;
+  return <Link href="/" className="brand" aria-label="Plotloom 首页"><span className="brand-wordmark">Plotloom</span></Link>;
 }
 
 export function Header({ workspace = false }: { workspace?: boolean }) {
