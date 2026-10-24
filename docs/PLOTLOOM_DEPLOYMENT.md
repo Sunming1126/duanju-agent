@@ -42,3 +42,12 @@
 - 数据库备份：`/opt/plotloom-cn/backups/studio-20261024T013307Z.sqlite3`；旧程序目标记录：`backups/previous-20261024T013307Z.txt`。
 - 新增旧候选入口及迁移世界一致性校验，52项回归和前端检查通过，最终Linux生产构建通过。本次20份运行源码与线上release逐文件SHA-256完全一致（0差异）；核对不含密钥配置与线上数据。
 - Nginx仍仅中文代理3001；api/web/worker三服务及原duanju-agent均active，中日HTTPS200。所有发布备份和验收数据保留。
+
+## 2026-10-24 原创动漫海报与动画发布（北京时间）
+
+- 运行源码基线：`09513792bcb4`。新目录 `/opt/plotloom-cn/releases/20261024T125736Z-art`，上一目录 `/opt/plotloom-cn/releases/20261024T013307Z`；本次没有部署其他分支的未提交文件。
+- 发布前逐文件核对全部 agent Python、studio_main.py、main.py 及 requirements.txt 与上一版一致。仅构建并切换新版前端，重启 `plotloom-cn-web`；api、worker、原 duanju-agent 的 MainPID 部署前后分别保持 3799840／3799842／1948834，未中断生成工作者。没有修改 Nginx 或日文站。
+- 只读 SQLite 在线备份：`/opt/plotloom-cn/backups/studio-20261024T125736Z-art.sqlite3`，权限 0600；旧目录记录：`backups/previous-20261024T125736Z-art.txt`。新 release 继续链接 shared/data，没有上传或覆盖本机作品及模型配置。
+- 服务器 Node 24 生产构建通过；切换后回环及公网首页、原创概念页、剧本／小说新建、作品列表、世界页与状态接口正常。公网 10 张 WebP 的 SHA-256 均与本次源码素材一致，Next 图片优化接口 200；CSS 包包含新入场／淡入动画，不含旧滚动进度变量。模型就绪，旧 `/lapian` 保留 307 到 `/corpus`，旧模型配置代理 404；日文站 HTTPS 200，四个应用服务 active。
+- 本轮没有创建测试作品、调用生成模型或做浏览器逐帧动画验收。
+- 本次前端回滚：确认 current 仍为上述 art 版本后，将符号链接原子切回 `20261024T013307Z` 并仅重启 `plotloom-cn-web`；保留 shared/data 和备份，不恢复旧 SQLite 覆盖新作品。后端代码与上一版一致，因此本次前端回滚无需重启 api／worker。
