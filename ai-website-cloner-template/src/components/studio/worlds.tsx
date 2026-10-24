@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { StudioNav } from "./editor";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
-  BookOpen,
   Download,
   Globe2,
   Plus,
   Save,
-  SquarePen,
   Upload,
 } from "lucide-react";
 import {
@@ -24,6 +22,8 @@ import { worldDraftChecksum } from "@/lib/studio/world-codec";
 import { Header, Modal } from "@/components/sites/storyplay/shared";
 
 export function WorldWorkspace() {
+  const [search, setSearch] = useState("");
+  const [archived, setArchived] = useState(false);
   const [worlds, setWorlds] = useState<World[]>([]);
   const [world, setWorld] = useState<World | null>(null);
   const [status, setStatus] = useState<StudioStatus | null>(null);
@@ -116,6 +116,7 @@ export function WorldWorkspace() {
           name: world.name,
           description: world.description,
           sections: world.sections,
+          archived: world.archived || false,
           revision: world.revision,
         }),
       });
@@ -224,31 +225,9 @@ export function WorldWorkspace() {
       }}
     >
       <Header workspace />
-      <div className="studio-layout">
-        <aside className="studio-sidebar">
-          <div className="sidebar-label">世界设定</div>
-          <Link href="/workspace" className="sidebar-link">
-            <SquarePen size={18} /> 创作工作台
-          </Link>
-          <Link href="/corpus" className="sidebar-link">
-            <BookOpen size={18} /> 语料参考
-          </Link>
-          <div className="sidebar-divider" />
-          {status?.world_sections.map((item) => (
-            <button
-              key={item.id}
-              className={`sidebar-link ${section === item.id ? "selected" : ""}`}
-              onClick={() => setSection(item.id)}
-            >
-              <Globe2 size={17} />
-              {item.label}
-            </button>
-          ))}
-          <div className="sidebar-foot">
-            <span className="local-dot" /> 独立世界草稿<p>世界与作品分开保存</p>
-          </div>
-        </aside>
-        <main className="studio-main">
+      <div className="plotloom-shell">
+        <StudioNav selected="世界模型" />
+        <main className="plotloom-main">
           <div className="workspace-title">
             <div>
               <span className="eyebrow">WORLD BUILDING</span>
@@ -277,6 +256,8 @@ export function WorldWorkspace() {
               </button>
             </p>
           )}
+          <div className="works-toolbar"><input aria-label="搜索世界" placeholder="搜索世界名称" value={search} onChange={e => setSearch(e.target.value)} /><label><input type="checkbox" checked={archived} onChange={e => setArchived(e.target.checked)} />显示归档世界</label></div>
+          <div className="works-filters">{status?.world_sections.map(s => <button key={s.id} className={s.id === section ? "active" : ""} onClick={() => setSection(s.id)}>{s.label}</button>)}</div>
           <div className="studio-world-toolbar">
             <button
               className="text-button"
@@ -306,7 +287,7 @@ export function WorldWorkspace() {
                 }
               >
                 <option value="">选择世界</option>
-                {worlds.map((item) => (
+                {worlds.filter(item => !!item.archived === archived && item.name.includes(search)).map((item) => (
                   <option value={item.id} key={item.id}>
                     {item.name} · v{item.revision}
                   </option>
@@ -328,6 +309,8 @@ export function WorldWorkspace() {
             </label>
             {world && (
               <>
+                <button className="outline-button" disabled={busy || dirty} onClick={async () => { setBusy(true); try { const value = await backendRequest<World>("/studio/worlds", { method: "POST", body: jsonBody({ name: world.name.slice(0, 74) + " · 副本", description: world.description, sections: world.sections }) }); await load(); setWorld(value); setNotice("已复制为独立世界"); } catch(e) { setNotice(String(e)); } finally { setBusy(false); } }}>复制</button>
+                <button className="outline-button" disabled={busy || dirty} onClick={async () => { setBusy(true); try { const value = await backendRequest<World>(`/studio/worlds/${world.id}`, { method: "PUT", body: jsonBody({ name: world.name, description: world.description, sections: world.sections, revision: world.revision, archived: !world.archived }) }); await load(); setWorld(value); setNotice(value.archived ? "世界已归档，作品副本不受影响" : "世界已恢复"); } catch(e) { setNotice(String(e)); } finally { setBusy(false); } }}>{world.archived ? "恢复" : "归档"}</button>
                 <button
                   className="outline-button"
                   disabled={busy}
@@ -386,8 +369,8 @@ export function WorldWorkspace() {
                 </label>
                 <p>
                   v{world.revision} ·{" "}
-                  {dirty ? "有未保存的修改" : "已保存到本机后端"} ·
-                  作品生成时引用当前已保存版本
+                  {dirty ? "有未保存的修改" : "已保存到服务器"} ·
+                  作品绑定时复制当前版本，之后各自独立
                 </p>
               </div>
               <section className="editor-panel">

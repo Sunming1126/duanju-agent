@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, BookOpen, Globe2, Search, SquarePen } from "lucide-react";
+import { ArrowRight, BookOpen, Search } from "lucide-react";
 import {
   backendRequest,
   type ContentType,
   type Reference,
 } from "@/lib/studio/api";
+import { StudioNav } from "./editor";
 import { Header } from "@/components/sites/storyplay/shared";
 
 function sourceUrl(value: string) {
@@ -56,30 +57,10 @@ export function CorpusWorkspace() {
   return (
     <div className="workspace-page">
       <Header workspace />
-      <div className="studio-layout">
-        <aside className="studio-sidebar">
-          <div className="sidebar-label">本机语料平台</div>
-          <Link href="/workspace" className="sidebar-link">
-            <SquarePen size={18} /> 创作工作台
-          </Link>
-          <Link href="/worlds" className="sidebar-link">
-            <Globe2 size={18} /> 世界设定
-          </Link>
-          <div className="sidebar-divider" />
-          <button
-            className={`sidebar-link ${type === "short_drama" ? "selected" : ""}`}
-            onClick={() => setType("short_drama")}
-          >
-            <BookOpen size={18} /> 中文剧本语料
-          </button>
-          <button
-            className={`sidebar-link ${type === "novel" ? "selected" : ""}`}
-            onClick={() => setType("novel")}
-          >
-            <BookOpen size={18} /> 中文小说语料
-          </button>
-        </aside>
-        <main className="studio-main">
+      <div className="plotloom-shell">
+        <StudioNav selected="语料参考" />
+        <main className="plotloom-main">
+          <div className="works-filters"><button className={type === "short_drama" ? "active" : ""} onClick={() => setType("short_drama")}>中文剧本</button><button className={type === "novel" ? "active" : ""} onClick={() => setType("novel")}>中文小说</button></div>
           <div className="workspace-title">
             <div>
               <span className="eyebrow">CORPUS LIBRARY</span>
@@ -150,6 +131,7 @@ export function CorpusWorkspace() {
                       </a>
                     )}
                   </div>
+                  <details><summary>预览资料</summary><p className="studio-hint">{item.beats.length ? item.beats.join("\n") : "此条目暂无更多情节拆解，详见来源。"}</p></details>
                   <Link
                     className="outline-button"
                     href={`/workspace?create=${type === "novel" ? "novel" : "new"}&reference=${encodeURIComponent(item.id)}`}

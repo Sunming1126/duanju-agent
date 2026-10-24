@@ -135,7 +135,7 @@ async def test_config():
     return out
 
 
-async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retries=3, err_box=None):
+async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retries=3, err_box=None, reject_truncated=False):
     """调用 LLM，返回文本；失败返回 None（由上层走模板兜底或挂起）。
     瞬时失败（超时/限流/5xx）自动重试，指数退避（429 限流窗口按分钟计，用 10/25/45s 长退避+随机抖动）。
     err_box 传 dict 时回传末次失败类型：{kind: rate_limit|http_error|error, status, attempts}；
@@ -161,6 +161,10 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
                 resp = await client.post(url, json=payload, headers=headers)
                 resp.raise_for_status()
                 data = resp.json()
+                if reject_truncated and data["choices"][0].get("finish_reason") != "stop":
+                    if err_box is not None:
+                        err_box.update(kind="incomplete", status=200, attempts=attempt + 1)
+                    return None
                 if err_box is not None:
                     err_box.clear()
                 return data["choices"][0]["message"]["content"]

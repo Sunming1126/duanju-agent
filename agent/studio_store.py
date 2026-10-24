@@ -48,6 +48,17 @@ class StudioStore:
             connection.execute("CREATE TABLE IF NOT EXISTS works (id TEXT PRIMARY KEY, data TEXT NOT NULL)")
             connection.execute("CREATE TABLE IF NOT EXISTS candidates (id TEXT PRIMARY KEY, work_id TEXT NOT NULL REFERENCES works(id), data TEXT NOT NULL)")
             connection.execute("BEGIN IMMEDIATE")
+            # One-time additive migration. Old linked worlds become private snapshots.
+            if connection.execute("PRAGMA user_version").fetchone()[0] < 1:
+                for row in connection.execute("SELECT data FROM works").fetchall():
+                    work = json.loads(row["data"])
+                    if "world_snapshot" not in work:
+                        linked = connection.execute("SELECT data FROM worlds WHERE id=?", (work.get("world_id"),)).fetchone()
+                        work["world_snapshot"] = world_payload(json.loads(linked["data"])) if linked else None
+                    work.setdefault("creative", {})
+                    work.setdefault("archived", False)
+                    self.write(connection, "works", work)
+                connection.execute("PRAGMA user_version=1")
             yield connection
             connection.commit()
         except Exception:
@@ -108,7 +119,7 @@ class StudioStore:
     def create_work(self, data):
         with self.transaction() as db:
             if data.get("world_id"):
-                self.read(db, "worlds", data["world_id"])
+                data["world_snapshot"] = world_payload(self.read(db, "worlds", data["world_id"]))
             # Idempotent browser-draft migration; keep original data in browser.
             legacy_id = data.get("legacy_id")
             if legacy_id:
@@ -125,8 +136,8 @@ class StudioStore:
             old = self.read(db, "works", ident)
             if old["revision"] != revision:
                 raise HTTPException(409, "作品已更新，请先重新加载；当前编辑内容可导出备份")
-            if data.get("world_id"):
-                self.read(db, "worlds", data["world_id"])
+            if data.get("world_id") and data.get("world_id") != old.get("world_id"):
+                data["world_snapshot"] = world_payload(self.read(db, "worlds", data["world_id"]))
             updated = {**old, **data, "revision": revision + 1, "updated_at": now()}
             self.write(db, "works", updated)
         return updated
@@ -141,7 +152,7 @@ class StudioStore:
             for row in db.execute("SELECT data FROM candidates WHERE work_id=?", (work_id,)).fetchall():
                 if json.loads(row["data"])["status"] == "running":
                     raise HTTPException(409, "已有生成任务进行中，请等待完成")
-            world = self.read(db, "worlds", work["world_id"]) if work.get("world_id") else None
+            world = work.get("world_snapshot")
             record = {"id": str(uuid.uuid4()), "work_id": work_id, "action": action, "number": number,
                       "base_revision": revision, "status": "running", "text": "", "error": "",
                       "work_snapshot": work, "world_snapshot": world, "references": [],
@@ -172,7 +183,9 @@ class StudioStore:
             if work["revision"] != candidate["base_revision"]:
                 raise HTTPException(409, "候选基于旧稿生成，请保留候选文本，重新生成后再采纳")
             snapshot = candidate.get("world_snapshot")
-            if snapshot and self.read(db, "worlds", snapshot["id"])["revision"] != snapshot["revision"]:
+            if snapshot and work.get("world_snapshot") and canonical(world_payload(snapshot)) != canonical(world_payload(work["world_snapshot"])):
+                raise HTTPException(409, "作品世界已变化，旧候选不能覆盖当前稿；候选仍可查看和导出")
+            if snapshot and not work.get("world_snapshot") and "id" in snapshot and self.read(db, "worlds", snapshot["id"])["revision"] != snapshot["revision"]:
                 raise HTTPException(409, "世界设定已变化，请核对新设定后重新生成；候选仍保留")
             if candidate["action"] == "chapter":
                 number = candidate["number"]
@@ -206,5 +219,9 @@ def export_work_text(work):
     unit = "章" if work["content_type"] == "novel" else "集"
     parts = [work["title"], f"{'小说' if unit == '章' else '短剧'} · {work['genre']} · 计划{work['units']}{unit}",
              "\n故事设定\n" + work["premise"], "\n人物小传\n" + work["characters"], "\n大纲\n" + work["outline"]]
+    if work.get("creative"):
+        parts.append("\n创作参数\n" + json.dumps(work["creative"], ensure_ascii=False, indent=2))
+    if work.get("world_snapshot"):
+        parts.append("\n作品世界副本\n" + json.dumps(work["world_snapshot"], ensure_ascii=False, indent=2))
     parts.extend(f"\n第{chapter['number']}{unit} {chapter['title']}\n{chapter['content']}" for chapter in sorted(work["chapters"], key=lambda chapter: chapter["number"]))
     return "\n".join(parts)

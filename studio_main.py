@@ -2,6 +2,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from agent.studio_api import router, store
+from agent.studio_jobs import create_router
 
 @asynccontextmanager
 async def lifespan(app):
@@ -16,3 +17,5 @@ async def chinese_market(request: Request, call_next):
     return await call_next(request)
 
 app.include_router(router)
+app.state.studio_queue = True
+app.include_router(create_router())

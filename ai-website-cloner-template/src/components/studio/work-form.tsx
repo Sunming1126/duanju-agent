@@ -11,6 +11,8 @@ import {
   type World,
 } from "@/lib/studio/api";
 
+const payloadGenre = (data: FormData) => String(data.get("genre") || "都市");
+
 export function WorkForm({
   mode,
   worlds,
@@ -21,7 +23,7 @@ export function WorkForm({
   mode: string;
   worlds: World[];
   reference?: Reference;
-  onCreated: (work: Work, generate: boolean) => void;
+  onCreated: (work: Work, generate: boolean) => void | Promise<void>;
   onClose: () => void;
 }) {
   const [type, setType] = useState<ContentType>(
@@ -60,7 +62,17 @@ export function WorkForm({
       market: "china",
       output_locale: "zh-CN",
       reference_ids: reference ? [reference.id] : [],
+      creative: {
+        genres: String(data.get("genres") || payloadGenre(data)).split(/[,，]/).map(x => x.trim()).filter(Boolean),
+        core: String(data.get("core") || "").split(/[,，]/).map(x => x.trim()).filter(Boolean),
+        styles: String(data.get("styles") || "").split(/[,，]/).map(x => x.trim()).filter(Boolean),
+        highlights: String(data.get("highlights") || ""),
+        source_text: mode === "小说改编" || mode === "剧本改写" ? premise : "",
+      },
     };
+    if ((payload.creative?.genres?.length || 0) > 3 || (payload.creative?.core?.length || 0) > 3 || (payload.creative?.styles?.length || 0) > 5) {
+      setError("题材和核心设定各最多3项，风格最多5项，使用逗号分隔。"); setBusy(false); return;
+    }
     if (!payload.title) {
       setError("请填写作品名称。");
       setBusy(false);
@@ -72,7 +84,7 @@ export function WorkForm({
       return;
     }
     try {
-      onCreated(
+      await onCreated(
         await backendRequest<Work>("/studio/works", {
           method: "POST",
           body: jsonBody(payload),
@@ -174,6 +186,12 @@ export function WorkForm({
           </select>
         </label>
       </div>
+      <div className="form-row">
+        <label>自定义题材（最多3项，逗号分隔）<input name="genres" placeholder="留空使用上方题材" maxLength={240} /></label>
+        <label>核心设定（最多3项）<input name="core" placeholder="时间循环，身份错位" maxLength={240} /></label>
+        <label>风格（最多5项）<input name="styles" placeholder="温暖，悬疑" maxLength={400} /></label>
+      </div>
+      <label>核心亮点<textarea name="highlights" rows={2} maxLength={5000} /></label>
       <label>
         {mode === "小说改编"
           ? "小说素材与改编方向"

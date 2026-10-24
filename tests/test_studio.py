@@ -100,7 +100,8 @@ def test_generation_is_candidate_until_adopted(studio, kind):
     rows = request('GET', f"/works/{work['id']}/candidates").json()['items']
     assert rows[0]['status'] == 'proposed'
     assert 'work_snapshot' not in rows[0]
-    assert rows[0]['world_revision'] == 1
+    # Generation freezes the work's private world, not the mutable library row.
+    assert rows[0]['world_revision'] is None
     adopted = request('POST', f"/works/{work['id']}/candidates/{candidate_id}/adopt")
     assert adopted.status_code == 200, adopted.text
     assert adopted.json()['revision'] == 2
@@ -119,9 +120,9 @@ def test_stale_candidate_never_overwrites(studio, owner):
         changed['premise'] = '人工修改'
         assert request('PUT', f"/works/{work['id']}", changed).status_code == 200
     else:
-        changed = editable(world)
-        changed['description'] = '世界修改'
-        assert request('PUT', f"/worlds/{world['id']}", changed).status_code == 200
+        changed = editable(work)
+        changed['world_snapshot']['description'] = '作品世界副本修改'
+        assert request('PUT', f"/works/{work['id']}", changed).status_code == 200
     assert request('POST', f"/works/{work['id']}/candidates/{candidate_id}/adopt").status_code == 409
     assert request('GET', f"/works/{work['id']}").json()['chapters'] == []
 

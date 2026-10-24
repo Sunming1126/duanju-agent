@@ -14,6 +14,7 @@ export type WorldInput = {
   name: string;
   description: string;
   sections: Record<string, string>;
+  archived?: boolean;
 };
 export type World = WorldInput & {
   id: string;
@@ -39,6 +40,9 @@ export type WorkInput = {
   output_locale: "zh-CN";
   legacy_id?: string | null;
   reference_ids: string[];
+  world_snapshot?: WorldInput | null;
+  creative?: { genres?: string[]; core?: string[]; styles?: string[]; highlights?: string; source_text?: string };
+  archived?: boolean;
 };
 export type Work = WorkInput & {
   id: string;
@@ -96,7 +100,7 @@ export async function backendRequest<T>(
   } catch (cause) {
     if (cause instanceof Error && cause.name === "AbortError") throw cause;
     throw new Error(
-      "无法连接本地后端，请先启动剧本平台服务；请求不会自动重试。",
+      "无法连接创作服务，请稍后刷新；请求不会自动重试。",
     );
   }
   const contentType = response.headers.get("content-type") || "";
@@ -113,7 +117,7 @@ export async function backendRequest<T>(
           ? detail
               .map((item: { msg?: string }) => item.msg || "参数无效")
               .join("；")
-          : "本地服务请求失败，请确认后端已启动，并检查终端日志。";
+          : "创作服务请求失败，请稍后重试或联系维护者。";
     throw new Error(message);
   }
   return data as T;
@@ -137,6 +141,9 @@ export function workPayload(work: Work): WorkInput {
     output_locale,
     legacy_id,
     reference_ids,
+    world_snapshot,
+    creative,
+    archived,
   } = work;
   return {
     title,
@@ -155,6 +162,9 @@ export function workPayload(work: Work): WorkInput {
     output_locale,
     legacy_id,
     reference_ids,
+    world_snapshot,
+    creative,
+    archived,
   };
 }
 export function downloadText(
@@ -180,6 +190,8 @@ export function localExport(work: Work) {
     `\n故事设定\n${work.premise}`,
     `\n人物\n${work.characters}`,
     `\n大纲\n${work.outline}`,
+    ...(work.creative ? [`\n创作参数\n${JSON.stringify(work.creative, null, 2)}`] : []),
+    ...(work.world_snapshot ? [`\n作品世界副本\n${JSON.stringify(work.world_snapshot, null, 2)}`] : []),
     ...work.chapters.map(
       (chapter) =>
         `\n第${chapter.number}${unit} ${chapter.title}\n${chapter.content}`,

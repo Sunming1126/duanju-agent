@@ -27,8 +27,8 @@ export function StoryplayHome() {
         <p>从故事设定到正文，让灵感逐步成稿</p>
         <Link href="/workspace" className="pill light hero-cta">立即体验</Link>
         <div className="hero-tools" aria-label="主要创作功能">
-          <Link href="/workspace?create=new"><SquarePen size={15} /> 新建剧本</Link><span />
-          <Link href="/workspace?create=novel"><BookOpen size={15} /> 小说创作</Link><span />
+          <Link href="/studio/scripts/new"><SquarePen size={15} /> 新建剧本</Link><span />
+          <Link href="/studio/novels/new"><BookOpen size={15} /> 小说创作</Link><span />
           <Link href="/worlds"><Globe2 size={15} /> 世界设定</Link>
         </div>
       </section>

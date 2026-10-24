@@ -30,6 +30,7 @@ class WorldInput(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     description: str = Field(default="", max_length=5000)
     sections: dict[str, str] = Field(default_factory=dict)
+    archived: bool = False
 
     @field_validator("name")
     @classmethod
@@ -59,6 +60,22 @@ class Chapter(BaseModel):
     content: str = Field(default="", max_length=150000)
 
 
+class CreativeSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    genres: list[str] = Field(default_factory=list, max_length=3)
+    core: list[str] = Field(default_factory=list, max_length=3)
+    styles: list[str] = Field(default_factory=list, max_length=5)
+    highlights: str = Field(default="", max_length=5000)
+    source_text: str = Field(default="", max_length=50000)
+
+    @field_validator("genres", "core", "styles")
+    @classmethod
+    def tag_lengths(cls, values):
+        if any(not value.strip() or len(value) > 80 for value in values):
+            raise ValueError("标签须为1至80个字符")
+        return list(dict.fromkeys(value.strip() for value in values))
+
+
 class WorkInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=80)
@@ -77,6 +94,9 @@ class WorkInput(BaseModel):
     output_locale: Literal["zh-CN"] = "zh-CN"
     legacy_id: Optional[str] = Field(default=None, max_length=120)
     reference_ids: list[str] = Field(default_factory=list, max_length=10)
+    world_snapshot: Optional[WorldInput] = None
+    creative: CreativeSettings = Field(default_factory=CreativeSettings)
+    archived: bool = False
 
     @field_validator("title")
     @classmethod
@@ -278,10 +298,14 @@ async def run_generation(candidate_id):
 
 
 @router.post("/works/{ident}/generate", status_code=202)
-def generate(ident: str, body: GenerateInput, background: BackgroundTasks):
+def generate(ident: str, body: GenerateInput, background: BackgroundTasks, request: Request):
     llm._refresh_config()
     if not llm.API_KEY:
-        raise HTTPException(503, "尚未配置模型，请先在模型设置中填写可用的 API Key、地址和模型名称。")
+        raise HTTPException(503, "尚未配置模型，请联系服务端维护者。")
+    if getattr(request.app.state, "studio_queue", False):
+        from .studio_jobs import JobInput, JobStore, summary
+        request_key = hashlib.sha256(f"{ident}:{body.revision}:{body.action}:{body.number}".encode()).hexdigest()
+        return summary(JobStore(store).create(ident, JobInput(**body.model_dump(), request_key=request_key)))
     candidate = store.begin_candidate(ident, body.action, body.number, body.revision)
     background.add_task(run_generation, candidate["id"])
     return {"id": candidate["id"], "status": candidate["status"]}
@@ -290,3 +314,62 @@ def generate(ident: str, body: GenerateInput, background: BackgroundTasks):
 @router.post("/works/{ident}/candidates/{candidate_id}/adopt")
 def adopt(ident: str, candidate_id: str):
     return store.adopt(ident, candidate_id)
+
+
+@router.get("/works/{ident}/backup")
+def backup_work(ident: str):
+    return {
+        "schema": "plotloom.work", "version": 1,
+        "work": WorkInput.model_validate({k: v for k, v in store.get("works", ident).items() if k in WorkInput.model_fields}).model_dump()}
+
+
+@router.post("/works/import")
+def import_work(body: dict):
+    if body.get("schema") != "plotloom.work" or body.get("version") != 1:
+        raise HTTPException(422, "不是受支持的 Plotloom 作品备份")
+    try:
+        payload = WorkInput.model_validate(body["work"]).model_dump()
+    except (ValueError, KeyError):
+        raise HTTPException(422, "作品备份字段无效，未导入")
+    # Imported worlds travel as private copies, never resolve a foreign library ID.
+    payload.update(world_id=None, legacy_id=None, archived=False)
+    return store.create_work(payload)
+
+
+@router.post("/works/{ident}/duplicate")
+def duplicate_work(ident: str):
+    work = store.get("works", ident)
+    payload = {k: v for k, v in work.items() if k in WorkInput.model_fields}
+    payload.update(title=(work["title"][:74] + " · 副本"), legacy_id=None, world_id=None, archived=False)
+    return store.create_work(WorkInput.model_validate(payload).model_dump())
+
+
+@router.post("/works/{ident}/world-library")
+def save_world_library(ident: str):
+    world = store.get("works", ident).get("world_snapshot")
+    if not world:
+        raise HTTPException(422, "当前作品尚无世界副本")
+    return store.create_world(WorldInput.model_validate(world).model_dump())
+
+
+@router.get("/history")
+def history():
+    from .studio_history import records
+    return {"items": [{k: v for k, v in r.items() if k != "payload"} for r in records()]}
+
+
+@router.get("/history/{ident}/preview", response_class=PlainTextResponse)
+def history_preview(ident: str):
+    from .studio_history import find
+    payload = find(ident)["payload"]
+    return export_work_text(payload)
+
+
+@router.post("/history/{ident}/import")
+def history_import(ident: str):
+    from .studio_history import find
+    try:
+        payload = WorkInput.model_validate(find(ident)["payload"]).model_dump()
+    except ValueError:
+        raise HTTPException(422, "旧记录超出支持范围或字段有歧义；原件保留，请先预览导出核对")
+    return store.create_work(payload)
