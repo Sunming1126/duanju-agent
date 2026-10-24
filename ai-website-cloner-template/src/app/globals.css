@@ -354,16 +354,11 @@ img {
 }
 
 .poster-stage {
-  --gallery-progress: 0;
   position: relative;
   width: 1204px;
   max-width: 100%;
   height: 696px;
-  margin: 20px auto 0;
-  transform: translate(calc(44px * (1 - var(--gallery-progress))),calc(-152px * (1 - var(--gallery-progress)))) rotate(calc(-14.7deg * (1 - var(--gallery-progress)))) scale(calc(1 + .29 * (1 - var(--gallery-progress))));
-  opacity: calc(.4 + .6 * var(--gallery-progress));
-  transform-origin: center center;
-  will-change: transform,opacity;
+  margin: 40px auto 0;
 }
 
 .poster-grid {
@@ -371,7 +366,6 @@ img {
   grid-template-columns: repeat(5,220px);
   gap: 26px 16px;
   justify-content: center;
-  animation: poster-enter .4s ease;
 }
 
 .poster {
@@ -391,14 +385,6 @@ img {
   object-fit: cover;
 }
 
-.poster-tag {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 44px !important;
-  height: 52px !important;
-  object-fit: contain !important;
-}
 
 .poster-overlay {
   position: absolute;
@@ -1438,15 +1424,6 @@ img {
   padding: 9px 15px;
 }
 
-@keyframes poster-enter {
-  from {
-    opacity: .3;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @keyframes notice-in {
   from {
     opacity: 0;
@@ -1720,7 +1697,6 @@ img {
     left: 50%;
     margin-left: -390px;
     margin-top: 30px;
-    transform: translate(calc(22px * (1 - var(--gallery-progress))),calc(-95px * (1 - var(--gallery-progress)))) rotate(calc(-12deg * (1 - var(--gallery-progress)))) scale(calc(1 + .12 * (1 - var(--gallery-progress))));
     mask-image: linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
   }
   .poster-grid {
@@ -1733,10 +1709,6 @@ img {
   }
   .poster {
     border-radius: 14px;
-  }
-  .poster-tag {
-    width: 30px !important;
-    height: 35px !important;
   }
   .poster-overlay>span {
     font-size: 11px;
@@ -2095,16 +2067,7 @@ img {
     animation: none !important;
     transition: none !important;
   }
-  .poster-stage {
-    transform: none;
-    opacity: 1;
-    will-change: auto;
-  }
-  .poster-stage {
-    left: auto;
-    margin-left: auto;
-    margin-right: auto;
-  }
+
 }
 
 /* Chinese local creation integration: preserve the existing home visual system. */
@@ -2120,3 +2083,30 @@ img {
 
 .plotloom-nav-toggle{display:none}
 @media(max-width:700px){.plotloom-shell .plotloom-nav{display:block;min-height:50px}.plotloom-nav-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px;font-size:13px;color:#c6bcdf}.plotloom-nav:not(.is-open)>.sidebar-link{display:none}.plotloom-nav.is-open>.sidebar-link{display:inline-flex;margin:5px 3px}}
+
+/* Original concept gallery: no scroll-linked rotation or zoom. */
+.concept-poster { background: #171b24; aspect-ratio: 2 / 3; border: 1px solid #ffffff12; }
+.concept-poster .poster-image { aspect-ratio: 2 / 3; height: auto; }
+.concept-poster[data-ready="true"] .poster-image { animation: concept-image-in 550ms ease both; }
+.concept-genre { position: absolute; left: 13px; top: 13px; padding: 4px 9px; border: 1px solid #ffffff35; border-radius: 20px; background: #0b142c80; backdrop-filter: blur(8px); font-size: 10px; color: #f5f2e9; }
+.concept-caption { position: absolute; inset: auto 0 0; display: flex; flex-direction: column; gap: 6px; padding: 45px 16px 17px; background: linear-gradient(transparent, #07101bd9 55%, #07101bf5); pointer-events: none; }
+.concept-caption > span { font-size: 11px; letter-spacing: .08em; color: #e0e9f5; }
+.concept-caption strong { font-size: 20px; font-weight: 600; color: #fff; }
+.concept-caption small { font-size: 9px; color: #a1b2c4; letter-spacing: .03em; }
+.concept-image-error { position: absolute; inset: 40% 8% auto; text-align: center; font-size: 12px; color: #a1b2c4; }
+.concept-disclaimer { color: #7b8290; font-size: 11px; line-height: 1.8; text-align: center; margin: 24px 20px 0; }
+.concept-poster:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .poster-stage[data-motion="enabled"]:not(.is-revealed) .poster { opacity: 0; }
+  .poster-stage.is-revealed .poster[data-ready="true"] { animation: concept-reveal 650ms cubic-bezier(.2,.65,.3,1) both; animation-delay: var(--poster-delay, 0ms); }
+}
+@keyframes concept-reveal { from { opacity: 0; transform: translateY(24px); clip-path: inset(7% 0 0); } to { opacity: 1; transform: translateY(0); clip-path: inset(0); } }
+@media (max-width: 640px) {
+  .concept-caption { padding: 36px 10px 12px; gap: 4px; }
+  .concept-caption > span { font-size: 9px; letter-spacing: 0; }
+  .concept-caption strong { font-size: 15px; }
+  .concept-caption small { font-size: 8px; }
+  .concept-genre { top: 8px; left: 8px; font-size: 9px; padding: 3px 7px; }
+}
+
+@keyframes concept-image-in { from { opacity: 0; } to { opacity: 1; } }

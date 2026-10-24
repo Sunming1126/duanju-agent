@@ -1,0 +1,86 @@
+/** Original fictional concepts and generated art, not released series or corpus records. */
+export const storyConcepts = [
+  {
+    slug: "star-mail",
+    title: "星轨邮便局",
+    japaneseTitle: "星を運ぶ郵便局",
+    genre: "奇幻",
+    description: "一位邮差沿着星空铁路，投递那些从未说出口的心愿。",
+    alt: "蓝发邮差站在暮色车站屋顶，星光列车横穿夜空",
+  },
+  {
+    slug: "rain-memory",
+    title: "雨城记忆",
+    japaneseTitle: "雨の街の記憶",
+    genre: "悬疑",
+    description: "雨夜里，一尾光构成的锦鲤，引侦探走向一座早已停业的电影院。",
+    alt: "撑透明雨伞的女侦探走进霓虹雨巷，发光锦鲤游向旧电影院",
+  },
+  {
+    slug: "summer-frequency",
+    title: "夏日频率",
+    japaneseTitle: "夏の周波数",
+    genre: "青春",
+    description: "海边的旧收音机，每到夏天都会收到一段来自未来的声音。",
+    alt: "海边天文台的两位青年与收音机，背后是盛夏积云和碧海",
+  },
+  {
+    slug: "clockwork-orchard",
+    title: "发条果园",
+    japaneseTitle: "からくりの果樹園",
+    genre: "奇幻",
+    description: "机械师修好了一只黄铜小鸟，也唤醒了温室中沉睡的机械森林。",
+    alt: "白发机械师手捧黄铜小鸟，站在长满钟表树的绿色温室里",
+  },
+  {
+    slug: "moon-tide",
+    title: "月下潮汐",
+    japaneseTitle: "月下の潮騒",
+    genre: "幻想",
+    description: "守护旧档案的女子发现，每一次月潮都会带回一段被遗忘的传说。",
+    alt: "长发档案守护者站在海上石桥，银色星鲸游过月夜",
+  },
+  {
+    slug: "night-platform",
+    title: "零点站台",
+    japaneseTitle: "零時のホーム",
+    genre: "悬疑",
+    description: "末班车离站之后，站台上的怀表却开始为另一班列车倒数。",
+    alt: "红围巾列车员在秋夜站台查看怀表，身旁有一只猫",
+  },
+  {
+    slug: "cloud-atlas",
+    title: "云海地图",
+    japaneseTitle: "雲海の地図",
+    genre: "冒险",
+    description: "制图师追随一张不断改写自己的地图，寻找云海之外的岛屿。",
+    alt: "穿红色飞行夹克的制图师站在浮空岛上，远方是飞艇与云海",
+  },
+  {
+    slug: "snow-letter",
+    title: "雪港来信",
+    japaneseTitle: "雪の港からの便り",
+    genre: "日常",
+    description: "回到海港小镇的提琴手，收到了一封没有寄件人的冬日来信。",
+    alt: "背着大提琴的女子走过雪中的海边小镇，橙色围巾映衬蓝色暮光",
+  },
+  {
+    slug: "last-stargazer",
+    title: "最后的观星人",
+    japaneseTitle: "最後の星見人",
+    genre: "科幻",
+    description: "城市忘记了星空的名字，而废弃天文台里仍有人守着最后一束星光。",
+    alt: "戴眼镜的观星人站在旧天文台，手中捧着星光碎片，身后是紫色环星",
+  },
+  {
+    slug: "camellia-cafe",
+    title: "山茶小馆",
+    japaneseTitle: "椿の喫茶室",
+    genre: "日常",
+    description: "一间只在雨天开门的小馆，让来客在热茶里重新遇见生活的温度。",
+    alt: "绿围裙店主为年长客人奉上热茶，窗边有山茶花、书与睡着的猫",
+  },
+] as const;
+export type StoryConcept = (typeof storyConcepts)[number];
+export const conceptImage = (slug: string) =>
+  `/images/story-concepts/${slug}.webp`;
