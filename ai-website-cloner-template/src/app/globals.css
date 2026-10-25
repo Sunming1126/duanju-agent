@@ -2110,3 +2110,84 @@ img {
 }
 
 @keyframes concept-image-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Inspiration planning and the creation form share the existing dark palette. */
+.creation-fields { display: grid; gap: 24px; border: 0; min-width: 0; padding: 0; margin: 0; }
+.creation-fields:disabled { opacity: .65; }
+.creation-world { display: grid; gap: 18px; border: 1px solid #ffffff16; border-radius: 12px; padding: 22px; }
+.creation-world h3 { font-size: 17px; }
+.creation-world details { border-top: 1px solid #ffffff15; padding-top: 14px; }
+.creation-world details label { margin-top: 14px; }
+.creation-world summary { color: #c6bcdf; cursor: pointer; font-size: 13px; }
+.inspiration-entry { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 26px; margin-bottom: 30px; background: linear-gradient(120deg,#29203980,#30202960); border: 1px solid #b48fe638; border-radius: 16px; }
+.inspiration-entry h2 { font-size: 22px; margin: 9px 0; font-weight: 600; }
+.inspiration-entry p { color: #a5a1b1; font-size: 13px; line-height: 1.9; }
+.inspiration-eyebrow { display: inline-flex; align-items: center; gap: 7px; color: #c3a6ec; font-size: 12px; letter-spacing: .06em; }
+.inspiration-primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 20px; border-radius: 999px; background: linear-gradient(110deg,#7650c9,#ad536e); color: #fff; font-size: 13px; font-weight: 500; min-height: 44px; flex-shrink: 0; }
+.inspiration-primary:hover:not(:disabled) { filter: brightness(1.13); }
+.inspiration-primary:disabled { opacity: .45; cursor: not-allowed; }
+.modal:has(.inspiration-flow) { width: min(1320px,calc(100vw - 48px)); max-width: none; padding: 30px; background: #101013; border: 1px solid #ffffff22; border-radius: 20px; }
+.inspiration-flow { display: grid; gap: 26px; min-width: 0; }
+.inspiration-flow button:focus-visible,.inspiration-flow summary:focus-visible { outline: 2px solid #c3a6ec; outline-offset: 4px; }
+.inspiration-flow button:disabled { opacity: .45; cursor: not-allowed; }
+.inspiration-hero { text-align: center; padding: 30px 14px 8px; }
+.inspiration-hero h2 { font-size: clamp(28px,3.5vw,40px); font-weight: 700; margin: 14px 0; color: #c09be9; background: linear-gradient(95deg,#9671ec,#e17191); background-clip: text; -webkit-text-fill-color: transparent; }
+.inspiration-hero p { font-size: 15px; line-height: 1.9; color: #b8b5c0; }
+.inspiration-steps { list-style: none; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px 34px; padding: 0; font-size: 12px; color: #777483; }
+.inspiration-steps li.current { color: #d5b8f0; }
+.inspiration-composer { background: #1a1a20; border: 1px solid #a6a0b16b; border-radius: 24px; padding: 22px; gap: 18px; margin: 0; }
+.inspiration-composer>textarea { background: transparent; border: 0; border-radius: 0; padding: 4px; min-height: 130px; resize: vertical; font-size: 15px; line-height: 1.9; width: 100%; }
+.inspiration-preferences>summary { font-size: 12px; color: #aaa3ba; cursor: pointer; line-height: 1.8; }
+.inspiration-preference-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 15px; padding-top: 18px; }
+.inspiration-compose-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.inspiration-compose-actions>span { font-size: 11px; color: #868192; }
+.inspiration-progress { display: flex; align-items: center; gap: 14px; border: 1px solid #9870d845; border-radius: 12px; background: #33234355; padding: 17px 20px; color: #d6c5ed; font-size: 13px; line-height: 1.9; }
+.inspiration-progress p { color: #948b9e; font-size: 12px; }
+.inspiration-spinner { flex-shrink: 0; animation: inspiration-spin 1.5s linear infinite; }
+@keyframes inspiration-spin { to { transform: rotate(360deg); } }
+.inspiration-plan-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; align-items: start; }
+.inspiration-plan { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 22px; border: 1px solid #ffffff1f; border-radius: 16px; background: #19191f; }
+.inspiration-plan.selected { border-color: #ab7fe2; box-shadow: 0 0 0 1px #ab7fe230; }
+.inspiration-plan-number { font-size: 11px; color: #b79ad9; letter-spacing: .08em; }
+.inspiration-plan h3 { font-size: 21px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.inspiration-plan-summary { font-size: 13px; line-height: 1.9; color: #c8b1e0; }
+.inspiration-plan-story { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.95; color: #aaa6b3; font-size: 13px; max-height: 340px; overflow-y: auto; }
+.inspiration-plan .text-button { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12px; }
+.inspiration-plan .create-form { margin: 0; gap: 14px; }
+.inspiration-plan input,.inspiration-plan textarea,.inspiration-preference-grid input,.inspiration-preference-grid select { width: 100%; min-width: 0; padding: 10px 12px; font-size: 13px; line-height: 1.8; }
+.inspiration-plan-bottom { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid #ffffff16; }
+.inspiration-plan-bottom label { display: grid; gap: 8px; color: #a9a3b8; font-size: 12px; }
+.inspiration-plan-bottom .outline-button { font-size: 12px; padding: 10px; }
+.inspiration-analysis { padding: 25px; border: 1px solid #ba92df50; background: #251c3050; border-radius: 16px; display: grid; gap: 20px; }
+.inspiration-analysis h3 { font-size: 24px; }
+.inspiration-analysis dl { display: grid; gap: 14px; font-size: 13px; line-height: 1.9; }
+.inspiration-analysis dl>div { display: grid; grid-template-columns: 75px minmax(0,1fr); gap: 15px; }
+.inspiration-analysis dt { color: #968aa5; }
+.inspiration-analysis dd { color: #d1c7dc; white-space: pre-wrap; overflow-wrap: anywhere; }
+.inspiration-analysis>.inspiration-primary { justify-self: start; }
+.inspiration-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 13px; line-height: 1.9; color: #cebedb; }
+.inspiration-confirm p { flex-basis: 100%; }
+.studio-inline-notice .text-button { display: inline-block; margin-left: 14px; text-decoration: underline; }
+@media(max-width:1050px) {
+  .inspiration-plan-grid { grid-template-columns: 1fr; }
+  .inspiration-plan-story { max-height: none; }
+  .inspiration-preference-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .inspiration-entry { align-items: flex-start; flex-direction: column; }
+}
+@media(max-width:600px) {
+  .modal:has(.inspiration-flow) { width: calc(100vw - 20px); padding: 18px; max-height: calc(100dvh - 20px); border-radius: 14px; }
+  .inspiration-flow { gap: 20px; }
+  .inspiration-hero { padding: 15px 0 0; }
+  .inspiration-hero p { font-size: 12px; }
+  .inspiration-steps { gap: 10px; justify-content: space-between; font-size: 10px; }
+  .inspiration-composer,.inspiration-analysis,.inspiration-plan { padding: 17px; border-radius: 14px; }
+  .inspiration-preference-grid { grid-template-columns: 1fr; }
+  .inspiration-compose-actions { flex-wrap: wrap; }
+  .inspiration-compose-actions .inspiration-primary { width: 100%; }
+  .inspiration-entry { padding: 20px; }
+  .inspiration-entry h2 { font-size: 18px; }
+  .creation-world { padding: 15px; }
+  .creation-fields { gap: 20px; }
+  .inspiration-analysis dl>div { grid-template-columns: 60px minmax(0,1fr); gap: 10px; }
+}
+@media(prefers-reduced-motion:reduce) { .inspiration-spinner { animation: none; } }

@@ -4,6 +4,7 @@ import os
 
 from .studio_api import store
 from .studio_jobs import JobStore, execute
+from .studio_inspiration import InspirationStore, execute as execute_inspiration
 
 
 def lock_worker(path):
@@ -22,14 +23,28 @@ def lock_worker(path):
     return handle
 
 
-async def run():
-    jobs = JobStore(store)
-    jobs.recover()
-    while True:
+async def run_once(jobs, inspirations):
+    queued = [(j["created_at"], "work") for j in jobs.list() if j["status"] == "queued"]
+    queued += [(j["created_at"], "inspiration") for j in inspirations.jobs() if j["status"] == "queued"]
+    if not queued:
+        return False
+    if min(queued)[1] == "inspiration":
+        job = inspirations.claim()
+        if job:
+            await execute_inspiration(inspirations, job)
+    else:
         job = jobs.claim()
         if job:
             await execute(jobs, job)
-        else:
+    return bool(job)
+
+
+async def run():
+    jobs, inspirations = JobStore(store), InspirationStore(store)
+    jobs.recover()
+    inspirations.recover()
+    while True:
+        if not await run_once(jobs, inspirations):
             await asyncio.sleep(1)
 
 

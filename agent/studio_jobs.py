@@ -20,6 +20,15 @@ ACTIVE = {"queued", "running", "stopping"}
 LABELS = {"premise": "故事设定", "characters": "人物小传", "outline": "大纲", "chapter": "正文", "world": "作品世界"}
 
 
+def queue_records(db):
+    """Both task types share one global capacity and one worker."""
+    records = []
+    for table in ("studio_jobs", "inspiration_jobs"):
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
+            records.extend(json.loads(row[0]) for row in db.execute(f"SELECT data FROM {table}").fetchall())
+    return records
+
+
 class JobInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     market: Literal["china"] = "china"
@@ -79,7 +88,7 @@ class JobStore:
             jobs = [json.loads(row[0]) for row in db.execute("SELECT data FROM studio_jobs").fetchall()]
             if any(j["work_id"] == work_id and j["status"] in ACTIVE for j in jobs):
                 raise HTTPException(409, "此作品已有进行中任务，请查看任务进度")
-            if sum(j["status"] == "queued" for j in jobs) >= 10:
+            if sum(j["status"] == "queued" for j in queue_records(db)) >= 10:
                 raise HTTPException(429, "全站队列已满（最多10个排队任务），请稍后提交")
             steps = ([{"action": a, "number": 1} for a in ("premise", "characters", "outline")] +
                      [{"action": "chapter", "number": n} for n in range(1, work["units"] + 1)]) if body.mode == "all" else [{"action": body.action, "number": body.number}]
@@ -104,7 +113,7 @@ class JobStore:
                 others = [json.loads(row[0]) for row in db.execute("SELECT data FROM studio_jobs WHERE id<>?", (ident,)).fetchall()]
                 if any(j["work_id"] == job["work_id"] and j["status"] in ACTIVE for j in others):
                     raise HTTPException(409, "作品已有另一任务，不能同时继续")
-                if sum(j["status"] == "queued" for j in others) >= 10:
+                if sum(j["status"] == "queued" for j in queue_records(db)) >= 10:
                     raise HTTPException(429, "排队数量已满，请稍后继续")
                 job.update(status="queued" if len(job["results"]) < len(job["steps"]) else "completed", error="")
             self.write(db, job)
@@ -122,7 +131,7 @@ class JobStore:
     def claim(self):
         with self.transaction() as db:
             jobs = [json.loads(row[0]) for row in db.execute("SELECT data FROM studio_jobs").fetchall()]
-            if any(j["status"] in {"running", "stopping"} for j in jobs):
+            if any(j["status"] in {"running", "stopping"} for j in queue_records(db)):
                 return None
             queued = sorted((j for j in jobs if j["status"] == "queued"), key=lambda j: j["created_at"])
             if not queued:

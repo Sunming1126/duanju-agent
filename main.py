@@ -125,6 +125,8 @@ def _cleanup_stale_writer_tasks():
 
 app = FastAPI(title="短剧剧本生成 Agent Demo", version="0.6.0", lifespan=lifespan)
 app.include_router(studio_router)
+from agent.studio_jobs import create_router as studio_jobs_router
+app.include_router(studio_jobs_router())
 
 
 # 线上两个域名共用一个进程，市场边界由 Host 决定。未知 Host 仅保留本地

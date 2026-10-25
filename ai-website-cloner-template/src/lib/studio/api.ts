@@ -176,8 +176,10 @@ export function downloadText(
   const link = document.createElement("a");
   link.href = url;
   link.download = name.replace(/[\\/:*?"<>|]/g, "_");
+  document.body.appendChild(link);
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 export function unitLabel(type: ContentType) {
   return type === "novel" ? "章" : "集";

@@ -23,6 +23,10 @@ def require_chinese_site(request: Request):
 
 router = APIRouter(prefix="/api/studio", dependencies=[Depends(require_chinese_site)])
 
+# The child router uses the parent market boundary in both application entries.
+from .studio_inspiration import create_router as inspiration_router
+router.include_router(inspiration_router())
+
 
 class WorldInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
