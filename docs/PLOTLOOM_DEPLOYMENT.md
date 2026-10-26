@@ -103,3 +103,14 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 源码包全部非data文件哈希、数据库quick_check及历史记录保留检查通过，回环和公网主要页面200，模型就绪，灵感代理与管理路径限制正常，日文站200。三个中文版服务active，旧duanju-agent PID仍为1948834。未改Nginx、systemd或模型配置。
 - 上线后补充只读验证回环和公网`/workspace`：统一筛选／排序布局存在，顶部无新建小说／剧本按钮；已发布JS包含删除确认及摘要请求，不含编辑器代码。当前1份作品的摘要响应247字节，完整响应22353字节，进度与归档标记一致。新归档PATCH与删除DELETE对不存在的测试ID正确返回记录不存在404；没有删除或修改真实作品，也没有调用付费模型。
 - 本次保留shared/data、数据库备份与旧release。程序回滚按上述MVP回滚方式，仅在确认current仍为本次release后切回`20261026T060802Z-inspiration-50410315`并重启中文版api／web／worker；不恢复旧SQLite覆盖新作品。尚未运行浏览器预览，实际浏览器切换耗时、视觉与逐按钮交互仍需另外验收。
+
+## 2026-10-26 官方小说／剧本样例库发布
+
+- 用户要求在网站合适位置放置官方生成的小说／剧本文档供新用户参考；本轮实现并发布独立`/samples`，提供首页导航、创作侧栏与新建页入口。包含两篇原创小说、两部原创短剧，各有完整3章／集及设定、人物、大纲、世界、阅读提示；完整清单及维护说明见`PLOTLOOM_OFFICIAL_SAMPLES.md`。
+- 运行源码`b9640296702af912c5a9d6f7cb18ff13eb74ce9d`；源码包SHA-256为`d494943de012be80b8e198af3e2855bf84edc10d57f8fb4249e57d62763e9259`。包仅来自已提交Git文件，不含本机数据或密钥。首批内容由本轮AI原创整理，未调用站内付费模型，未复制用户作品。
+- 实际release：`/opt/plotloom-cn/releases/20261026T073609Z-inspiration-b9640296`；上版：`/opt/plotloom-cn/releases/20261026T062937Z-inspiration-488bc25f`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261026T073609Z-inspiration.sqlite3`，权限0600；旧目标记录：`backups/previous-20261026T073609Z-inspiration.txt`。
+- 发布前101项后端／市场回归、24项前端适配、lint／类型及本地webpack生产构建通过；4份样例与独立回填参数通过Python WorkInput校验，12个正文单元通过小说／剧本格式检查。Linux另行复验4项样例测试、lint／类型与生产构建；队列空闲后备份并原子切换，输出DEPLOYMENT_OK，未执行回滚。
+- 回环与公网样例列表、两种筛选、4份完整阅读页、4份TXT与4个回填入口均通过；第三章／集和阅读提示存在，创建页有“我的版本”和回填提示。未知下载slug明确404，错误类型的新建入口被notFound拒绝，兼容Next流式错误的HTTP200语义。阅读／下载／带入设定没有创建作品或发起生成任务。
+- 从本机再次下载4个公网TXT并逐字符对比已校验源码文档，全部一致：last-light 7411字节，receipt 7257字节，platform-seven 7689字节，rain-check 7165字节。响应带UTF-8 BOM和中文下载文件名，完整正文、设定与提示未遗漏；比对报告保存在Git忽略的`data/official-samples-live-report.json`。
+- 所有归档非data源码哈希、历史记录数量、SQLite quick_check、原主要页面、灵感代理与管理边界检查通过；中文版api／web／worker均active，旧站PID1948834保持不变、日文站200。保留shared/data和旧release，未改Nginx、systemd或模型配置，未操作用户作品。没有启动本机应用或浏览器，未宣称浏览器视觉与点击交互已人工验收。
+- 如需回滚程序，先确认current仍为本次release，再按上述保留数据的MVP回滚流程切回`20261026T062937Z-inspiration-488bc25f`并重启中文版服务；不使用旧SQLite覆盖此后新作品。
