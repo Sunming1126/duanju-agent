@@ -69,6 +69,6 @@ if ($PrepareOnly) {
 }
 Invoke-Checked -Program "scp" -Arguments @("-o", "BatchMode=yes", $archive, "${Server}:$remoteArchive")
 Invoke-Checked -Program "scp" -Arguments @("-o", "BatchMode=yes", $releaseRunner, "${Server}:$remoteRunner")
-$remoteCommand = "test `"`$(sha256sum $remoteArchive | cut -d' ' -f1)`" = $archiveHash && test `"`$(sha256sum $remoteRunner | cut -d' ' -f1)`" = $runnerHash && sudo -n bash $remoteRunner $remoteArchive $sourceCommit"
+$remoteCommand = "cd /tmp && test `"`$(sha256sum $remoteArchive | cut -d' ' -f1)`" = $archiveHash && test `"`$(sha256sum $remoteRunner | cut -d' ' -f1)`" = $runnerHash && sudo -n bash $remoteRunner $remoteArchive $sourceCommit"
 Invoke-Checked -Program "ssh" -Arguments @("-o", "BatchMode=yes", "-o", "ConnectTimeout=10", $Server, $remoteCommand)
 Write-Host "Deployment checks passed. Open https://jubencn.onesay.top/studio/scripts/new or /studio/novels/new."

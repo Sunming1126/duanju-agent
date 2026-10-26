@@ -177,3 +177,10 @@
 - 新增tools/deploy_plotloom.ps1供用户自己的PowerShell执行，复用原SSH别名和协作同步，运行已有回归及前端检查，按已提交Git版本打包并校验，排除密钥、依赖、缓存及本机运行数据。支持-PrepareOnly完成本地检查和打包而不访问服务器；包保存在Git忽略的data/deployment-bundles。
 - 新增tools/plotloom_deploy_release.sh，实际运行时先核查线上current与服务目录、用户、端口和专用运行时；构建成功且队列空闲后备份SQLite并切换中文版api／web／worker，出错尝试恢复原程序，保留共享数据。核验源码哈希、历史记录数量、公开页面和灵感路由，检查旧站PID未变；不重写Nginx或systemd配置，不调用真实模型做付费验收。
 - PowerShell AST及Git Bash语法检查通过；脚本的本地准备运行及后续实际远端结果以交付输出为准。更新docs/PLOTLOOM_DEPLOYMENT.md为“待执行发布”，不登记未经核实的新线上版本。当前仍需在拥有SSH权限的用户终端执行发布入口，真实模型效果和浏览器交互仍未验收。
+
+### 2026-10-26：权限恢复后完成灵感功能部署
+
+- 用户开放当前会话权限并要求验证，延续既有部署授权。完整读取规则并成功start拉取，免密SSH、sudo及真实部署目录／服务核对通过；后续GitHub同步间歇TCP超时，保留待推送提交，使用已核验源码3c88ac2及既有发布包继续部署，不声称该时点已推送。
+- 修复发布runner未保留/usr/sbin导致runuser不可用的问题，并让PowerShell远程入口固定从/tmp执行。首次失败发生于停服前，线上保持原样；重试完成隔离接口检查、Linux lint／类型及生产构建、队列空闲检查、SQLite备份和原子切换。
+- 灵感版实际发布至/opt/plotloom-cn/releases/20261026T051419Z-inspiration-3c88ac28，旧版为20261024T125736Z-art，备份studio-20261026T051419Z-inspiration.sqlite3。源码哈希、历史记录数量、数据库完整性、回环和公网主要页面、灵感代理、管理边界均通过，三个中文版服务active，旧站PID1948834未变且日文站200。完整记录见docs/PLOTLOOM_DEPLOYMENT.md。
+- 用户在部署过程中补充三项后续要求：去掉新建页类型下拉框，参考公开平台区分小说／剧本参数，排查小说生成成剧本；已明确先完成本次发布再继续修复。发布检查没有付费模型调用，未启动本机应用或浏览器。

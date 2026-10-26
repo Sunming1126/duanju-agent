@@ -71,3 +71,12 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 切换期间出现错误会尝试恢复原程序目录并启动原中文版服务，保留 shared/data，不用旧数据库覆盖新作品。部署前队列忙时退出，待任务结束后重跑。新 release 和备份保留供排查。
 
 实际发布目录、备份和上线检查结果须在脚本执行成功后补记。本节只记录准备工作。
+
+## 2026-10-26 灵感功能发布成功
+
+- 用户调整会话权限后，GitHub拉取、免密SSH与sudo验证通过；发布前重新确认current为`/opt/plotloom-cn/releases/20261024T125736Z-art`，三个中文版服务及旧站均active，实际监听3001／8766，专用Node24.22.1及Python3.10.12可用。
+- 后续GitHub同步出现TCP超时，因此使用已核验的干净本地提交`3c88ac2848f93798c71aaf89eda1692b5900bbe7`源码包，经SCP传输并核对SHA-256。源码包`87a70907c6368e4782062cfd52bb5b281f7e35c6ad1dde413adb0d6f0d32afe5`不含本机作品或密钥。
+- 首次发布在运行隔离检查前发现runner的PATH遗漏`/usr/sbin`，无法找到runuser；旧程序未切换或停止。补齐标准系统路径后重新执行，隔离后端检查、Linux lint／生产构建、队列空闲检查及SQLite备份通过。发布调用固定从`/tmp`执行，避免继承不可访问的用户目录。
+- 实际目录：`/opt/plotloom-cn/releases/20261026T051419Z-inspiration-3c88ac28`；上版：`/opt/plotloom-cn/releases/20261024T125736Z-art`。数据库备份：`/opt/plotloom-cn/backups/studio-20261026T051419Z-inspiration.sqlite3`；旧目标记录：`backups/previous-20261026T051419Z-inspiration.txt`。
+- 发布输出`DEPLOYMENT_OK`：源码包全部非data文件哈希一致；数据库quick_check及旧作品／世界／候选／任务数量检查通过；回环与公网首页、原创概念、作品库、世界库、剧本及小说新建页正常；灵感代理422参数校验和管理路径限制正常。中文版api／web／worker均active，旧duanju-agent PID保持1948834，日文站200。没有修改Nginx、服务配置或模型密钥；未执行回滚。
+- 上述发布验收不调用付费模型，也不代表浏览器及文学质量验收；用户随后提出的类型下拉框移除、表单差异化及小说格式排查在此发布之后另行处理。

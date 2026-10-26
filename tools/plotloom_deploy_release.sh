@@ -18,7 +18,7 @@ case "$old" in "$base"/releases/*) ;; *) echo 'Unexpected current target; inspec
 test -d "$old" && test -d "$base/shared/data"
 python="$base/venv/bin/python"
 test -x "$python" && test -x "$base/runtime/bin/node"
-export PATH="$base/runtime/bin:/usr/bin:/bin"
+export PATH="$base/runtime/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 node -e 'if(Number(process.versions.node.split(".")[0])<24) process.exit(1)'
 for service in "${services[@]}"; do
     systemctl is-active --quiet "$service"
