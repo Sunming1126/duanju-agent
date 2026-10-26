@@ -144,6 +144,30 @@ class StudioStore:
             self.write(db, "works", updated)
         return updated
 
+    def archive_work(self, ident, archived, revision):
+        # Update only the requested flag; never round-trip an entire manuscript.
+        return self.update_work(ident, {"archived": archived}, revision)
+
+    def delete_work(self, ident, revision):
+        with self.transaction() as db:
+            work = self.read(db, "works", ident)
+            if work["revision"] != revision:
+                raise HTTPException(409, "作品已更新，请刷新列表后再删除")
+            candidates = db.execute("SELECT data FROM candidates WHERE work_id=?", (ident,)).fetchall()
+            if any(json.loads(row["data"])["status"] == "running" for row in candidates):
+                raise HTTPException(409, "作品正在生成，请等待生成结束后再删除")
+            has_jobs = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='studio_jobs'").fetchone()
+            if has_jobs:
+                jobs = db.execute("SELECT data FROM studio_jobs WHERE work_id=?", (ident,)).fetchall()
+                if any(json.loads(row["data"])["status"] in {"queued", "running", "stopping"} for row in jobs):
+                    raise HTTPException(409, "作品有进行中的生成任务，请先停止任务并等待结束后再删除")
+                db.execute("DELETE FROM studio_jobs WHERE work_id=?", (ident,))
+            db.execute("DELETE FROM candidates WHERE work_id=?", (ident,))
+            db.execute("DELETE FROM works WHERE id=?", (ident,))
+
+    def work_summaries(self):
+        return [work_summary(work) for work in self.list("works")]
+
     def begin_candidate(self, work_id, action, number, revision):
         with self.transaction() as db:
             work = self.read(db, "works", work_id)
@@ -215,6 +239,13 @@ class StudioStore:
         world = self.get("worlds", ident)
         payload = {"schema": "onesay.world-draft", "version": 1, "world": world_payload(world)}
         return {**payload, "checksum": hashlib.sha256(canonical(payload).encode("utf-8")).hexdigest()}
+
+
+def work_summary(work):
+    return {key: work.get(key) for key in ("id", "title", "content_type", "genre", "units", "revision", "created_at", "updated_at")} | {
+        "archived": bool(work.get("archived")),
+        "completed_units": sum(bool(chapter.get("content", "").strip()) for chapter in work.get("chapters", [])),
+    }
 
 
 def export_work_text(work):

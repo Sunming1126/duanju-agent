@@ -1,6 +1,6 @@
 "use client";
 
-import { StudioNav } from "./editor";
+import { StudioNav } from "./navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   Download,

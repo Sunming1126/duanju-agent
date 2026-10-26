@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, FileText, Globe2, Library, Settings2, SquarePen } from "lucide-react";
 import { Header } from "@/components/sites/storyplay/shared";
 import { backendRequest as api, jsonBody, workPayload, downloadText, localExport, unitLabel,
   type Work, type World, type StudioStatus, type Action, type Reference, type WorldInput, type Candidate } from "@/lib/studio/api";
 import { WorkForm } from "./work-form";
-import { ModelSettings } from "./model-settings";
+import { StudioNav } from "./navigation";
 import { worldDraftChecksum } from "@/lib/studio/world-codec";
 import { creationMode } from "@/lib/studio/writing";
 import { WritingOptions } from "./writing-options";
@@ -19,22 +18,6 @@ type Job = { id: string; status: string; completed: number; total: number; error
 const baseLabels = { premise: "故事设定", characters: "人物小传", outline: "大纲", chapter: "正文", world: "作品世界" };
 const active = ["queued", "running", "stopping"];
 
-export function StudioNav({ selected = "" }: { selected?: string }) {
-  const [model, setModel] = useState(false);
-  const [open, setOpen] = useState(false);
-  const items = [
-    ["/workspace", "我的作品", FileText], ["/studio/scripts/new", "剧本创作", SquarePen],
-    ["/studio/novels/new", "小说创作", BookOpen], ["/worlds", "世界模型", Globe2], ["/corpus", "语料参考", Library],
-  ] as const;
-  return <aside className={`studio-sidebar plotloom-nav ${open ? "is-open" : ""}`}><div className="sidebar-label">PLOTLOOM · 中文创作</div>
-    <button className="plotloom-nav-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "收起导航" : "展开导航"} · {selected || "创作空间"}</button>
-    {items.map(([href, label, Icon]) => <Link key={href} href={href} className={`sidebar-link ${selected === label ? "selected" : ""}`}><Icon size={18} />{label}</Link>)}
-    <button className="sidebar-link" onClick={() => setModel(true)}><Settings2 size={18} />模型信息</button>
-    <p className="studio-hint">公开创作空间<br />访客共享作品与世界库</p>
-    {model && <ModelSettings onClose={() => setModel(false)} />}
-  </aside>;
-}
-
 export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" }: {
   id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string;
 }) {
@@ -43,6 +26,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
   const [worlds, setWorlds] = useState<World[]>([]);
   const [status, setStatus] = useState<StudioStatus>();
   const [reference, setReference] = useState<Reference>();
+  const [referenceReady, setReferenceReady] = useState(!referenceId);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -65,15 +49,24 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
-    Promise.all([api<StudioStatus>("/studio/status", { signal }), api<{ items: World[] }>("/studio/worlds", { signal }),
-      id ? api<Work>(`/studio/works/${id}`, { signal }) : Promise.resolve(null),
-      referenceId ? api<Reference>(`/studio/references/${encodeURIComponent(referenceId)}`, { signal }) : Promise.resolve(undefined),
-      id ? api<{ items: Candidate[] }>(`/studio/works/${id}/candidates`, { signal }) : Promise.resolve({ items: [] as Candidate[] }),
-    ]).then(([s, w, value, ref, oldCandidates]) => {
+    const auxiliaryError = (cause: Error) => { if (!signal.aborted) setNotice(cause.message); };
+    // Supporting panels must not hold the manuscript or creation form hostage.
+    void api<StudioStatus>("/studio/status", { signal }).then(value => {
+      if (!signal.aborted) setStatus(value);
+    }).catch(auxiliaryError);
+    void api<{ items: World[] }>("/studio/worlds", { signal }).then(value => {
+      if (!signal.aborted) setWorlds(value.items.filter(world => !world.archived));
+    }).catch(auxiliaryError);
+    if (referenceId) void api<Reference>(`/studio/references/${encodeURIComponent(referenceId)}`, { signal }).then(value => {
+      if (!signal.aborted) { setReference(value); setReferenceReady(true); }
+    }).catch(cause => { if (!signal.aborted) setError(cause.message); });
+    if (id) void api<{ items: Candidate[] }>(`/studio/works/${id}/candidates`, { signal }).then(value => {
+      if (!signal.aborted) setLegacyCandidates(value.items);
+    }).catch(auxiliaryError);
+    if (id) void api<Work>(`/studio/works/${id}`, { signal }).then(value => {
       if (signal.aborted) return;
-      setStatus(s); setWorlds(w.items.filter(x => !x.archived)); setReference(ref);
-      setLegacyCandidates(oldCandidates.items);
-      if (value) {
+      setWork(value);
+      try {
         const raw = localStorage.getItem(`plotloom-unsaved-${id}`);
         if (raw) {
           try {
@@ -81,12 +74,10 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
             if (cached.id === value.id && cached.revision === value.revision) { setWork(cached); setDirty(true); setNotice("已恢复此浏览器未保存编辑，正在自动保存。"); }
             else { setWork(value); setRecovery(raw); setNotice("发现基于旧版本的本地编辑，请导出备份；未覆盖服务器作品。"); }
           } catch { setWork(value); setRecovery(raw); }
-        } else setWork(value);
-      }
-      if (id) {
+        }
         const warning = localStorage.getItem(`plotloom-create-warning-${id}`);
         if (warning) { setNotice(warning); localStorage.removeItem(`plotloom-create-warning-${id}`); }
-      }
+      } catch { setNotice("浏览器草稿备份不可用，已读取服务器作品。"); }
     }).catch(e => { if (!signal.aborted) setError(e.message); });
     return () => controller.abort();
   }, [id, referenceId]);
@@ -238,7 +229,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
       {error && <p className="studio-error" role="alert">{error}<button onClick={() => window.location.reload()}>重新加载</button></p>}
       {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
       {recovery && <button className="outline-button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button>}
-      {!status && !error ? <p>正在读取创作空间…</p> : !id ? <>
+      {!id && !referenceReady ? <p role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <>
         <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1><span className="studio-hint">{isNovel ? "01 小说设定 → 02 人物档案 → 03 章节大纲 → 04 小说正文" : "01 剧本设定 → 02 人物小传 → 03 分集大纲 → 04 分场剧本"}</span></div>
         <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${creation}:${reference?.id}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
           if (auto) {

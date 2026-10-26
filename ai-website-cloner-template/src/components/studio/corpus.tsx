@@ -8,7 +8,7 @@ import {
   type ContentType,
   type Reference,
 } from "@/lib/studio/api";
-import { StudioNav } from "./editor";
+import { StudioNav } from "./navigation";
 import { Header } from "@/components/sites/storyplay/shared";
 
 function sourceUrl(value: string) {

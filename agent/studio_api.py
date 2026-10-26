@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from . import llm
 from .knowledge import get_kb
-from .studio_store import StudioStore, WORLD_FIELDS, WORLD_SECTIONS, canonical, export_work_text
+from .studio_store import StudioStore, WORLD_FIELDS, WORLD_SECTIONS, canonical, export_work_text, work_summary
 from .studio_writing import NovelSettings, DramaSettings, canonical_mode, normalized_work, writing_context, system_prompt, step_instruction, validate_chapter_format
 
 store = StudioStore()
@@ -147,6 +147,12 @@ class WorkUpdate(WorkInput):
     revision: int = Field(ge=1)
 
 
+class WorkArchive(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    revision: int = Field(ge=1)
+    archived: bool
+
+
 class GenerateInput(BaseModel):
     market: Literal["china"] = "china"
     model_config = ConfigDict(extra="forbid")
@@ -202,8 +208,8 @@ def import_world(body: dict):
 
 
 @router.get("/works")
-def works():
-    return {"items": store.list("works")}
+def works(view: Literal["full", "summary"] = "full"):
+    return {"items": store.work_summaries() if view == "summary" else store.list("works")}
 
 
 @router.post("/works")
@@ -222,6 +228,17 @@ def get_work(ident: str):
 @router.put("/works/{ident}")
 def update_work(ident: str, body: WorkUpdate):
     return store.update_work(ident, body.model_dump(exclude={"revision"}), body.revision)
+
+
+@router.patch("/works/{ident}/archive")
+def archive_work(ident: str, body: WorkArchive):
+    return work_summary(store.archive_work(ident, body.archived, body.revision))
+
+
+@router.delete("/works/{ident}")
+def delete_work(ident: str, revision: int = Query(ge=1)):
+    store.delete_work(ident, revision)
+    return {"deleted": ident}
 
 
 @router.get("/works/{ident}/export", response_class=PlainTextResponse)

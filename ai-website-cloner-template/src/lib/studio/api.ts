@@ -64,6 +64,10 @@ export type Work = WorkInput & {
   created_at: number;
   updated_at: number;
 };
+export type WorkSummary = Pick<Work, "id" | "title" | "content_type" | "genre" | "units" | "revision" | "created_at" | "updated_at"> & {
+  archived: boolean;
+  completed_units: number;
+};
 export type Action = "premise" | "characters" | "outline" | "chapter";
 export type Reference = {
   id: string;

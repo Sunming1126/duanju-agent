@@ -49,6 +49,9 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 - 新建表单在此浏览器保留草稿；已有作品自动保存，另有手动保存、离页保护及冲突备份。共享空间中，其他访客修改后的新版本不能被旧版本静默覆盖。
 - 世界库绑定会复制为作品独立世界。新建时可编辑世界概述和六类设定；作品右侧继续编辑，可另存世界库，不影响原件或其他作品。
 - 支持 TXT 导出、完整 JSON 备份导入、作品复制、归档恢复、浏览器旧草稿迁移及明确标记为中国市场的旧站历史导入。手动引用的语料保留来源，并与内容类型匹配。
+- “我的作品”统一展示小说、剧本与已归档作品，支持名称搜索、类型／状态筛选和最近更新／最近创建／名称排序。卡片显示正文进度、更新时间及复制／归档／恢复／删除操作；创建入口保留在侧栏，历史导入默认收起。
+- 删除须确认，可先下载完整备份。删除正文、作品世界副本、旧候选与生成记录，保留世界库原件及其他作品；进行中的任务或旧版本删除请求会被拒绝。删除后不能直接恢复，可导入事先下载的备份。
+- 页面侧栏独立加载，编辑页先显示作品，世界库、模型信息和旧候选独立读取。作品列表请求`/api/studio/works?view=summary`仅传摘要；返回作品库时先显示内存中的上次列表，再重新核对服务器。归档接口`PATCH /api/studio/works/{id}/archive`及删除接口`DELETE /api/studio/works/{id}?revision=…`均校验版本；原完整列表接口保持兼容。
 
 ## 入口与边界
 
@@ -64,13 +67,13 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 在根目录，使用项目虚拟环境：
 
 ```powershell
-.venv\Scripts\python.exe -m pytest -q tests/test_writing_modes.py tests/test_inspiration.py tests/test_plotloom_mvp.py tests/test_studio.py test_market_features.py test_trilang_samples.py test_japan_adaptation.py
+.venv\Scripts\python.exe -m pytest -q tests/test_library.py tests/test_writing_modes.py tests/test_inspiration.py tests/test_plotloom_mvp.py tests/test_studio.py test_market_features.py test_trilang_samples.py test_japan_adaptation.py
 ```
 
 在前端目录：
 
 ```powershell
-node --test scripts/studio.test.mjs scripts/inspiration.test.mjs scripts/writing.test.mjs
+node --test scripts/studio.test.mjs scripts/inspiration.test.mjs scripts/writing.test.mjs scripts/library.test.mjs
 npm run lint
 npm run typecheck
 npm run build -- --webpack
