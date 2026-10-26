@@ -80,3 +80,16 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 实际目录：`/opt/plotloom-cn/releases/20261026T051419Z-inspiration-3c88ac28`；上版：`/opt/plotloom-cn/releases/20261024T125736Z-art`。数据库备份：`/opt/plotloom-cn/backups/studio-20261026T051419Z-inspiration.sqlite3`；旧目标记录：`backups/previous-20261026T051419Z-inspiration.txt`。
 - 发布输出`DEPLOYMENT_OK`：源码包全部非data文件哈希一致；数据库quick_check及旧作品／世界／候选／任务数量检查通过；回环与公网首页、原创概念、作品库、世界库、剧本及小说新建页正常；灵感代理422参数校验和管理路径限制正常。中文版api／web／worker均active，旧duanju-agent PID保持1948834，日文站200。没有修改Nginx、服务配置或模型密钥；未执行回滚。
 - 上述发布验收不调用付费模型，也不代表浏览器及文学质量验收；用户随后提出的类型下拉框移除、表单差异化及小说格式排查在此发布之后另行处理。
+
+## 2026-10-26 小说／剧本区分修复及真实灵感验收
+
+- 先完成上一轮灵感功能上线，再完成用户提出的三项修复：新建页删除创作类型下拉框，路由固定类型；小说与短剧采用不同的创作参数、题材及字数范围；规范旧mode与content_type冲突，并对两条生成路径共用类型专属提示与明显格式错误检查。设计依据及排查限制见`docs/PLOTLOOM_WRITING_MODES.md`。
+- 类型修复提交`25d861119361c8a7f7847f0879c48a1e84f46060`首次发布到`/opt/plotloom-cn/releases/20261026T054059Z-inspiration-25d86111`，备份`studio-20261026T054059Z-inspiration.sqlite3`。86项后端及17项前端适配、lint／类型／本地和Linux生产构建通过，源码、数据库保留及公开页面检查通过。
+- 随后的真实模型验收发现两种实际兼容问题：方案附带空story_note导致严格Plan拒收；世界规则、地点及highlights以列表／对象返回导致文本表单验证失败。模型方案现在只投影title、summary、story，附言及模型id不会存储；世界章节和亮点的结构化资料转换成可编辑文本，仍由WorkInput验证类型、长度、必填内容和世界字段白名单。人工编辑接口保持严格，未放宽作品创建字段。
+- 备注兼容提交`b33a3f607a7feeddda6de3a97a8816ef854df0cc`发布到`20261026T055658Z-inspiration-b33a3f60`，备份`studio-20261026T055658Z-inspiration.sqlite3`。此版真实验证三个方案和单独AI修改通过，分析失败后保留全部方案。
+- **最终线上源码：`5041031569185c901f9e2023ce5de07ac5713567`**；目录`/opt/plotloom-cn/releases/20261026T060802Z-inspiration-50410315`；上版`/opt/plotloom-cn/releases/20261026T055658Z-inspiration-b33a3f60`；SQLite备份`/opt/plotloom-cn/backups/studio-20261026T060802Z-inspiration.sqlite3`，旧目标记录`backups/previous-20261026T060802Z-inspiration.txt`。源码包SHA-256：`6f3076ce37a43342902b7beeda03da38884baa571e991a6740de4fb158aa065b`。
+- 最终包来自独立已提交的修复分支，未混入同期835d699页面切换／作品库改动。修复已合并回task/creative-studio-cn，工作区同期功能也完整保留；因此主分支最终HEAD与实际运行源码不同，不能仅凭Git HEAD推断服务器版本。后续部署应重新打包希望发布的明确提交。
+- 最终隔离源码93项后端／市场回归通过；合并同期主线后101项回归通过。前端未再变更，沿用类型修复17项适配通过记录；最终Linux lint、TypeScript及webpack生产构建再次通过。每次上线均校验归档源码哈希、SQLite完整性和历史记录数量、回环／公网入口、灵感代理和管理边界，均输出DEPLOYMENT_OK，未执行回滚。
+- 真实验收使用同一会话`f48df5bf-1b64-4634-8f7f-919f791c6667`：生成恰好三个方案，修改第二个而另两个保持不变；修复后显式恢复失败的解析任务，成功回填题材、核心、亮点、世界规则及地点。没有自动重新付费生成前三步。最终结果位于服务器`/tmp/plotloom-writing-acceptance-5041031.json`，ok=true。
+- 新建标记的小说验收作品`cc84bbe9-e965-4d19-b616-4e017d2c7cdc`，刻意提交旧mode“新建剧本”，服务端返回“小说创作”；真实正文433字符，为第一人称连续叙事。短剧验收作品`087e1947-bb25-4962-9f84-81bf1ed88ea4`，正文673字符，以“场1 修表铺 日 内”开篇并带人物动作／对白。两类任务重复提交返回相同ID，采纳前原正文为空，显式采纳后正文一致；两份验收作品均已归档。没有改写用户既有正文。
+- 最终只读核查：current及RELEASE_COMMIT匹配5041031，中文版api／web／worker与旧站均active，旧duanju-agent MainPID仍1948834；小说和剧本公网入口200，日文站200。shared/data、模型配置、Nginx及systemd配置保持原样。检查未启动本机应用或浏览器；真实正文与接口通过不等于完整浏览器交互或长篇文学质量验收。
