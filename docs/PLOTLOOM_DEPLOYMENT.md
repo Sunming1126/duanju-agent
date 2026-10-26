@@ -93,3 +93,13 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 真实验收使用同一会话`f48df5bf-1b64-4634-8f7f-919f791c6667`：生成恰好三个方案，修改第二个而另两个保持不变；修复后显式恢复失败的解析任务，成功回填题材、核心、亮点、世界规则及地点。没有自动重新付费生成前三步。最终结果位于服务器`/tmp/plotloom-writing-acceptance-5041031.json`，ok=true。
 - 新建标记的小说验收作品`cc84bbe9-e965-4d19-b616-4e017d2c7cdc`，刻意提交旧mode“新建剧本”，服务端返回“小说创作”；真实正文433字符，为第一人称连续叙事。短剧验收作品`087e1947-bb25-4962-9f84-81bf1ed88ea4`，正文673字符，以“场1 修表铺 日 内”开篇并带人物动作／对白。两类任务重复提交返回相同ID，采纳前原正文为空，显式采纳后正文一致；两份验收作品均已归档。没有改写用户既有正文。
 - 最终只读核查：current及RELEASE_COMMIT匹配5041031，中文版api／web／worker与旧站均active，旧duanju-agent MainPID仍1948834；小说和剧本公网入口200，日文站200。shared/data、模型配置、Nginx及systemd配置保持原样。检查未启动本机应用或浏览器；真实正文与接口通过不等于完整浏览器交互或长篇文学质量验收。
+
+## 2026-10-26 页面切换优化与统一作品库发布
+
+- 用户明确授权“部署吧”，随后要求继续。成功执行start，同步当前干净分支；发布前重新核对线上current实际为`20261026T060802Z-inspiration-50410315`，api／web／worker工作目录、服务用户及8766／3001端口均符合独立中文版配置。
+- 本次运行源码为`488bc25ff5429c19769a9ddcd2d9fb8729304202`，包含`835d699`页面切换／统一作品库优化及已上线的灵感兼容修复。源码包SHA-256：`1ed72b87cbeb14cd85d0bd97cdacc9d59c5122e0f1bb1fd0a2d5e700d0c4c161`。包仅来自已提交Git文件，不含本机作品、运行配置或密钥。
+- 实际release：`/opt/plotloom-cn/releases/20261026T062937Z-inspiration-488bc25f`；上版：`/opt/plotloom-cn/releases/20261026T060802Z-inspiration-50410315`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261026T062937Z-inspiration.sqlite3`，权限0600；旧目标记录：`backups/previous-20261026T062937Z-inspiration.txt`。
+- 本机发布前93项既有后端回归及8项作品库测试通过，17项既有前端适配及3项作品库适配通过，lint／类型检查通过。Linux隔离接口检查、依赖安装、lint／类型及webpack生产构建成功；队列空闲后停中文版服务、备份SQLite、原子切current并启动新版，输出DEPLOYMENT_OK，未执行回滚。
+- 源码包全部非data文件哈希、数据库quick_check及历史记录保留检查通过，回环和公网主要页面200，模型就绪，灵感代理与管理路径限制正常，日文站200。三个中文版服务active，旧duanju-agent PID仍为1948834。未改Nginx、systemd或模型配置。
+- 上线后补充只读验证回环和公网`/workspace`：统一筛选／排序布局存在，顶部无新建小说／剧本按钮；已发布JS包含删除确认及摘要请求，不含编辑器代码。当前1份作品的摘要响应247字节，完整响应22353字节，进度与归档标记一致。新归档PATCH与删除DELETE对不存在的测试ID正确返回记录不存在404；没有删除或修改真实作品，也没有调用付费模型。
+- 本次保留shared/data、数据库备份与旧release。程序回滚按上述MVP回滚方式，仅在确认current仍为本次release后切回`20261026T060802Z-inspiration-50410315`并重启中文版api／web／worker；不恢复旧SQLite覆盖新作品。尚未运行浏览器预览，实际浏览器切换耗时、视觉与逐按钮交互仍需另外验收。
