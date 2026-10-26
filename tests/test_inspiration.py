@@ -174,6 +174,42 @@ def test_analysis_validation_preserves_three_plans_on_failure(setup):
     assert failed["plans"] == previous and failed["analysis"] is None
 
 
+def test_structured_model_world_notes_and_highlights_become_editable_text(setup):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {"plans": plans()})
+    action(service, session, "analyze")
+    result = analysis()
+    result["creative"]["highlights"] = ["亲情线", "旧信解谜"]
+    result["world_snapshot"]["sections"] = {
+        "world_rules": ["现实世界", "没有超能力"],
+        "locations": [{"name": "修表铺", "description": "父女和解之处"}],
+        "characters": {"父亲": "固执但关心女儿"},
+        "history": [],
+    }
+    session, calls = run(service, result)
+    assert session["job"]["status"] == "completed" and len(calls) == 1
+    fields = session["analysis"]
+    assert fields["creative"]["highlights"] == "亲情线\n旧信解谜"
+    assert fields["world_snapshot"]["sections"]["world_rules"] == "现实世界\n没有超能力"
+    assert json.loads(fields["world_snapshot"]["sections"]["locations"])[0]["name"] == "修表铺"
+    assert json.loads(fields["world_snapshot"]["sections"]["characters"])["父亲"] == "固执但关心女儿"
+
+
+@pytest.mark.parametrize("sections", [{"world_rules": [], "locations": ["街道"]}, {"world_rules": 123, "locations": "街道"},
+                                     {"world_rules": ["现实"], "locations": ["街道"], "unexpected": ["额外字段"]}])
+def test_structured_notes_keep_required_fields_types_and_world_whitelist(setup, sections):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {"plans": plans()})
+    action(service, session, "analyze")
+    result = analysis()
+    result["world_snapshot"]["sections"] = sections
+    failed, _ = run(service, result)
+    assert failed["job"]["status"] == "failed" and failed["analysis"] is None
+    assert failed["plans"] == session["plans"]
+
+
 def test_recovery_is_worker_owned_and_session_survives_restart(setup):
     store, service, _ = setup
     ident = service.create(body())

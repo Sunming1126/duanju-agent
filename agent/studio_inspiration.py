@@ -237,7 +237,9 @@ def messages_for(job):
             task = ('解析选定方案并补齐创作表单，只返回JSON对象，字段为：title（1至80字）、genre（题材）、'
                     'premise（完整故事想法，不少于50字）、audience（general/male/female）、units（1至200）、'
                     'words_per_chapter（小说300至6000、剧本300至3000）、creative（genres最多3项、core最多3项、styles最多5项，标签每项不超过80字、highlights核心亮点），'
-                    'world_snapshot（name、description、sections）。world_snapshot必须提供世界规则和主要地点；'
+                    'world_snapshot（name、description、sections）。highlights必须是纯文本字符串，不能是列表或对象。'
+                    'world_snapshot的name、description及sections内每个值必须是纯文本字符串，不能是列表或对象。'
+                    'world_snapshot必须提供世界规则和主要地点；'
                     f'sections只允许这些键：{", ".join(sorted(WORLD_FIELDS))}。'
                     '不要生成正文、人物小传或章节大纲，不要改变选定方案。未指定数量时默认12，未指定字数时小说2000、剧本800。')
             if novel:
@@ -256,6 +258,17 @@ def parse_model_plan(data):
     if not isinstance(data, dict):
         raise ValueError("模型方案必须是对象")
     return Plan.model_validate({key: data[key] for key in ("title", "summary", "story") if key in data}).model_dump()
+
+
+def form_text(value):
+    """Render structured model notes into the existing editable text fields only."""
+    if isinstance(value, (list, dict)):
+        if not value:
+            return ""
+        if isinstance(value, list) and all(isinstance(item, str) for item in value):
+            return "\n".join(value)
+        return json.dumps(value, ensure_ascii=False, indent=2)
+    return value
 
 
 def parse_result(job, raw):
@@ -279,6 +292,15 @@ def parse_result(job, raw):
     allowed = required | {"novel_settings", "drama_settings"}
     if not isinstance(data, dict) or set(data) - allowed or not required.issubset(data):
         raise ValueError("模型解析结果缺少创作表单字段")
+    # The model may describe locations/rules/highlights as lists or objects.
+    # Preserve that content as editable text without accepting new form fields,
+    # changing settings, or loosening WorkInput's bounds/section whitelist.
+    creative = data.get("creative")
+    if isinstance(creative, dict) and "highlights" in creative:
+        creative["highlights"] = form_text(creative["highlights"])
+    world = data.get("world_snapshot")
+    if isinstance(world, dict) and isinstance(world.get("sections"), dict):
+        world["sections"] = {key: form_text(value) for key, value in world["sections"].items()}
     work = WorkInput.model_validate({**data, "content_type": job["snapshot"]["input"]["content_type"], "mode": "灵感创作"})
     if (not work.premise.strip() or not work.genre.strip() or not work.creative.genres or not work.creative.core
             or not work.creative.styles or not work.creative.highlights.strip() or not work.world_snapshot
