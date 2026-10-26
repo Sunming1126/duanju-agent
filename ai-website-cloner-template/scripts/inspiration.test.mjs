@@ -6,10 +6,17 @@ import vm from "node:vm";
 
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
-const source = readFileSync(new URL("../src/lib/studio/inspiration.ts", import.meta.url), "utf8");
-const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-const helpers = {};
-vm.runInThisContext(`(function(exports){${compiled}\n})`)(helpers);
+function load(name) {
+  const source = readFileSync(new URL(`../src/lib/studio/${name}.ts`, import.meta.url), "utf8");
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const exports = {};
+  vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, path => {
+    if (path === "./writing") return load("writing");
+    throw new Error(`Unexpected dependency: ${path}`);
+  });
+  return exports;
+}
+const helpers = load("inspiration");
 
 const analysis = (type) => ({
   title: "钟城来信", content_type: type, genre: "悬疑", mode: "灵感创作", units: 24,

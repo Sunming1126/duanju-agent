@@ -10,11 +10,13 @@ import { backendRequest as api, jsonBody, workPayload, downloadText, localExport
 import { WorkForm } from "./work-form";
 import { ModelSettings } from "./model-settings";
 import { worldDraftChecksum } from "@/lib/studio/world-codec";
+import { creationMode } from "@/lib/studio/writing";
+import { WritingOptions } from "./writing-options";
 
 type Result = { action: Action | "world"; number: number; text: string; adopted: boolean; references: Reference[] };
 type Job = { id: string; status: string; completed: number; total: number; error: string;
   current: { action: string; number: number }; results?: Result[]; base_revision: number };
-const labels = { premise: "故事设定", characters: "人物小传", outline: "分集／章节大纲", chapter: "正文", world: "作品世界" };
+const baseLabels = { premise: "故事设定", characters: "人物小传", outline: "大纲", chapter: "正文", world: "作品世界" };
 const active = ["queued", "running", "stopping"];
 
 export function StudioNav({ selected = "" }: { selected?: string }) {
@@ -56,6 +58,9 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
   const mutating = useRef(false);
   const requestKey = useRef("");
   const refreshSequence = useRef(0);
+  const creation = creationMode(kind, mode);
+  const isNovel = (work?.content_type || kind) === "novel";
+  const labels = { ...baseLabels, premise: isNovel ? "小说设定" : "剧本设定", characters: isNovel ? "人物档案" : "人物小传", outline: isNovel ? "章节大纲" : "分集大纲", chapter: isNovel ? "章节正文" : "分场剧本" };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -234,8 +239,8 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
       {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
       {recovery && <button className="outline-button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button>}
       {!status && !error ? <p>正在读取创作空间…</p> : !id ? <>
-        <div className="workspace-title"><h1>{mode || (kind === "novel" ? "小说创作" : "剧本创作")}</h1><span className="studio-hint">01 故事设定 → 02 人物 → 03 大纲 → 04 正文</span></div>
-        <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${mode}:${reference?.id}`} kind={kind} mode={mode || (kind === "novel" ? "小说创作" : "新建剧本")} worlds={worlds} sections={status?.world_sections} reference={reference} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
+        <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1><span className="studio-hint">{isNovel ? "01 小说设定 → 02 人物档案 → 03 章节大纲 → 04 小说正文" : "01 剧本设定 → 02 人物小传 → 03 分集大纲 → 04 分场剧本"}</span></div>
+        <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${creation}:${reference?.id}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
           if (auto) {
             try { await api(`/studio/works/${value.id}/jobs`, { method: "POST", body: jsonBody({ revision: value.revision, action: "premise", request_key: `create-${value.id}` }) }); }
             catch { try { localStorage.setItem(`plotloom-create-warning-${value.id}`, "草稿已创建，生成未确认提交，请查看任务列表后手动生成。"); } catch { /* The saved work must still open. */ } }
@@ -254,9 +259,10 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
           <div className="plotloom-writing">
             <div className="editor-tabs" role="tablist" aria-label="创作步骤">{(["premise", "characters", "outline", "chapter"] as Action[]).map((a, i) => <button key={a} role="tab" aria-selected={a === tab} className={tab === a ? "active" : ""} onClick={() => setTab(a)}><span>0{i + 1}</span>{labels[a]}</button>)}</div>
             {tab === "premise" && <section className="create-form plotloom-settings">
+              <WritingOptions kind={work.content_type} novel={work.novel_settings} drama={work.drama_settings} disabled={busy} onChange={patch => update(patch)} />
               <div className="form-row"><label>目标受众<select value={work.audience} disabled={busy} onChange={e => update({ audience: e.target.value as Work["audience"] })}><option value="general">不限</option><option value="male">男性向</option><option value="female">女性向</option></select></label>
                 <NumberSetting key={`${work.id}:units:${work.units}`} label={`计划${unit}数`} min={Math.max(1, ...work.chapters.map(c => c.number))} max={200} value={work.units} disabled={busy} onChange={value => { update({ units: value }); setNumber(current => Math.min(current, value)); }} />
-                <NumberSetting key={`${work.id}:words:${work.words_per_chapter}`} label={`每${unit}字数`} min={300} max={3000} value={work.words_per_chapter} disabled={busy} onChange={value => update({ words_per_chapter: value })} /></div>
+                <NumberSetting key={`${work.id}:words:${work.words_per_chapter}`} label={`每${unit}字数`} min={300} max={isNovel ? 6000 : 3000} value={work.words_per_chapter} disabled={busy} onChange={value => update({ words_per_chapter: value })} /></div>
               {([['genres', '题材（最多3项）', 3], ['core', '核心设定（最多3项）', 3], ['styles', '风格（最多5项）', 5]] as const).map(([key, label, max]) => <TagField key={key + work.id} label={label} value={work.creative?.[key] || (key === "genres" ? [work.genre] : [])} max={max} disabled={busy} onChange={tags => update({ creative: { ...work.creative, [key]: tags }, ...(key === "genres" && tags.length ? { genre: tags.join(" / ").slice(0, 80) } : {}) })} />)}
               <label>核心亮点<textarea rows={2} maxLength={5000} disabled={busy} value={work.creative?.highlights || ""} onChange={e => update({ creative: { ...work.creative, highlights: e.target.value } })} /></label>
               {work.creative?.source_text && <details><summary>改编／改写原始素材（保留原文）</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}

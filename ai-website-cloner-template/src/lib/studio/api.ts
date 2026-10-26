@@ -23,6 +23,18 @@ export type World = WorldInput & {
   updated_at: number;
 };
 export type Chapter = { number: number; title: string; content: string };
+export type NovelSettings = {
+  form: "serial" | "short_story";
+  perspective: "third_limited" | "first_person" | "omniscient" | "multiple";
+  prose_style: "natural" | "immersive" | "literary" | "light";
+  pacing: "balanced" | "fast" | "slow_burn";
+};
+export type DramaSettings = {
+  format: "vertical_short" | "horizontal_short";
+  minutes_per_episode: number;
+  scene_density: "compact" | "balanced" | "multi_scene";
+  hook_style: "reversal" | "suspense" | "emotional";
+};
 export type WorkInput = {
   title: string;
   content_type: ContentType;
@@ -36,6 +48,8 @@ export type WorkInput = {
   world_id: string | null;
   audience: "general" | "male" | "female";
   words_per_chapter: number;
+  novel_settings?: NovelSettings | null;
+  drama_settings?: DramaSettings | null;
   market: "china";
   output_locale: "zh-CN";
   legacy_id?: string | null;
@@ -137,6 +151,8 @@ export function workPayload(work: Work): WorkInput {
     world_id,
     audience,
     words_per_chapter,
+    novel_settings,
+    drama_settings,
     market,
     output_locale,
     legacy_id,
@@ -158,6 +174,8 @@ export function workPayload(work: Work): WorkInput {
     world_id,
     audience,
     words_per_chapter,
+    novel_settings,
+    drama_settings,
     market,
     output_locale,
     legacy_id,

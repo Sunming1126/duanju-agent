@@ -42,6 +42,8 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 ## 剧本与小说创作
 
 - 四个步骤：故事设定、人物小传、大纲、正文。支持分步生成和一键生成设定、人物、大纲及全部计划正文（1至200单元）。
+- 新建页的类型由左侧入口固定，不再重复选择。小说提供作品形态、叙事视角、文风、节奏和独立主分类，默认每章2000字；剧本提供画幅、单集时长、场景密度和集尾钩子，默认每集800字。小说上限6000字，剧本上限3000字。细节与资料来源见`PLOTLOOM_WRITING_MODES.md`。
+- 两条生成路径按内容类型规范化旧mode；小说正文的场记／台词清单、缺少场次的剧本会标记失败而不覆盖作品。旧浏览器中的另一类型草稿保留可导出备份，不混入当前入口。
 - 生成前先保存编辑，结果存入独立生成稿，审阅后逐项或整稿采纳。版本变化会拒绝旧候选覆盖，候选仍能导出。失败不返回模板假结果。
 - “保存并进入下一步”衔接编辑；正文支持上一集／章、下一集／章及续写。计划数量不能小于已有正文的最大编号；数字输入确认有效后才修改保存值。
 - 新建表单在此浏览器保留草稿；已有作品自动保存，另有手动保存、离页保护及冲突备份。共享空间中，其他访客修改后的新版本不能被旧版本静默覆盖。
@@ -62,13 +64,13 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 在根目录，使用项目虚拟环境：
 
 ```powershell
-.venv\Scripts\python.exe -m pytest -q tests/test_inspiration.py tests/test_plotloom_mvp.py tests/test_studio.py test_market_features.py test_trilang_samples.py test_japan_adaptation.py
+.venv\Scripts\python.exe -m pytest -q tests/test_writing_modes.py tests/test_inspiration.py tests/test_plotloom_mvp.py tests/test_studio.py test_market_features.py test_trilang_samples.py test_japan_adaptation.py
 ```
 
 在前端目录：
 
 ```powershell
-node --test scripts/studio.test.mjs scripts/inspiration.test.mjs
+node --test scripts/studio.test.mjs scripts/inspiration.test.mjs scripts/writing.test.mjs
 npm run lint
 npm run typecheck
 npm run build -- --webpack

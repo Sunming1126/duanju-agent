@@ -78,6 +78,7 @@ with zipfile.ZipFile(sys.argv[1]) as archive:
     archive.extractall(target)
 PY
 test -f "$release/agent/studio_inspiration.py"
+test -f "$release/agent/studio_writing.py"
 test -f "$release/ai-website-cloner-template/src/components/studio/inspiration.tsx"
 mv "$release/data" "$release/seed-data"
 ln -s "$base/shared/data" "$release/data"
@@ -89,6 +90,10 @@ chown -hR plotloom-cn:plotloom-cn "$release"
 runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/studio.sqlite3" PYTHONPATH="$release" "$python" - <<'PY'
 import asyncio, json, httpx
 from studio_main import app
+from agent.studio_api import WorkInput
+from agent.studio_writing import validate_chapter_format
+novel = WorkInput(title='deployment mode check', content_type='novel', mode='新建剧本')
+assert novel.mode == '小说创作' and novel.novel_settings and not novel.drama_settings
 async def check():
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://localhost') as client:
         response = await client.get('/api/studio/status')

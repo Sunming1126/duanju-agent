@@ -136,6 +136,8 @@ class StudioStore:
             old = self.read(db, "works", ident)
             if old["revision"] != revision:
                 raise HTTPException(409, "作品已更新，请先重新加载；当前编辑内容可导出备份")
+            if data.get("content_type", old["content_type"]) != old["content_type"]:
+                raise HTTPException(409, "已创建作品的类型不能更改，请从对应入口创建新作品")
             if data.get("world_id") and data.get("world_id") != old.get("world_id"):
                 data["world_snapshot"] = world_payload(self.read(db, "worlds", data["world_id"]))
             updated = {**old, **data, "revision": revision + 1, "updated_at": now()}

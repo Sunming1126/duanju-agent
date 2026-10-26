@@ -28,6 +28,8 @@ def studio(tmp_path, monkeypatch):
 
     async def chat(messages, **kwargs):
         calls.append(messages)
+        if '专业中文短剧编剧' in messages[0]['content']:
+            return '场1 城门 日 外\n出场人物：女孩\n女孩推开城门，看见昨日留下的信。\n女孩：候选正文，我终于找到你了。'
         return '候选正文：她推开城门，看见昨日留下的信。'
 
     monkeypatch.setattr(api, 'get_kb', lambda: Knowledge())
