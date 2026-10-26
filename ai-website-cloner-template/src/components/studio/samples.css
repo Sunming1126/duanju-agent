@@ -1,0 +1,81 @@
+.sample-library,.sample-reader{max-width:1400px;min-width:0}
+.sample-library-heading{padding:16px 0 40px;border-bottom:1px solid #ffffff12}
+.sample-eyebrow{display:inline-flex;align-items:center;gap:8px;color:#c6b0e4;font-size:11px;letter-spacing:.13em}
+.sample-library-heading h1{font-size:clamp(30px,3.5vw,49px);font-weight:600;line-height:1.35;letter-spacing:-.025em;margin:20px 0;color:#f2edf8}
+.sample-library-heading p{font-size:14px;line-height:2;color:#aaa4b4}
+.sample-official-note{display:block;margin-top:20px;color:#8c8298;font-size:11px;line-height:1.8}
+.sample-filters{display:flex;gap:28px;align-items:center;margin:28px 0}
+.sample-filters a{display:inline-flex;gap:9px;align-items:center;font-size:13px;color:#a49aaf;padding:8px 0;border-bottom:2px solid transparent}
+.sample-filters a[aria-current=page]{color:#e4d5f6;border-color:#b395d6}
+.sample-filters span{font-size:10px;color:#8d809b}
+.sample-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.sample-card{--sample-accent:#dbbf91;background:linear-gradient(145deg,#31291c38,#151416 70%);border:1px solid #b597632f;border-radius:15px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.sample-card.is-drama{--sample-accent:#a7c8c6;background:linear-gradient(145deg,#1f38353b,#141718 70%);border-color:#80a8a02b}
+.sample-card-body{display:flex;flex-direction:column;flex:1;padding:28px;transition:background .2s}
+.sample-card-body:hover{background:#ffffff03}
+.sample-card-label{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:#8f8898}
+.sample-card-label>span:first-child{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--sample-accent)}
+.sample-card h2{font-size:clamp(24px,2.4vw,32px);font-weight:600;line-height:1.4;color:#f3edf7;margin:25px 0 14px;overflow-wrap:anywhere}
+.sample-logline{font-size:13px;color:#b1a9b8;line-height:1.9;min-height:3.8em}
+.sample-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px}
+.sample-tags>span{font-size:10px;color:#b6aebf;border:1px solid #ffffff14;padding:4px 8px;border-radius:5px;line-height:1.5}
+.sample-card-learn{border-top:1px solid #ffffff0e;margin-top:25px;padding-top:19px}
+.sample-card-learn>span{font-size:10px;color:#867b92}
+.sample-card-learn p{font-size:11px;line-height:1.9;color:#b0a2bc;margin-top:7px}
+.sample-card-footer{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-top:auto;padding-top:25px;font-size:10px;color:#8b8195}
+.sample-card-footer strong{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--sample-accent);font-weight:500}
+.sample-card-download{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;font-size:11px;color:#a79aaf;border-top:1px solid #ffffff0d}
+.sample-card-download:hover{color:#f1e6fd;background:#ffffff04}
+.sample-library-note{font-size:12px;color:#8a8095;line-height:2;max-width:720px;margin-top:30px}
+.sample-back{display:inline-flex;align-items:center;gap:8px;color:#a99ab9;font-size:12px;line-height:1.8}
+.sample-reader-heading{border-bottom:1px solid #ffffff15;padding:35px 0;margin-bottom:32px}
+.sample-reader-heading h1{font-size:clamp(30px,4vw,48px);font-weight:600;line-height:1.4;color:#f0e9f7;margin:18px 0}
+.sample-reader-heading>p{font-size:14px;line-height:2;color:#afa5bb;max-width:760px}
+.sample-reader-heading.is-novel .sample-eyebrow{color:#dbbf91}
+.sample-reader-heading.is-drama .sample-eyebrow{color:#a7c8c6}
+.sample-reader-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:25px}
+.sample-reader-actions a{display:inline-flex;align-items:center;gap:8px;font-size:12px;min-height:42px}
+.sample-reading-layout{display:grid;grid-template-columns:170px minmax(0,780px);gap:40px;align-items:start}
+.sample-contents{position:sticky;top:120px;display:flex;flex-direction:column;gap:3px;border-left:1px solid #ffffff16;padding-left:15px}
+.sample-contents>span{font-size:10px;color:#7c6e8e;letter-spacing:.1em;padding:0 8px 16px}
+.sample-contents a{font-size:12px;line-height:1.8;color:#a798b6;padding:7px 8px;border-radius:4px;overflow-wrap:anywhere}
+.sample-contents a:hover{color:#eee3fa;background:#ffffff06}
+.sample-contents .sample-chapter-link{font-size:10px;color:#8c7a9e;padding-left:19px}
+.sample-reading-body{min-width:0}
+.sample-section{scroll-margin-top:115px;margin-bottom:50px;padding-bottom:38px;border-bottom:1px solid #ffffff12}
+.sample-section-number{font-size:10px;letter-spacing:.14em;color:#8c76a7}
+.sample-section>h2{font-size:24px;font-weight:600;margin:12px 0 22px;color:#e5daef}
+.sample-text{font-size:14px;line-height:2.05;color:#bbb0c6;white-space:pre-wrap;overflow-wrap:anywhere}
+.sample-setting-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:28px;padding:24px;border:1px solid #ffffff12;background:#ffffff02;border-radius:10px}
+.sample-setting-grid dt{font-size:10px;color:#8f7ca3;margin-bottom:8px}
+.sample-setting-grid dd{font-size:12px;color:#c2b3d0;line-height:1.9;overflow-wrap:anywhere}
+.sample-setting-wide{grid-column:1/-1}
+.sample-world{margin-top:20px;color:#a898b8;font-size:12px;line-height:1.9}
+.sample-world summary{cursor:pointer;padding:8px 0}
+.sample-world>p,.sample-world>div{margin-top:15px}
+.sample-world h3{font-size:12px;color:#d1bddf;margin-bottom:6px}
+.sample-world .sample-text{font-size:12px}
+.sample-character-list,.sample-outline{display:grid;gap:16px}
+.sample-character-list p,.sample-outline p{font-size:14px;line-height:2;color:#b9adC5;overflow-wrap:anywhere;border-left:2px solid #9b79c333;padding-left:20px}
+.sample-chapter{scroll-margin-top:115px;padding-top:16px;margin-top:35px}
+.sample-chapter>span{font-size:10px;letter-spacing:.15em;color:#ac967a}
+.sample-chapter>h3{font-size:22px;margin:12px 0 28px;color:#e5d7c4;font-weight:500}
+.sample-prose{font-size:16px;line-height:2.2;letter-spacing:.015em;color:#d2cbd7;white-space:pre-wrap;overflow-wrap:anywhere}
+.sample-chapter.is-novel .sample-prose{font-family:"Noto Serif SC","Songti SC","SimSun",serif}
+.sample-chapter.is-drama{background:#181f2038;padding:22px;border-radius:12px;border:1px solid #9bbeb31c}
+.sample-chapter.is-drama>h3{color:#bdd3ce}
+.sample-chapter.is-drama>span{color:#7fa49b}
+.sample-chapter.is-drama .sample-prose{font-size:14px;line-height:2.05;color:#b9c7c5}
+.sample-lessons{display:grid;gap:24px}
+.sample-lessons>div{padding-left:35px;position:relative}
+.sample-lessons span{position:absolute;left:0;top:2px;font-size:11px;color:#9076a7}
+.sample-lessons h3{font-size:15px;color:#d0bedf;margin-bottom:8px}
+.sample-lessons p{font-size:13px;color:#a899b8;line-height:1.9}
+.sample-reading-end{padding:28px;background:linear-gradient(120deg,#33243f70,#1d192960);border:1px solid #b995df2b;border-radius:13px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.sample-reading-end h2{font-size:24px;color:#e0d2ee;font-weight:600;width:100%}
+.sample-reading-end p{font-size:13px;line-height:1.9;color:#aa98bb;width:100%}
+.sample-reading-end .pill{font-size:12px;display:inline-flex;gap:8px;align-items:center}
+.sample-library a:focus-visible,.sample-reader a:focus-visible,.sample-reader summary:focus-visible{outline:2px solid #d3b2f1;outline-offset:4px}
+@media(max-width:1100px){.sample-reading-layout{grid-template-columns:140px minmax(0,1fr);gap:24px}.sample-card-body{padding:23px}.sample-card h2{font-size:26px}}
+@media(max-width:850px){.sample-grid{grid-template-columns:1fr}.sample-reading-layout{display:block}.sample-contents{position:static;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;margin-bottom:30px;padding:12px;border:1px solid #ffffff12;border-radius:8px}.sample-contents>span{width:100%;padding:0 8px 8px}.sample-contents .sample-chapter-link{display:none}.sample-logline{min-height:0}}
+@media(max-width:600px){.sample-library-heading{padding:14px 0 28px}.sample-library-heading h1{font-size:32px}.sample-library-heading p{font-size:12px}.sample-official-note{font-size:10px}.sample-card-body{padding:22px}.sample-reader-heading{padding:26px 0}.sample-reader-heading h1{font-size:32px}.sample-reader-heading>p{font-size:13px}.sample-reader-actions{gap:10px}.sample-setting-grid{padding:17px;gap:18px}.sample-setting-grid>div{grid-column:1/-1}.sample-prose{font-size:16px;line-height:2.1}.sample-section{margin-bottom:35px;padding-bottom:28px}.sample-chapter.is-drama{padding:16px}.sample-reading-end{padding:20px}.sample-reader-actions .pill{padding:12px 16px}}

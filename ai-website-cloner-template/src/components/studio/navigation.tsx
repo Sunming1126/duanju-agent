@@ -3,7 +3,7 @@
 import Link, { useLinkStatus } from "next/link";
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { BookOpen, FileText, Globe2, Library, Settings2, SquarePen } from "lucide-react";
+import { BookOpen, FileText, Globe2, Library, Settings2, SquarePen, BookMarked } from "lucide-react";
 
 const ModelSettings = dynamic(() => import("./model-settings").then(module => module.ModelSettings));
 
@@ -17,7 +17,7 @@ export function StudioNav({ selected = "" }: { selected?: string }) {
   const [open, setOpen] = useState(false);
   const items = [
     ["/workspace", "我的作品", FileText], ["/studio/scripts/new", "剧本创作", SquarePen],
-    ["/studio/novels/new", "小说创作", BookOpen], ["/worlds", "世界模型", Globe2], ["/corpus", "语料参考", Library],
+    ["/studio/novels/new", "小说创作", BookOpen], ["/samples", "官方样例", BookMarked], ["/worlds", "世界模型", Globe2], ["/corpus", "语料参考", Library],
   ] as const;
   return <aside className={`studio-sidebar plotloom-nav ${open ? "is-open" : ""}`}><div className="sidebar-label">PLOTLOOM · 中文创作</div>
     <button className="plotloom-nav-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "收起导航" : "展开导航"} · {selected || "创作空间"}</button>

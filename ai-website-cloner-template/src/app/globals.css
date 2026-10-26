@@ -2252,6 +2252,10 @@ img {
 @media(prefers-reduced-motion:reduce) { .inspiration-spinner { animation: none; } }
 
 .writing-options { display: grid; gap: 18px; padding: 22px; background: #19151f; border: 1px solid #aa8bd92b; border-radius: 12px; }
+.sample-new-entry{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:-12px 0 24px;font-size:12px;line-height:1.9;color:#9c8fa9}
+.sample-new-entry a{color:#ceb1ea;text-decoration:underline;text-underline-offset:4px}
+.sample-new-entry a:focus-visible{outline:2px solid #ceb1ea;outline-offset:4px}
+@media(max-width:600px){.site-header .header-reference-link{display:none}}
 .writing-options h3 { font-size: 17px; margin-bottom: 6px; color: #e2d5f0; }
 .writing-option-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
 .writing-option-grid label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #a7a0b4; }

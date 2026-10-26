@@ -8,12 +8,16 @@ import { Inspiration } from "./inspiration";
 import { WritingOptions } from "./writing-options";
 import { novelGenres, dramaGenres, creationDraftKeys } from "@/lib/studio/writing";
 
-export function WorkForm({ mode, kind, worlds, reference, sections = [], onCreated, onClose }: {
+export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleId, sampleInput, onCreated, onClose }: {
   mode: string; kind?: ContentType; worlds: World[]; reference?: Reference; sections?: Section[];
+  sampleId?: string; sampleInput?: WorkInput;
   onCreated: (work: Work, generate: boolean) => void | Promise<void>; onClose: () => void;
 }) {
   const initialType: ContentType = kind || reference?.content_type || (mode === "小说创作" ? "novel" : "short_drama");
-  const [draft, setDraft] = useState(() => initialCreationDraft(initialType, reference));
+  const [draft, setDraft] = useState(() => {
+    const initial = initialCreationDraft(initialType, reference);
+    return sampleInput ? applyInspiration(initial, sampleInput) : initial;
+  });
   const [inspiration, setInspiration] = useState(mode === "灵感策划" || mode === "灵感创作");
   const [backup, setBackup] = useState<CreationDraft>();
   const [error, setError] = useState("");
@@ -24,14 +28,15 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], onCreat
   const lock = useRef(false);
   const snapshotRef = useRef(draft);
   const restoredKey = useRef("");
-  const storageKey = `plotloom-new-${initialType}-${mode}-${reference?.id || "original"}`;
+  const draftSourceId = sampleId ? `official-${sampleId}` : reference?.id;
+  const storageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}`;
 
   useEffect(() => {
     let disposed = false;
     void Promise.resolve().then(() => {
       if (disposed) return;
       try {
-        const sourceKey = creationDraftKeys(initialType, mode, reference?.id).find(key => localStorage.getItem(key)) || storageKey;
+        const sourceKey = creationDraftKeys(initialType, mode, draftSourceId).find(key => localStorage.getItem(key)) || storageKey;
         const raw = localStorage.getItem(sourceKey);
         if (raw) {
           const cached = JSON.parse(raw) as CreationDraft;
@@ -51,7 +56,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], onCreat
       setReady(true);
     });
     return () => { disposed = true; };
-  }, [storageKey, initialType, reference, mode]);
+  }, [storageKey, initialType, reference, mode, draftSourceId]);
 
   useEffect(() => {
     snapshotRef.current = draft;
@@ -96,6 +101,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], onCreat
   return <>
     <div className="inspiration-entry"><div><span className="inspiration-eyebrow"><Sparkles size={16} /> 灵感创作</span><h2>有一个念头，还没想好怎么写？</h2><p>用自然语言描述想法，获得三个可修改的方案，再自动填写创作设定。</p></div><button type="button" className="inspiration-primary" disabled={busy || !ready} onClick={() => setInspiration(true)}><Sparkles size={17} /> 开始灵感创作</button></div>
     <form className="create-form studio-form" onSubmit={submit}>
+      {sampleInput && <p className="studio-inline-notice">已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
       <p className="modal-description">确认下面的设定后，点击“创建并 AI 生成”完善故事设定，再依次生成人物、大纲和正文。也可先创建草稿。</p>
       {notice && <p className="studio-inline-notice" role="status">{notice}{backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}</p>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}

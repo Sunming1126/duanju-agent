@@ -13,7 +13,8 @@ export function Header({ workspace = false }: { workspace?: boolean }) {
     <span className="preview-badge">中文创作空间</span>
     <nav aria-label="主导航">
       {workspace ? <Link href="/" className="text-link"><ArrowLeft size={14} /> 返回首页</Link> : <>
-        <Link href="/corpus" className="text-link">语料参考</Link>
+        <Link href="/samples" className="text-link">官方样例</Link>
+        <Link href="/corpus" className="text-link header-reference-link">语料参考</Link>
       </>}
       <Link className="pill light" href="/workspace">{workspace ? "我的作品" : "创作工作台"}</Link>
     </nav>

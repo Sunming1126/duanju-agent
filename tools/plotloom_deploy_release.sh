@@ -109,6 +109,7 @@ PY
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund
 runuser -u plotloom-cn -- env PATH="$PATH" npm run lint
+runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs
 runuser -u plotloom-cn -- env PATH="$PATH" DUANJU_BACKEND_URL=http://127.0.0.1:8766 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=1024 npm run build -- --webpack
 grep -R -q 'inspiration-flow' .next/static/chunks
 test "$(readlink -f "$base/current")" = "$old"
@@ -171,9 +172,31 @@ with sqlite3.connect('file:' + backup + '?mode=ro', uri=True) as previous, sqlit
         if previous.execute("SELECT 1 FROM sqlite_master WHERE name=?", (table,)).fetchone():
             assert current.execute('SELECT count(*) FROM ' + table).fetchone()[0] >= previous.execute('SELECT count(*) FROM ' + table).fetchone()[0], table
 for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
-    for path in ('/', '/concepts', '/workspace', '/worlds', '/studio/scripts/new', '/studio/novels/new'):
+    for path in ('/', '/concepts', '/workspace', '/worlds', '/studio/scripts/new', '/studio/novels/new', '/samples', '/samples?type=novel', '/samples?type=short_drama'):
         with urlopen(base + path, timeout=30) as response:
             assert response.status == 200
+    for slug, kind in (('last-light', 'novels'), ('platform-seven', 'novels'), ('receipt', 'scripts'), ('rain-check', 'scripts')):
+        with urlopen(base + '/samples/' + slug, timeout=30) as response:
+            body = response.read().decode('utf-8')
+            assert response.status == 200 and 'id="chapter-3"' in body and 'id="notes"' in body
+        with urlopen(base + '/samples/' + slug + '/download', timeout=30) as response:
+            document = response.read().decode('utf-8-sig')
+            assert response.status == 200 and len(document) > 1000
+            assert 'attachment;' in response.headers.get('Content-Disposition', '')
+            assert 'charset=utf-8' in response.headers.get('Content-Type', '')
+            assert 'AI辅助创作' in document and ('第3章' if kind == 'novels' else '第3集') in document
+        with urlopen(base + '/studio/' + kind + '/new?sample=' + slug, timeout=30) as response:
+            body = response.read().decode('utf-8')
+            assert response.status == 200 and '我的版本' in body and '已载入官方样例设定' in body
+    for path in ('/samples/not-a-sample/download', '/studio/novels/new?sample=receipt', '/studio/scripts/new?sample=last-light'):
+        try:
+            with urlopen(base + path, timeout=30) as response:
+                body = response.read().decode('utf-8')
+                # Next's loading boundary can stream a notFound() page as 200.
+                assert '/download' not in path and 'NEXT_HTTP_ERROR_FALLBACK;404' in body
+                assert '已载入官方样例设定' not in body, path
+        except HTTPError as error:
+            assert error.code == 404, (path, error.code)
     with urlopen(base + '/api/backend/studio/status', timeout=30) as response:
         assert json.load(response)['llm_ready']
     for path, payload, expected in (('/api/backend/studio/inspirations', b'{}', (422,)), ('/api/backend/llm/config', b'{}', (403,404,405)), ('/api/llm/config', b'{}', (403,404,405))):
@@ -184,7 +207,7 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
             assert error.code in expected, (path, error.code)
 with urlopen('https://juben.onesay.top', timeout=30) as response:
     assert response.status == 200
-print('Source hashes, retained database records, public pages, inspiration proxy and admin boundaries passed.')
+print('Source hashes, retained database records, official samples/downloads/drafts, public pages, inspiration proxy and admin boundaries passed.')
 PY
 for service in "${services[@]}"; do systemctl is-active --quiet "$service"; done
 test "$(systemctl show duanju-agent -p MainPID --value)" = "$legacy_pid"

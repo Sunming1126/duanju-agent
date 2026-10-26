@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "@/components/sites/storyplay/shared";
 import { backendRequest as api, jsonBody, workPayload, downloadText, localExport, unitLabel,
-  type Work, type World, type StudioStatus, type Action, type Reference, type WorldInput, type Candidate } from "@/lib/studio/api";
+  type Work, type WorkInput, type World, type StudioStatus, type Action, type Reference, type WorldInput, type Candidate } from "@/lib/studio/api";
 import { WorkForm } from "./work-form";
 import { StudioNav } from "./navigation";
 import { worldDraftChecksum } from "@/lib/studio/world-codec";
@@ -18,8 +18,8 @@ type Job = { id: string; status: string; completed: number; total: number; error
 const baseLabels = { premise: "故事设定", characters: "人物小传", outline: "大纲", chapter: "正文", world: "作品世界" };
 const active = ["queued", "running", "stopping"];
 
-export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" }: {
-  id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string;
+export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "", sampleId, sampleInput }: {
+  id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string; sampleId?: string; sampleInput?: WorkInput;
 }) {
   const router = useRouter();
   const [work, setWork] = useState<Work | null>(null);
@@ -231,7 +231,8 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "" 
       {recovery && <button className="outline-button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button>}
       {!id && !referenceReady ? <p role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <>
         <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1><span className="studio-hint">{isNovel ? "01 小说设定 → 02 人物档案 → 03 章节大纲 → 04 小说正文" : "01 剧本设定 → 02 人物小传 → 03 分集大纲 → 04 分场剧本"}</span></div>
-        <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${creation}:${reference?.id}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
+        <p className="sample-new-entry">还不确定从哪里开始？<Link href={`/samples?type=${kind}`}>先读一份官方{isNovel ? "小说" : "剧本"}样例 →</Link></p>
+        <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
           if (auto) {
             try { await api(`/studio/works/${value.id}/jobs`, { method: "POST", body: jsonBody({ revision: value.revision, action: "premise", request_key: `create-${value.id}` }) }); }
             catch { try { localStorage.setItem(`plotloom-create-warning-${value.id}`, "草稿已创建，生成未确认提交，请查看任务列表后手动生成。"); } catch { /* The saved work must still open. */ } }
