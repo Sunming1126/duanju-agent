@@ -109,6 +109,33 @@ def test_manual_edit_invalidates_analysis_and_requires_current_revision(setup):
     assert client.put(url, json=payload).status_code == 409
 
 
+def test_model_plan_metadata_is_discarded_without_changing_server_ids(setup):
+    _, service, client = setup
+    service.create(body())
+    enriched = [{**p, "story_note": "", "id": "model-id", "chapters": ["untrusted"]} for p in plans()]
+    session, calls = run(service, {"plans": enriched})
+    assert session["job"]["status"] == "completed" and len(calls) == 1
+    assert all(set(p) == {"id", "title", "summary", "story"} and p["id"] != "model-id" for p in session["plans"])
+    previous = copy.deepcopy(session["plans"])
+    action(service, session, "revise", feedback="更温暖")
+    updated, _ = run(service, {**plans()[0], "id": "replacement-id", "story_note": "模型附言"})
+    assert updated["job"]["status"] == "completed"
+    assert updated["plans"][0]["id"] == previous[0]["id"]
+    assert updated["plans"][1:] == previous[1:]
+    plan = updated["plans"][0]
+    payload = {k: v for k, v in plan.items() if k != "id"} | {"revision": updated["revision"], "story_note": "manual extra"}
+    assert client.put(f"/api/studio/inspirations/{updated['id']}/plans/{plan['id']}", json=payload).status_code == 422
+
+
+@pytest.mark.parametrize("invalid", [{"summary": "缺少故事", "story_note": "备注"}, "not an object"])
+def test_model_metadata_never_replaces_required_plan_fields(setup, invalid):
+    _, service, _ = setup
+    service.create(body())
+    session, calls = run(service, {"plans": [invalid, *plans()[1:]]})
+    assert session["job"]["status"] == "failed" and session["plans"] == []
+    assert len(calls) == 1
+
+
 def test_idempotency_before_and_after_completion_and_conflicting_keys(setup):
     _, service, _ = setup
     payload = body()

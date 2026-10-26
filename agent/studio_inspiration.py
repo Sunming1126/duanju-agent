@@ -226,13 +226,13 @@ def messages_for(job):
     plan_shape = {"title": "方案名称", "summary": "一句话卖点", "story": "不少于150字的方案，包含主角、目标、冲突、世界背景、主线与结局方向"}
     action = job["action"]
     if action == "generate":
-        task = f"提出恰好三个差异明显的原创方案。只返回JSON：{json.dumps({'plans': [plan_shape] * 3}, ensure_ascii=False)}"
+        task = f"提出恰好三个差异明显的原创方案。每个方案仅包含title、summary、story，不要添加备注或其他字段。只返回JSON：{json.dumps({'plans': [plan_shape] * 3}, ensure_ascii=False)}"
         context = source
     else:
         selected = InspirationStore.plan(session, job["input"]["plan_id"])
         context = {"原始想法与偏好": source, "用户选定方案": selected, "修改要求": job["input"].get("feedback", "")}
         if action == "revise":
-            task = f"按修改要求完善这一方案，保留未要求改变的设定。只返回JSON：{json.dumps(plan_shape, ensure_ascii=False)}"
+            task = f"按修改要求完善这一方案，保留未要求改变的设定。仅包含title、summary、story，不返回id或备注。只返回JSON：{json.dumps(plan_shape, ensure_ascii=False)}"
         else:
             task = ('解析选定方案并补齐创作表单，只返回JSON对象，字段为：title（1至80字）、genre（题材）、'
                     'premise（完整故事想法，不少于50字）、audience（general/male/female）、units（1至200）、'
@@ -250,6 +250,14 @@ def messages_for(job):
             {"role": "user", "content": json.dumps(context, ensure_ascii=False) + "\n任务：" + task}]
 
 
+def parse_model_plan(data):
+    # Provider-added notes must not invalidate an otherwise complete plan. Project
+    # only these three fields; model IDs and executable/work fields never persist.
+    if not isinstance(data, dict):
+        raise ValueError("模型方案必须是对象")
+    return Plan.model_validate({key: data[key] for key in ("title", "summary", "story") if key in data}).model_dump()
+
+
 def parse_result(job, raw):
     from .studio_api import WorkInput
     clean = raw.strip()
@@ -260,12 +268,12 @@ def parse_result(job, raw):
         plans = data.get("plans")
         if not isinstance(plans, list) or len(plans) != 3:
             raise ValueError("模型未返回恰好三个完整方案")
-        result = [Plan.model_validate(p).model_dump() for p in plans]
+        result = [parse_model_plan(p) for p in plans]
         if len({p["story"] for p in result}) != 3 or len({p["title"] for p in result}) != 3:
             raise ValueError("模型返回了重复方案，请手动重试")
         return result
     if job["action"] == "revise":
-        return Plan.model_validate(data).model_dump()
+        return parse_model_plan(data)
     # Only allow form fields; the model cannot create manuscripts, links or references.
     required = {"title", "genre", "premise", "audience", "units", "words_per_chapter", "creative", "world_snapshot"}
     allowed = required | {"novel_settings", "drama_settings"}
