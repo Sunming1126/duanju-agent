@@ -1,5 +1,16 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-27 三请求并发与浏览器隔离
+
+- 运行源码：`3be631ec36f4a8187924c8439bba757b5d7c7f12`，继续使用原服务器模型Key。`llm_config.json`的发布前后文件指纹一致，额外测试凭据没有写入或启用。首次GitHub同步因连接重置／超时失败；从明确的本地已提交版本打包部署，远端同步后续重试，不能据发布成功推断GitHub当时已更新。
+- 源码包SHA-256：`de6da918389673fe7e34a353aed2b1fd2801638c998528915c84a7aab711c108`；release：`/opt/plotloom-cn/releases/20261027T041838Z-inspiration-3be631ec`；上版：`/opt/plotloom-cn/releases/20261026T073609Z-inspiration-b9640296`；数据库备份：`/opt/plotloom-cn/backups/studio-20261027T041838Z-inspiration.sqlite3`（0600）；旧目标记录：`backups/previous-20261027T041838Z-inspiration.txt`。
+- 本机115项后端／市场、27项前端及lint／类型通过，本地生产构建通过。新release隔离接口检查、Linux样例测试、lint／类型／生产构建、队列空闲、SQLite备份与原子切换通过，输出DEPLOYMENT_OK。源码哈希、数据库quick_check与原作品／世界／候选／任务保留、样例／下载／回填、其他主要入口和管理边界均通过。
+- 公网补充验收：两个独立Cookie会话，安全Cookie属性及身份持久；匿名私有读取401，新空间作品／世界／历史为空；跨空间读取、备份、导出、候选、任务列表、删除、归档和任务创建404；外站Origin写入403、正式站点同源归档200；响应禁止缓存，状态接口报告最多3个模型请求。一份明确标记的临时记录在测试空间创建后删除，原用户数据不变，无真实模型调用。
+- 原共享记录仍保留待领取，不自动分配给新访客。一次性恢复码位于`/opt/plotloom-cn/shared/data/studio/legacy-claim-code.txt`（0600），日志只记录路径；数据库仅保存摘要，本次没有使用恢复码。私下提供给原用户后，在其常用浏览器“我的空间 → 恢复以前的共享作品”领取。不要把恢复码写入Git、公开文档或聊天。
+- 三个中文版服务active，旧duanju-agent MainPID仍1948834，日文站200；未改Nginx、systemd或其他项目。没有回滚，没有恢复旧数据库覆盖作品。
+- **回滚边界改变**：本次上一版没有浏览器隔离，私有记录出现后不得直接回到该程序，否则会重新公开数据。发布器会拒绝这种不安全的自动回退并保留数据；应发布修复后的隔离版本。旧release及SQLite备份保留供维护，不能用旧SQLite覆盖新增作品。细节见`PLOTLOOM_CONCURRENCY_AND_SPACES.md`。
+- 未运行浏览器预览；接口及模拟调度通过，不等于长期多人／长篇真实模型负载和完整人工交互验收。
+
 ## 2026-10-24 第一阶段（北京时间）
 
 - 基线：task/creative-studio-cn / 2b3cf2e，加本次安全与展示清理。
