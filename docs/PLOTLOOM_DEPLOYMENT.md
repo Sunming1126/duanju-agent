@@ -152,6 +152,15 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 本地42项前端测试、lint、类型和构建通过；发布后以线上代码复验20项灵感状态／标签测试通过。公网小说、剧本新建页及作品库200，发布脚本包含新进度／结果入口与逐行标签提示，旧草稿提示和作品库多余标题文案不存在。未启动浏览器或调用付费模型，不将上述检查视为真实点击／视觉验收。
 - 旧版已回填且含逗号的草稿如果仍提示标签超限，应在同一浏览器打开原灵感解析结果并重新确认回填；旧版已拼接文本无法可靠推断项目边界，回填前表单保留备份。回滚须先核对 current，仅切回保留私人空间能力的上一版并保留 shared/data，不用旧 SQLite 覆盖新作品。
 
+## 2026-10-28 常驻四步流程与人物卡片发布
+
+- 用户明确授权部署到 https://jubencn.onesay.top 。运行源码为 `bacd11ef3be8362c423910fcc02f7934503d5290`，包含新建与编辑页常驻四步导航、四阶段预填／先保存再生成、人物卡片与关系编辑、旧文本兼容及教程更新。成功start同步并重新检查线上c00860fa及实际服务后，使用现有发布器执行。
+- 源码包 `plotloom-20261027T234700Z-bacd11ef3be8.zip`，SHA-256 `4a67f702cd7add778b0bd0c4ec102fb53b1ee1873060bf2179fe8afedc996514`；runner SHA-256 `f35833b65875371282ce2deec73437c35fd922033bb32d6af36dac1f2847439d`。只打包Git已提交文件，SCP上传后校验双哈希，未上传本机作品或配置。
+- release：`/opt/plotloom-cn/releases/20261027T234740Z-inspiration-bacd11ef`（北京时间10月28日07:47）；上版：`/opt/plotloom-cn/releases/20261027T055012Z-inspiration-c00860fa`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261027T234740Z-inspiration.sqlite3`，权限0600；旧目标记录：`backups/previous-20261027T234740Z-inspiration.txt`。
+- 本机115项后端与53项前端检查、lint／类型通过；服务器隔离接口、16项样例／创作流程检查、lint／类型及webpack生产构建通过。队列空闲后备份并原子切换，发布器返回DEPLOYMENT_OK；源文件哈希、SQLite完整性及旧记录保留、主要页面、十份样例阅读／下载／回填、匿名401及管理边界检查通过，无回滚。
+- 公网补验小说和剧本新建页均有四个流程页签、唯一当前步骤和新创建按钮；CSS有桌面80px／窄屏68px的sticky定位，已发布脚本含人物关系、角色新增／删除及年龄编辑；教程文案更新。报告 `data/workflow-deployment-live-report.json`仅在本机忽略目录。未启动浏览器，不将HTML和资源检查当作实际滚动、触屏或视觉验收。
+- 部署后current与RELEASE_COMMIT匹配bacd11ef，中文api／worker／web及旧站均active，旧站PID1948834未变。没有付费模型调用或用户作品操作；shared/data、模型配置、恢复码、Nginx与systemd保持。回滚前须确认current仍为本次release，仅按既有流程切回c00860fa并重启中文版服务，保留共享数据，不恢复旧SQLite覆盖新作品。
+
 ## 2026-10-28 创作页顶部与四步导航精简发布
 
 - 用户明确授权“部署一下”，发布目标为 https://jubencn.onesay.top 。成功 start 同步；实际运行源码 `8141b6ef6f5d0f63c3e82c75170c300afaad6917`，相对服务器原版本 `bacd11ef3be8362c423910fcc02f7934503d5290` 仅改变前端及文档，后端代码不变。Mac 使用本机既有 `onesay-server` SSH 别名，上传已提交 Git 源码包并调用包内原版发布 runner，不上传本机数据或配置。
