@@ -113,7 +113,17 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
           <label>{type === "novel" ? "每章目标字数" : "每集剧本字数"}<input name="words" type="number" min={300} max={type === "novel" ? 6000 : 3000} required value={draft.words} onChange={e => update({ words: e.target.value })} /></label></div>
         <div className="form-row"><label>目标受众<select name="audience" value={draft.audience} onChange={e => update({ audience: e.target.value as CreationDraft["audience"] })}><option value="general">不限</option><option value="male">男性向</option><option value="female">女性向</option></select></label>
           <label>从世界库复制<select name="world_id" value={draft.world_id} onChange={e => { const item = worlds.find(w => w.id === e.target.value); update({ world_id: item?.id || "", world_snapshot: item ? { name: item.name, description: item.description, sections: { ...item.sections } } : null }); }}><option value="">{world ? "使用下方作品专属世界" : "暂不绑定"}</option>{worlds.map(w => <option value={w.id} key={w.id}>{w.name} · v{w.revision}</option>)}</select></label></div>
-        <div className="form-row"><label>自定义题材（最多3项）<input name="genres" maxLength={240} value={draft.genres} onChange={e => update({ genres: e.target.value })} placeholder="留空使用上方题材，逗号分隔" /></label><label>核心设定（最多3项）<input name="core" maxLength={240} value={draft.core} onChange={e => update({ core: e.target.value })} placeholder="时间循环，身份错位" /></label><label>风格（最多5项）<input name="styles" maxLength={400} value={draft.styles} onChange={e => update({ styles: e.target.value })} placeholder="温暖，悬疑" /></label></div>
+        <div className="form-row">{([ ["genres", "自定义题材", 3, "留空使用上方题材"], ["core", "核心设定", 3, "如：时间循环"], ["styles", "风格", 5, "如：温暖"] ] as const).map(([field, label, max, placeholder]) => {
+          const source = draft.tag_source?.[field];
+          const needsConfirmation = draft.tag_format === "lines" && Array.isArray(source) && source.some(s => typeof s === "string" && /[\r\n]/.test(s)) && source.join("\n") !== draft[field];
+          return <label key={field}>{label}（最多{max}项）
+            {draft.tag_format === "lines"
+              ? <textarea name={field} rows={3} value={draft[field]} onChange={e => update({ [field]: e.target.value })} placeholder={`${placeholder}，每行一项`} />
+              : <input name={field} value={draft[field]} onChange={e => update({ [field]: e.target.value })} placeholder={`${placeholder}，逗号分隔`} />}
+            {draft.tag_format === "lines" && <small className="studio-hint">每行一项，可在内容中使用逗号</small>}
+            {needsConfirmation && draft.tag_source && <><small className="studio-hint">原始项目内含换行，请检查并将每项整理为一行。</small><button type="button" className="text-button" onClick={() => update({ tag_source: { ...draft.tag_source!, [field]: [] } })}>已整理，确认标签分隔</button></>}
+          </label>;
+        })}</div>
         <label>{type === "novel" ? "阅读看点与人物成长" : "视觉钩子与反转亮点"}<textarea name="highlights" rows={3} maxLength={5000} value={draft.highlights} onChange={e => update({ highlights: e.target.value })} placeholder={type === "novel" ? "读者为什么会关心主角？主角将经历怎样的变化？" : "开场怎样抓住观众？每集靠什么冲突和反转推动？"} /></label>
         <label>{mode === "小说改编" ? "小说素材与改编方向" : mode === "剧本改写" ? "已有原稿与改写方向" : "故事想法"}<textarea rows={7} maxLength={50000} value={draft.premise} onChange={e => update({ premise: e.target.value })} placeholder="人物是谁？想要什么？会遇到怎样的冲突？" /></label>
         {draft.source_text && ["小说改编", "剧本改写"].includes(mode) && <details><summary>回填前的原始素材（创建作品时一并保留）</summary><pre className="plotloom-pre">{draft.source_text}</pre></details>}

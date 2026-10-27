@@ -2205,6 +2205,7 @@ img {
 .inspiration-spinner { flex-shrink: 0; animation: inspiration-spin 1.5s linear infinite; }
 @keyframes inspiration-spin { to { transform: rotate(360deg); } }
 .inspiration-plan-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; align-items: stretch; }
+.inspiration-plan-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
 .inspiration-plan { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 22px; border: 1px solid #ffffff1f; border-radius: 16px; background: #19191f; }
 .inspiration-plan.selected { border-color: #ab7fe2; box-shadow: 0 0 0 1px #ab7fe230; }
 .inspiration-plan-number { font-size: 11px; color: #b79ad9; letter-spacing: .08em; }

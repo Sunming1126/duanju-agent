@@ -26,6 +26,68 @@ const analysis = (type) => ({
   market: "china", output_locale: "zh-CN", reference_ids: [],
 });
 
+const analyzedSession = (overrides = {}) => ({
+  id: "session-1", revision: 2,
+  input: { content_type: "novel", prompt: "故事", audience: "general", genres: "", core: "", styles: "" },
+  plans: [{ id: "plan-1", title: "钟城来信", summary: "未来的信", story: "修表师收到来自未来的信。" }],
+  analysis: analysis("novel"), analyzed_plan_id: "plan-1",
+  job: { id: "job-1", action: "analyze", status: "completed", error: "" },
+  ...overrides,
+});
+
+test("completed analysis is shown immediately, including when a saved session is restored", () => {
+  const session = analyzedSession();
+  assert.equal(helpers.showInspirationAnalysis(session, null, false), true);
+  assert.equal(helpers.showInspirationAnalysis(JSON.parse(JSON.stringify(session)), null, false), true);
+  assert.equal(helpers.showInspirationAnalysis(undefined, null, false), false);
+  assert.equal(helpers.showInspirationAnalysis({ ...session, analysis: null }, null, false), false);
+});
+
+test("returning to plans hides that result while a later completed analysis can appear", () => {
+  const session = analyzedSession();
+  assert.equal(helpers.showInspirationAnalysis(session, session.job.id, false), false);
+  const next = analyzedSession({ job: { id: "job-2", action: "analyze", status: "completed", error: "" } });
+  assert.equal(helpers.showInspirationAnalysis(next, session.job.id, false), true);
+});
+
+test("a newly submitted analysis hides the previous result before the server responds", () => {
+  const oldResult = analyzedSession();
+  assert.equal(helpers.showInspirationAnalysis(oldResult, null, true), false);
+});
+
+test("queued, running, failed and interrupted jobs do not display an old analysis", () => {
+  for (const status of ["queued", "running", "failed", "interrupted"]) {
+    const session = analyzedSession({ job: { id: "job-2", action: "analyze", status, error: "" } });
+    assert.equal(helpers.showInspirationAnalysis(session, null, false), false, status);
+  }
+});
+
+test("retry stays on plans while pending and shows the new result once the same job succeeds", () => {
+  const job = { id: "job-2", action: "analyze", status: "queued", error: "" };
+  assert.equal(helpers.showInspirationAnalysis(analyzedSession({ job }), "job-1", false), false);
+  const completed = analyzedSession({ job: { ...job, status: "completed" } });
+  assert.equal(helpers.showInspirationAnalysis(completed, "job-1", false), true);
+});
+
+test("previous analysis is available only on request after a failed or interrupted analysis", () => {
+  for (const status of ["failed", "interrupted"]) {
+    const job = { id: "job-2", action: "analyze", status, error: "解析中断" };
+    const session = analyzedSession({ job });
+    assert.equal(helpers.showPreviousInspirationAnalysis(session, true, false), true, status);
+    assert.equal(helpers.showPreviousInspirationAnalysis(session, false, false), false, `${status}: not requested`);
+    assert.equal(helpers.showPreviousInspirationAnalysis(session, true, true), false, `${status}: submitting`);
+    assert.equal(helpers.showPreviousInspirationAnalysis({ ...session, analysis: null }, true, false), false, `${status}: no prior result`);
+  }
+  assert.equal(helpers.showPreviousInspirationAnalysis(undefined, true, false), false);
+});
+
+test("a queued, running or completed analysis cannot show a previous result", () => {
+  for (const status of ["queued", "running", "completed"]) {
+    const session = analyzedSession({ job: { id: "job-2", action: "analyze", status, error: "" } });
+    assert.equal(helpers.showPreviousInspirationAnalysis(session, true, false), false, status);
+  }
+});
+
 for (const type of ["novel", "short_drama"]) {
   test(`${type}: analysis fills every form field without creating chapters and preserves the original draft`, () => {
     const before = helpers.initialCreationDraft(type);
@@ -33,7 +95,7 @@ for (const type of ["novel", "short_drama"]) {
     const filled = helpers.applyInspiration(before, analysis(type));
     assert.equal(JSON.stringify(before), snapshot);
     assert.equal(filled.title, "钟城来信");
-    assert.equal(filled.genres, "悬疑，科幻");
+    assert.equal(filled.genres, "悬疑\n科幻");
     assert.equal(filled.core, "未来来信");
     assert.equal(filled.styles, "温暖");
     assert.equal(filled.highlights, "用记忆换取未来");

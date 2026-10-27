@@ -12,6 +12,17 @@ export type InspirationSession = {
   job: { id: string; action: "generate" | "revise" | "analyze"; status: string; error: string };
 };
 
+/** Only the latest completed analysis is eligible for the dedicated result view. */
+export function showInspirationAnalysis(session: InspirationSession | undefined, dismissedJobId: string | null, submittingAnalysis: boolean): boolean {
+  return !!session?.analysis && session.job.action === "analyze" && session.job.status === "completed"
+    && session.job.id !== dismissedJobId && !submittingAnalysis;
+}
+
+/** A previous result remains available after a failed job only by explicit choice. */
+export function showPreviousInspirationAnalysis(session: InspirationSession | undefined, requested: boolean, submittingAnalysis: boolean): boolean {
+  return !!session?.analysis && requested && !submittingAnalysis && ["failed", "interrupted"].includes(session.job.status);
+}
+
 export type CreationDraft = {
   title: string;
   content_type: ContentType;
@@ -22,6 +33,9 @@ export type CreationDraft = {
   genres: string;
   core: string;
   styles: string;
+  // Older browser drafts use comma-separated tags; analysis preserves each tag on its own line.
+  tag_format?: "lines";
+  tag_source?: { genres: string[]; core: string[]; styles: string[] };
   highlights: string;
   premise: string;
   source_text: string;
@@ -47,8 +61,9 @@ export function applyInspiration(draft: CreationDraft, analysis: WorkInput): Cre
   if (analysis.content_type !== draft.content_type) throw new Error("方案类型与当前创作类型不一致，请切换到对应入口。");
   return {
     ...draft, title: analysis.title, genre: analysis.genre, units: String(analysis.units), words: String(analysis.words_per_chapter),
-    audience: analysis.audience, premise: analysis.premise, source_text: draft.source_text || draft.premise, genres: (analysis.creative?.genres || []).join("，"),
-    core: (analysis.creative?.core || []).join("，"), styles: (analysis.creative?.styles || []).join("，"),
+    audience: analysis.audience, premise: analysis.premise, source_text: draft.source_text || draft.premise, genres: (analysis.creative?.genres || []).join("\n"),
+    core: (analysis.creative?.core || []).join("\n"), styles: (analysis.creative?.styles || []).join("\n"), tag_format: "lines",
+    tag_source: { genres: [...(analysis.creative?.genres || [])], core: [...(analysis.creative?.core || [])], styles: [...(analysis.creative?.styles || [])] },
     highlights: analysis.creative?.highlights || "", world_id: "", world_snapshot: analysis.world_snapshot || null,
     novel_settings: draft.content_type === "novel" ? analysis.novel_settings || draft.novel_settings || { ...defaultNovelSettings } : null,
     drama_settings: draft.content_type === "short_drama" ? analysis.drama_settings || draft.drama_settings || { ...defaultDramaSettings } : null,
@@ -56,9 +71,20 @@ export function applyInspiration(draft: CreationDraft, analysis: WorkInput): Cre
 }
 
 export function creationPayload(draft: CreationDraft, mode: string, generate: boolean, reference?: Reference, expectedType = draft.content_type): WorkInput {
-  const tags = (value: string, max: number) => {
-    const list = [...new Set(value.split(/[,，、\n]/).map(s => s.trim()).filter(Boolean))];
-    if (list.length > max || list.some(s => s.length > 80)) throw new Error(`标签最多${max}项，每项不超过80字。`);
+  const tags = (value: string, max: number, label: string, field: "genres" | "core" | "styles") => {
+    const separator = draft.tag_format === "lines" ? /\r?\n/ : /[,，、\n]/;
+    const source = draft.tag_source?.[field];
+    if (draft.tag_format === "lines" && Array.isArray(source) && source.some(s => typeof s === "string" && /[\r\n]/.test(s)) && source.join("\n") !== value) {
+      throw new Error(`${label}的原始项目含有换行，请将每项整理为一行，并确认标签分隔后再提交。`);
+    }
+    // Preserve even unusual newlines inside an untouched analysis item.
+    const values = draft.tag_format === "lines" && Array.isArray(source) && source.every(s => typeof s === "string") && source.join("\n") === value
+      ? source : value.split(separator);
+    const list = [...new Set(values.map(s => s.trim()).filter(Boolean))];
+    if (list.length > max || list.some(s => Array.from(s).length > 80)) {
+      const hint = draft.tag_format === "lines" ? "每行填写一项。" : "请用逗号分隔，或重新回填灵感方案。";
+      throw new Error(`${label}最多${max}项，每项不超过80字。${hint}`);
+    }
     return list;
   };
   if (draft.content_type !== expectedType) throw new Error("草稿类型与当前入口不一致，请从对应入口创建作品。");
@@ -78,7 +104,7 @@ export function creationPayload(draft: CreationDraft, mode: string, generate: bo
     // An edited/generated snapshot is already an independent copy, never re-copy a library world over it.
     world_id: draft.world_snapshot ? null : draft.world_id || null, world_snapshot: draft.world_snapshot,
     market: "china", output_locale: "zh-CN", reference_ids: reference ? [reference.id] : [],
-    creative: { genres: tags(draft.genres || draft.genre, 3), core: tags(draft.core, 3), styles: tags(draft.styles, 5),
+    creative: { genres: tags(draft.genres || draft.genre, 3, "自定义题材", "genres"), core: tags(draft.core, 3, "核心设定", "core"), styles: tags(draft.styles, 5, "风格", "styles"),
       highlights: draft.highlights, source_text: ["小说改编", "剧本改写"].includes(mode) ? draft.source_text || draft.premise : "" },
   };
 }
