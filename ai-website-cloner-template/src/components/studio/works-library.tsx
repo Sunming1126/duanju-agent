@@ -85,7 +85,7 @@ export function WorksLibrary() {
   const novels = works.filter(work => work.content_type === "novel").length;
 
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="我的作品" /><main className="plotloom-main works-library">
-    <div className="workspace-title library-heading"><div><span className="eyebrow">MY LIBRARY</span><h1>我的作品</h1><p>把每一个故事，收进同一座作品库。</p></div><span className="library-total">{works.length} 部作品<span>{archivedCount} 部已归档</span></span></div>
+    <div className="workspace-title library-heading"><div><h1>我的作品</h1></div><span className="library-total">{works.length} 部作品<span>{archivedCount} 部已归档</span></span></div>
     <section className="library-controls" aria-label="作品筛选">
       <div className="library-type-tabs" aria-label="作品类型">
         {[["", "全部作品", works.length], ["novel", "小说", novels], ["short_drama", "剧本", works.length - novels]].map(([value, label, count]) => <button key={value} aria-pressed={filter === value} className={filter === value ? "active" : ""} onClick={() => setFilter(String(value))}>{label}<span>{count}</span></button>)}
