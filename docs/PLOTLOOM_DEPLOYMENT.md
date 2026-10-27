@@ -144,3 +144,10 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - release：/opt/plotloom-cn/releases/20261027T052209Z-inspiration-5263a4dc；上一版：/opt/plotloom-cn/releases/20261027T043848Z-inspiration-f06eb051；数据库备份：/opt/plotloom-cn/backups/studio-20261027T052209Z-inspiration.sqlite3。发布器通过队列空闲、隔离接口、服务器 lint、5项样例测试、类型和生产构建、数据库与源码校验并输出 DEPLOYMENT_OK；中文版三个服务 active，旧站进程未变，日文站检查通过。
 - 公网核实首页有教程入口、教程页200，小说和剧本新建页及作品库200且导航仅含白底返回首页。客户端没有 Python 项目虚拟环境，本次未重跑本机后端测试；此前本机28项前端适配、lint、类型和构建通过。未调用付费模型，也未启动浏览器，视觉和实际点击仍待用户验收。
 - 回滚须先核对 current 仍为本次 release，再仅切回仍支持私人空间的上一版并按现有流程重启中文版服务；保留 shared/data，不使用旧数据库覆盖新作品。
+
+## 2026-10-27 灵感解析与标签修复及前序页面调整发布
+
+- 发布至 https://jubencn.onesay.top ，源码 c00860fa1cebd8a8cb98c65045a3f6072dc09f24，包含用户此前要求的草稿提示、作品库标题和灵感卡片修改。源码包 SHA-256：efdcf288ee92b926cbf41262e7578559452c34ab2c1bea4c38252549619beac7；runner SHA-256：0a7ba76cafb60000e275788581646dfb11f06ca5fa9a7d4ea0e56edd7c43dd26。
+- release /opt/plotloom-cn/releases/20261027T055012Z-inspiration-c00860fa；上一版 /opt/plotloom-cn/releases/20261027T052209Z-inspiration-5263a4dc；SQLite 备份 /opt/plotloom-cn/backups/studio-20261027T055012Z-inspiration.sqlite3。服务端隔离检查、lint、5项样例测试及 webpack 构建通过，空闲队列后备份并切换，发布器输出 DEPLOYMENT_OK。数据库完整性与记录保留、源码哈希、公开页面与安全边界检查通过；中文三服务 active，旧站进程不变，日文站200。
+- 本地42项前端测试、lint、类型和构建通过；发布后以线上代码复验20项灵感状态／标签测试通过。公网小说、剧本新建页及作品库200，发布脚本包含新进度／结果入口与逐行标签提示，旧草稿提示和作品库多余标题文案不存在。未启动浏览器或调用付费模型，不将上述检查视为真实点击／视觉验收。
+- 旧版已回填且含逗号的草稿如果仍提示标签超限，应在同一浏览器打开原灵感解析结果并重新确认回填；旧版已拼接文本无法可靠推断项目边界，回填前表单保留备份。回滚须先核对 current，仅切回保留私人空间能力的上一版并保留 shared/data，不用旧 SQLite 覆盖新作品。
