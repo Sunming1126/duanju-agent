@@ -34,12 +34,36 @@ function load(path) {
 
 const samples = load("content/samples/index.ts");
 const { officialSamples, sampleCreationInput, sampleCreationHref, sampleDocument } = samples;
+const { hotReferences } = load("content/samples/hot-references.ts");
 const { SampleLibrary } = load("components/studio/sample-library.tsx");
 const { SampleReader } = load("components/studio/sample-reader.tsx");
 const { WorkForm } = load("components/studio/work-form.tsx");
 const { creationDraftKeys } = load("lib/studio/writing.ts");
 const { GET } = load("app/samples/[slug]/download/route.ts");
 export { officialSamples, sampleCreationInput, sampleDocument };
+
+test("catalogue starts with filters, has exactly ten ranked references and keeps old links out of the list", () => {
+  assert.equal(officialSamples.length, 10);
+  assert.equal(officialSamples.filter(sample => sample.work.content_type === "novel").length, 5);
+  assert.equal(officialSamples.filter(sample => sample.work.content_type === "short_drama").length, 5);
+  assert.deepEqual(officialSamples.map(sample => sample.reference.rank), [1,2,3,4,5,6,7,8,9,10]);
+  const html = renderToStaticMarkup(React.createElement(SampleLibrary));
+  assert.doesNotMatch(html, /sample-library-heading|PLOTLOOM ORIGINALS|先读一个好故事|再开始你的故事|sample-library-note/);
+  assert.match(html, /<h1 class="sr-only">官方小说与剧本样例<\/h1><nav class="sample-filters"/);
+  assert.equal((html.match(/class="sample-card /g) || []).length, 10);
+  for (const sample of officialSamples) {
+    assert.equal(sample.reference.date, "2026-10-27");
+    assert.equal(sample.reference.url, "https://hongguoduanju.com/rank/hot-drama");
+    assert.notEqual(sample.work.title, sample.reference.title);
+    assert.equal(sample.reference.title, hotReferences[sample.reference.rank - 1].title);
+    const document = sampleDocument(sample);
+    assert.ok(document.includes(sample.reference.title) && document.includes(sample.reference.date));
+  }
+  for (const archived of samples.archivedSamples) {
+    assert.equal(samples.getOfficialSample(archived.slug), archived);
+    assert.ok(!html.includes(archived.work.title));
+  }
+});
 
 test("official catalogue offers complete novel and drama examples with settings and reading notes", () => {
   assert.equal(new Set(officialSamples.map(sample => sample.slug)).size, officialSamples.length);

@@ -175,7 +175,13 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
     for path in ('/', '/concepts', '/workspace', '/worlds', '/studio/scripts/new', '/studio/novels/new', '/samples', '/samples?type=novel', '/samples?type=short_drama'):
         with urlopen(base + path, timeout=30) as response:
             assert response.status == 200
-    for slug, kind in (('last-light', 'novels'), ('platform-seven', 'novels'), ('receipt', 'scripts'), ('rain-check', 'scripts')):
+            if path.startswith('/samples'):
+                listing = response.read().decode('utf-8')
+                assert '先读一个好故事' not in listing and 'PLOTLOOM ORIGINALS' not in listing
+                assert listing.count('class="sample-card ') == (10 if path == '/samples' else 5)
+    for slug, kind in (('gate-name', 'novels'), ('door-card', 'novels'), ('temporary-parent', 'scripts'),
+                       ('grain-scale', 'novels'), ('banquet-payroll', 'scripts'), ('night-watch', 'scripts'),
+                       ('shop-sign', 'novels'), ('immortal-debt', 'scripts'), ('extra-seat', 'scripts'), ('floor-thirteen', 'novels')):
         with urlopen(base + '/samples/' + slug, timeout=30) as response:
             body = response.read().decode('utf-8')
             assert response.status == 200 and 'id="chapter-3"' in body and 'id="notes"' in body
@@ -185,10 +191,11 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
             assert 'attachment;' in response.headers.get('Content-Disposition', '')
             assert 'charset=utf-8' in response.headers.get('Content-Type', '')
             assert 'AI辅助创作' in document and ('第3章' if kind == 'novels' else '第3集') in document
+            assert '2026-10-27' in document and 'https://hongguoduanju.com/rank/hot-drama' in document
         with urlopen(base + '/studio/' + kind + '/new?sample=' + slug, timeout=30) as response:
             body = response.read().decode('utf-8')
             assert response.status == 200 and '我的版本' in body and '已载入官方样例设定' in body
-    for path in ('/samples/not-a-sample/download', '/studio/novels/new?sample=receipt', '/studio/scripts/new?sample=last-light'):
+    for path in ('/samples/not-a-sample/download', '/studio/novels/new?sample=temporary-parent', '/studio/scripts/new?sample=gate-name'):
         try:
             with urlopen(base + path, timeout=30) as response:
                 body = response.read().decode('utf-8')

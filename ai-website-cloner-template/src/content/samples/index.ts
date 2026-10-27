@@ -4,12 +4,24 @@ import { platformSeven } from "./platform-seven";
 import { receipt } from "./receipt";
 import { rainCheck } from "./rain-check";
 import type { OfficialSample } from "./schema";
+import { gateName } from "./gate-name";
+import { doorCard } from "./door-card";
+import { temporaryParent } from "./temporary-parent";
+import { grainScale } from "./grain-scale";
+import { banquetPayroll } from "./banquet-payroll";
+import { nightWatch } from "./night-watch";
+import { shopSign } from "./shop-sign";
+import { immortalDebt } from "./immortal-debt";
+import { extraSeat } from "./extra-seat";
+import { floorThirteen } from "./floor-thirteen";
 
 export type { OfficialSample } from "./schema";
-export const officialSamples: readonly OfficialSample[] = [lastLight, receipt, platformSeven, rainCheck];
+export const officialSamples: readonly OfficialSample[] = [gateName, doorCard, temporaryParent, grainScale, banquetPayroll, nightWatch, shopSign, immortalDebt, extraSeat, floorThirteen];
+// Preserve already-shared URLs without showing the previous batch in the list.
+export const archivedSamples: readonly OfficialSample[] = [lastLight, receipt, platformSeven, rainCheck];
 
 export function getOfficialSample(slug: string, kind?: ContentType) {
-  return officialSamples.find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
+  return [...officialSamples, ...archivedSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
 }
 
 export function sampleCreationInput(sample: OfficialSample): WorkInput {
@@ -43,6 +55,8 @@ export function sampleDocument(sample: OfficialSample) {
   return [
     `《${work.title}》`, "Plotloom 官方样例 · AI辅助创作", "原创教学示范，可作为学习和创作练习参考。", "",
     `${novel ? "小说" : "剧本"} / ${work.genre} / ${work.units}${novel ? "章" : "集"}`, settings, sample.logline,
+    ...(sample.reference ? ["", `题材参考：${sample.reference.date} 红果热播总榜第${sample.reference.rank}名《${sample.reference.title}》`,
+      `参考方向：${sample.reference.direction}`, `榜单来源：${sample.reference.url}`, "人物、事件与结局为本示范独立创作。"] : []),
     "", "一、故事设定", work.premise, "", "核心设定", work.creative?.core?.join("、") || "",
     "", "亮点", work.creative?.highlights || "", "", "世界观", work.world_snapshot?.description || "",
     ...Object.entries(work.world_snapshot?.sections || {}).map(([key, value]) => `${worldLabels[key] || key}\n${value}`),

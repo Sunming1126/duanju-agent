@@ -4,6 +4,7 @@ export type OfficialSample = {
   slug: string;
   logline: string;
   lessons: { title: string; text: string }[];
+  reference?: { rank: number; date: string; title: string; heat: string; url: string; direction: string };
   work: WorkInput;
 };
 

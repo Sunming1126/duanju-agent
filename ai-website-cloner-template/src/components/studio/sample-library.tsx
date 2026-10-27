@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownToLine, ArrowRight, BookOpen, Clapperboard, Sparkles } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, BookOpen, Clapperboard } from "lucide-react";
 import { Header } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "./navigation";
 import { officialSamples, sampleCharacterCount } from "@/content/samples";
@@ -9,7 +9,7 @@ import "./samples.css";
 export function SampleLibrary({ kind }: { kind?: ContentType }) {
   const samples = officialSamples.filter(sample => !kind || sample.work.content_type === kind);
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="官方样例" /><main className="plotloom-main sample-library">
-    <header className="sample-library-heading"><span className="sample-eyebrow"><Sparkles size={15} /> PLOTLOOM ORIGINALS</span><h1>先读一个好故事，<br />再开始你的故事。</h1><p>从故事想法到完整正文，看看小说与剧本如何一步步成形。<br />每份样例都附有设定、人物、大纲与阅读提示。</p><span className="sample-official-note">官方原创示范 · AI辅助创作 · 免费阅读与下载</span></header>
+    <h1 className="sr-only">官方小说与剧本样例</h1>
     <nav className="sample-filters" aria-label="样例类型">{[["", "全部样例"], ["novel", "小说"], ["short_drama", "剧本"]].map(([value, label]) => <Link key={value} href={value ? `/samples?type=${value}` : "/samples"} aria-current={(kind || "") === value ? "page" : undefined}>{label}<span>{officialSamples.filter(sample => !value || sample.work.content_type === value).length}</span></Link>)}</nav>
     <div className="sample-grid">{samples.map(sample => {
       const novel = sample.work.content_type === "novel";
@@ -25,6 +25,5 @@ export function SampleLibrary({ kind }: { kind?: ContentType }) {
         <a className="sample-card-download" href={`/samples/${sample.slug}/download`} download><ArrowDownToLine size={14} />下载完整 TXT 文档</a>
       </article>;
     })}</div>
-    <p className="sample-library-note">这些是 Plotloom 为学习创作而准备的完整短篇示范。你可以阅读结构、下载文档，或将设定带入创作页面，写出自己的版本。</p>
   </main></div></div>;
 }
