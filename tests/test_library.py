@@ -9,13 +9,15 @@ import main
 from agent import studio_api as api
 from agent.studio_jobs import JobInput, JobStore
 from agent.studio_store import StudioStore
+from studio_test_scope import browser_scope
 
 
 @pytest.fixture
 def library(tmp_path, monkeypatch):
     store = StudioStore(tmp_path / "library.sqlite3")
     monkeypatch.setattr(api, "store", store)
-    return store, TestClient(studio_main.app, headers={"X-Duanju-Site": "china"})
+    with browser_scope(studio_main.app) as client:
+        yield store, client
 
 
 def create(store, **changes):

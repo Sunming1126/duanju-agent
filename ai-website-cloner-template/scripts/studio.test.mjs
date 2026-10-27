@@ -93,6 +93,7 @@ test("requests send China header and never retry failed mutations", async () => 
   const calls = [];
   try {
     globalThis.fetch = async (path, init) => {
+      if (path === "/api/backend/studio/session") return new Response(JSON.stringify({ space_id: "test-space", isolated: true, legacy_access: false }), { headers: { "content-type": "application/json" } });
       calls.push({ path, init });
       return new Response(JSON.stringify({ detail: "版本已变化" }), {
         status: 409,

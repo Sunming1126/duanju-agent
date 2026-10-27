@@ -13,6 +13,7 @@ from . import llm
 from .knowledge import get_kb
 from .studio_store import StudioStore, WORLD_FIELDS, WORLD_SECTIONS, canonical, export_work_text, work_summary
 from .studio_writing import NovelSettings, DramaSettings, canonical_mode, normalized_work, writing_context, system_prompt, step_instruction, validate_chapter_format
+from .studio_identity import require_identity, session, service as space_service, StudioJSONResponse
 
 store = StudioStore()
 
@@ -22,7 +23,7 @@ def require_chinese_site(request: Request):
         raise HTTPException(404, "本地中文版创作入口不可用于当前市场")
 
 
-router = APIRouter(prefix="/api/studio", dependencies=[Depends(require_chinese_site)])
+router = APIRouter(prefix="/api/studio", dependencies=[Depends(require_chinese_site), Depends(require_identity)], default_response_class=StudioJSONResponse)
 
 # The child router uses the parent market boundary in both application entries.
 from .studio_inspiration import create_router as inspiration_router
@@ -161,11 +162,24 @@ class GenerateInput(BaseModel):
     revision: int = Field(ge=1)
 
 
+class LegacyClaim(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    code: str = Field(min_length=20, max_length=128)
+
+
+router.add_api_route("/session", session, methods=["GET"])
+
+
+@router.post("/session/claim-legacy")
+def claim_legacy(body: LegacyClaim):
+    return {"claimed": space_service().claim_legacy(body.code.strip())}
+
+
 @router.get("/status")
 def status():
     llm._refresh_config()
     return {"ok": True, "market": "china", "output_locale": "zh-CN", "llm_ready": bool(llm.API_KEY),
-            "model": llm.MODEL, "world_sections": WORLD_SECTIONS, "storage": "local-backend"}
+            "model": llm.MODEL, "world_sections": WORLD_SECTIONS, "storage": "local-backend", "max_concurrent_requests": 3, "isolated": True}
 
 
 @router.get("/worlds")
@@ -395,11 +409,15 @@ def save_world_library(ident: str):
 @router.get("/history")
 def history():
     from .studio_history import records
+    if not space_service().legacy_allowed():
+        return {"items": []}
     return {"items": [{k: v for k, v in r.items() if k != "payload"} for r in records()]}
 
 
 @router.get("/history/{ident}/preview", response_class=PlainTextResponse)
 def history_preview(ident: str):
+    if not space_service().legacy_allowed():
+        raise HTTPException(404, "历史记录不存在")
     from .studio_history import find
     payload = find(ident)["payload"]
     return export_work_text(payload)
@@ -407,6 +425,8 @@ def history_preview(ident: str):
 
 @router.post("/history/{ident}/import")
 def history_import(ident: str):
+    if not space_service().legacy_allowed():
+        raise HTTPException(404, "历史记录不存在")
     from .studio_history import find
     try:
         payload = WorkInput.model_validate(find(ident)["payload"]).model_dump()

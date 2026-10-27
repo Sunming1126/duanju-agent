@@ -14,6 +14,7 @@ from agent import studio_api as api
 from agent.studio_inspiration import InspirationStore, InspirationInput, InspirationAction, PlanEdit, execute, messages_for
 from agent.studio_jobs import JobStore, JobInput
 from agent.studio_store import StudioStore
+from studio_test_scope import browser_scope
 
 
 @pytest.fixture
@@ -22,7 +23,8 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "store", store)
     monkeypatch.setattr(api.llm, "_refresh_config", lambda: None)
     monkeypatch.setattr(api.llm, "API_KEY", "offline-only")
-    return store, InspirationStore(store), TestClient(studio_main.app)
+    with browser_scope(studio_main.app) as client:
+        yield store, InspirationStore(store), client
 
 
 def body(kind="novel", **changes):
@@ -224,16 +226,16 @@ def test_recovery_is_worker_owned_and_session_survives_restart(setup):
     assert session["job"]["status"] == "completed"
 
 
-def test_shared_queue_capacity_and_mutual_exclusion(setup):
+def test_shared_queue_capacity_and_three_request_budget(setup):
     store, service, _ = setup
     work = store.create_work(api.WorkInput(title="排队作品").model_dump())
     jobs = JobStore(store)
     work_job = jobs.create(work["id"], JobInput(revision=1, request_key=str(uuid.uuid4())))
     ident = service.create(body())
     claimed = service.claim()
-    assert claimed and jobs.claim() is None
+    assert claimed and jobs.claim()["id"] == work_job["id"]
     service.finish(claimed["id"], error="test interruption")
-    assert jobs.claim()["id"] == work_job["id"]
+    assert jobs.get(work_job["id"])["status"] == "running"
     assert service.claim() is None
     for _ in range(10):
         service.create(body())
@@ -265,6 +267,7 @@ def test_market_input_and_model_guards_and_legacy_entry(setup, monkeypatch):
     assert client.post("/api/studio/inspirations", json=invalid).status_code == 422
     assert client.post("/api/studio/inspirations", json=body().model_dump() | {"prompt": "   "}).status_code == 422
     legacy = TestClient(main.app)
+    legacy.get("/api/studio/session", headers={"X-Duanju-Site": "china"})
     assert legacy.post("/api/studio/inspirations", json=body().model_dump(), headers={"Host": "juben.onesay.top", "X-Duanju-Site": "china"}).status_code == 403
     assert legacy.post("/api/studio/inspirations", json=body().model_dump(), headers={"X-Duanju-Site": "china"}).status_code == 202
     monkeypatch.setattr(api.llm, "API_KEY", "")

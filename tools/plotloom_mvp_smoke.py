@@ -3,11 +3,12 @@ import json
 import sys
 import time
 import uuid
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPCookieProcessor
 from urllib.error import HTTPError
 
 base = (sys.argv[1] if len(sys.argv) > 1 else 'https://jubencn.onesay.top').rstrip('/')
 prefix = '/api/backend/studio'
+urlopen = build_opener(HTTPCookieProcessor()).open
 
 def api(path, body=None, method=None):
     req = Request(base + prefix + path, data=json.dumps(body).encode() if body is not None else None,
@@ -17,7 +18,7 @@ def api(path, body=None, method=None):
         return json.loads(raw) if 'json' in response.headers.get('Content-Type', '') else raw
 
 def payload(work):
-    return {k:v for k,v in work.items() if k not in {'id','created_at','updated_at'}}
+    return {k:v for k,v in work.items() if k not in {'id','created_at','updated_at','owner_id'}}
 
 def wait(job):
     deadline = time.monotonic() + 900
@@ -29,6 +30,7 @@ def wait(job):
         time.sleep(3)
     raise RuntimeError('Acceptance task did not finish within 15 minutes; task retained')
 
+assert api('/session')['isolated']
 assert api('/status')['llm_ready']
 for path in ['/api/llm/config','/api/backend/llm/config','/api/backend/refresh','/api/studio/works']:
     try:

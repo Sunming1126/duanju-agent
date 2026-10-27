@@ -1,12 +1,13 @@
-import type { WorkSummary } from "./api";
+import { currentSpaceId, type WorkSummary } from "./api";
 
 export type LibraryState = "all" | "active" | "archived";
 export type LibrarySort = "updated" | "created" | "title";
 
 // Keep only the last lightweight list in memory. Every return still revalidates.
 let snapshot: WorkSummary[] | undefined;
-export function librarySnapshot() { return snapshot; }
-export function rememberLibrary(items: WorkSummary[]) { snapshot = items; }
+let snapshotSpace: string | undefined;
+export function librarySnapshot() { return snapshotSpace === currentSpaceId() ? snapshot : undefined; }
+export function rememberLibrary(items: WorkSummary[]) { snapshotSpace = currentSpaceId(); snapshot = items; }
 
 export function visibleWorks(items: WorkSummary[], query: string, kind: string, state: LibraryState, sort: LibrarySort) {
   const search = query.trim().toLocaleLowerCase();

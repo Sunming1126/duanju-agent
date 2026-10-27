@@ -13,6 +13,7 @@ from agent import studio_api as api
 from agent.studio_jobs import JobInput, JobStore, execute, messages_for
 from agent.studio_store import StudioStore
 from agent.studio_writing import canonical_mode, validate_chapter_format
+from studio_test_scope import browser_scope
 
 
 PROSE = '我推开修表铺的门，钟摆恰好停在半空。妹妹寄来的信躺在柜台上，纸边沾着昨夜的雨。我知道自己必须读完它，即使每一个字都可能改变我记得的过去。\n“你终于来了。”老人轻声说。\n我把信收进口袋，决定先去见那个失踪多年的邮差。'
@@ -26,7 +27,8 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(api.llm, '_refresh_config', lambda: None)
     monkeypatch.setattr(api.llm, 'API_KEY', 'offline-only')
     monkeypatch.setattr(api, 'reference_context', lambda work: [])
-    return store, JobStore(store), TestClient(studio_main.app)
+    with browser_scope(studio_main.app) as client:
+        yield store, JobStore(store), client
 
 
 @pytest.mark.parametrize('kind,mode,expected', [('novel','新建剧本','小说创作'), ('novel','剧本改写','小说创作'), ('short_drama','小说创作','剧本创作'), ('short_drama','小说改编','小说改编'), ('novel','灵感策划','灵感创作')])
@@ -56,7 +58,7 @@ def test_existing_work_cannot_switch_type_and_backup_retains_settings(setup):
     update = {key:value for key,value in source.items() if key not in {'id','created_at','updated_at'}}
     update.update(content_type='short_drama', novel_settings=None, drama_settings={})
     assert client.put(f"/api/studio/works/{source['id']}", json=update).status_code == 409
-    assert store.get('works',source['id']) == source
+    assert {key:value for key,value in store.get('works',source['id']).items() if key != 'owner_id'} == source
     backup = client.get(f"/api/studio/works/{source['id']}/backup").json()
     restored = client.post('/api/studio/works/import', json=backup).json()
     assert restored['novel_settings'] == source['novel_settings']
@@ -109,11 +111,11 @@ def test_novel_may_mention_screenplays_without_being_rejected():
 
 
 def test_legacy_background_path_uses_the_same_format_guard(setup, monkeypatch):
-    store,_,_ = setup
+    store,_,primary = setup
     work=store.create_work(api.WorkInput(title='旧路径',content_type='novel',premise='寻找来信').model_dump())
     async def wrong(*args, **kwargs): return SCRIPT
     monkeypatch.setattr(api.llm,'chat',wrong)
-    client=TestClient(main.app)
+    client=TestClient(main.app, cookies=primary.cookies)
     response=client.post(f"/api/studio/works/{work['id']}/generate",json={'action':'chapter','revision':1},headers={'X-Duanju-Site':'china'})
     assert response.status_code == 202
     assert store.get('candidates',response.json()['id'])['status'] == 'failed'

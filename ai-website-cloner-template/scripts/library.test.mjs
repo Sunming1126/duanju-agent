@@ -20,7 +20,7 @@ function load(path) {
     if (name === "next/link") return { __esModule: true, default: props => { const attributes = { ...props }; delete attributes.prefetch; return React.createElement("a", attributes); }, useLinkStatus: () => ({ pending: false }) };
     if (name === "next/dynamic") return { __esModule: true, default: () => () => null };
     const modules = {
-      "@/lib/studio/api": "lib/studio/api.ts", "@/lib/studio/library": "lib/studio/library.ts", "@/lib/studio/legacy": "lib/studio/legacy.ts",
+      "./api": "lib/studio/api.ts", "@/lib/studio/api": "lib/studio/api.ts", "@/lib/studio/library": "lib/studio/library.ts", "@/lib/studio/legacy": "lib/studio/legacy.ts",
       "@/components/sites/storyplay/shared": "components/sites/storyplay/shared.tsx", "./navigation": "components/studio/navigation.tsx",
     };
     if (modules[name]) return load(modules[name]);

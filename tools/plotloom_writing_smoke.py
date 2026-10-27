@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPCookieProcessor
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--base', default='https://jubencn.onesay.top/api/backend/studio')
@@ -16,6 +16,7 @@ args = parser.parse_args()
 if not args.real_model:
     parser.error('--real-model is required: these checks make five explicit model calls')
 base = args.base.rstrip('/')
+urlopen = build_opener(HTTPCookieProcessor()).open
 stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 report = {'started_at': stamp, 'results': [], 'ok': False}
 
@@ -60,6 +61,7 @@ def wait_job(job):
 
 
 try:
+    assert api('/session')['isolated']
     assert api('/status')['llm_ready']
     request = {'market': 'china', 'output_locale': 'zh-CN', 'content_type': 'novel', 'request_key': str(uuid.uuid4()),
                'prompt': '写一个第一人称、温暖的现实小说：我在老街修表铺发现妹妹留下的一封信，与疏远的父亲一起寻找寄信人，最终和解。不要超能力或时间旅行。',

@@ -9,6 +9,8 @@ export type StudioStatus = {
   llm_ready: boolean;
   model: string;
   world_sections: Section[];
+  max_concurrent_requests?: number;
+  isolated?: boolean;
 };
 export type WorldInput = {
   name: string;
@@ -100,15 +102,43 @@ export type WorldPackage = {
   checksum: string;
 };
 
+export type StudioSpace = { space_id: string; isolated: boolean; legacy_access: boolean };
+let spaceRequest: Promise<StudioSpace> | undefined;
+let spaceId: string | undefined;
+export function currentSpaceId() { return spaceId; }
+export function ensureStudioSpace(): Promise<StudioSpace> {
+  if (!spaceRequest) {
+    const establish = () => fetch("/api/backend/studio/session", {
+      cache: "no-store", credentials: "same-origin", headers: { "X-Duanju-Site": "china" },
+    }).then(async response => {
+      if (!response.ok) throw new Error("无法建立独立创作空间，请刷新页面重试。");
+      const value = await response.json() as StudioSpace;
+      if (!value.space_id || !value.isolated) throw new Error("创作空间验证失败，请刷新页面重试。");
+      spaceId = value.space_id;
+      return value;
+    });
+    // Coordinate first visits in multiple tabs before either tab sends writes.
+    const request = (async () => typeof navigator !== "undefined" && navigator.locks
+      ? await navigator.locks.request("plotloom-space", establish) : await establish())();
+    spaceRequest = request.catch(() => {
+      spaceRequest = undefined; spaceId = undefined;
+      throw new Error("无法建立独立创作空间，请检查连接并刷新；请求不会自动重试。");
+    });
+  }
+  return spaceRequest;
+}
+
 export async function backendRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
+  if (path.startsWith("/studio/") && path !== "/studio/session") await ensureStudioSpace();
   let response: Response;
   try {
     response = await fetch(`/api/backend${path}`, {
       ...init,
       cache: "no-store",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
         "X-Duanju-Site": "china",
@@ -126,6 +156,7 @@ export async function backendRequest<T>(
     ? await response.json()
     : await response.text();
   if (!response.ok) {
+    if (response.status === 401) { spaceRequest = undefined; spaceId = undefined; }
     const detail =
       typeof data === "object" && data !== null ? data.detail : undefined;
     const message =

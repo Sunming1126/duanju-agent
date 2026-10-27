@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from fastapi import HTTPException
+from .studio_identity import authorize, visible, current_owner, owner
 
 ROOT = Path(__file__).resolve().parent.parent
 WORLD_SECTIONS = json.loads((ROOT / "third_party/storyforge/world-sections.json").read_text(encoding="utf-8"))
@@ -74,7 +75,7 @@ class StudioStore:
         row = db.execute(f"SELECT data FROM {table} WHERE id=?", (ident,)).fetchone()
         if not row:
             raise HTTPException(404, "记录不存在")
-        return json.loads(row["data"])
+        return authorize(json.loads(row["data"]))
 
     @staticmethod
     def write(db, table, record):
@@ -95,14 +96,14 @@ class StudioStore:
                 rows = db.execute("SELECT data FROM candidates WHERE work_id=?", (work_id,)).fetchall()
             else:
                 rows = db.execute(f"SELECT data FROM {table}").fetchall()
-        return sorted((json.loads(row["data"]) for row in rows), key=lambda record: record["updated_at"], reverse=True)
+        return sorted((record for row in rows if visible(record := json.loads(row["data"]))), key=lambda record: record["updated_at"], reverse=True)
 
     def get(self, table, ident):
         with self.transaction() as db:
             return self.read(db, table, ident)
 
     def create_world(self, data):
-        record = {**data, "id": str(uuid.uuid4()), "revision": 1, "created_at": now(), "updated_at": now()}
+        record = {**data, "owner_id": current_owner(), "id": str(uuid.uuid4()), "revision": 1, "created_at": now(), "updated_at": now()}
         with self.transaction() as db:
             self.write(db, "worlds", record)
         return record
@@ -125,9 +126,9 @@ class StudioStore:
             if legacy_id:
                 for row in db.execute("SELECT data FROM works").fetchall():
                     existing = json.loads(row["data"])
-                    if existing.get("legacy_id") == legacy_id:
+                    if owner(existing) == current_owner() and existing.get("legacy_id") == legacy_id:
                         return existing
-            record = {**data, "id": str(uuid.uuid4()), "revision": 1, "created_at": now(), "updated_at": now()}
+            record = {**data, "owner_id": current_owner(), "id": str(uuid.uuid4()), "revision": 1, "created_at": now(), "updated_at": now()}
             self.write(db, "works", record)
         return record
 
@@ -179,7 +180,7 @@ class StudioStore:
                 if json.loads(row["data"])["status"] == "running":
                     raise HTTPException(409, "已有生成任务进行中，请等待完成")
             world = work.get("world_snapshot")
-            record = {"id": str(uuid.uuid4()), "work_id": work_id, "action": action, "number": number,
+            record = {"id": str(uuid.uuid4()), "owner_id": owner(work), "work_id": work_id, "action": action, "number": number,
                       "base_revision": revision, "status": "running", "text": "", "error": "",
                       "work_snapshot": work, "world_snapshot": world, "references": [],
                       "created_at": now(), "updated_at": now()}
