@@ -125,3 +125,14 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 从本机再次下载4个公网TXT并逐字符对比已校验源码文档，全部一致：last-light 7411字节，receipt 7257字节，platform-seven 7689字节，rain-check 7165字节。响应带UTF-8 BOM和中文下载文件名，完整正文、设定与提示未遗漏；比对报告保存在Git忽略的`data/official-samples-live-report.json`。
 - 所有归档非data源码哈希、历史记录数量、SQLite quick_check、原主要页面、灵感代理与管理边界检查通过；中文版api／web／worker均active，旧站PID1948834保持不变、日文站200。保留shared/data和旧release，未改Nginx、systemd或模型配置，未操作用户作品。没有启动本机应用或浏览器，未宣称浏览器视觉与点击交互已人工验收。
 - 如需回滚程序，先确认current仍为本次release，再按上述保留数据的MVP回滚流程切回`20261026T062937Z-inspiration-488bc25f`并重启中文版服务；不使用旧SQLite覆盖此后新作品。
+
+## 2026-10-27 热榜题材十份样例与列表精简发布
+
+- 用户明确要求去掉官方样例顶部介绍，参考红果近期热门前十重写内容并自动部署。沿用红果来源，核实公开总榜当日更新与前十名次；未使用10月21日缓存或首页分区推算heat冒充当日总榜。样例五篇小说、五部短剧，合计30章／集，保留来源日期与题材方向，具体人物与故事独立创作。
+- 主工作区初始有另一项未提交工作，独立副本成功start后开发；发布前发现三并发／浏览器空间已上线，因此合入8622c16远端与3be631ec源码。身份隔离、队列调度、旧稿恢复及回滚保护均保留，本轮未触碰用户作品和配置。
+- **实际运行源码：`f06eb051e29a7f7b5110fb969fe46ff1512b7f89`**；release：`/opt/plotloom-cn/releases/20261027T043848Z-inspiration-f06eb051`；上版：`/opt/plotloom-cn/releases/20261027T041838Z-inspiration-3be631ec`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261027T043848Z-inspiration.sqlite3`，权限0600；旧目录记录：`backups/previous-20261027T043848Z-inspiration.txt`。
+- 发布前GitHub拉取多次连接重置／超时，使用已提交、已核对基线的源码执行PrepareOnly；源码包SHA-256：`4ff44e7ef85ca90615007b5e51007737fb511d4562e9ccd9e16c78579963fe16`，runner：`0a7ba76cafb60000e275788581646dfb11f06ca5fa9a7d4ea0e56edd7c43dd26`。经SCP上传并核对双哈希，发布前额外确认线上仍为3be631ec后执行。随后常规GitHub HTTPS正常推送f06eb05成功，不需更改系统代理或TLS验证。
+- 115项后端／市场回归、28项前端适配、lint／类型及本地生产构建通过；10份作品与回填参数通过WorkInput，30个正文单元通过类型格式检查。Linux再验5项样例测试、lint／类型与webpack构建；队列空闲、SQLite备份、原子切换与上线检查通过，输出DEPLOYMENT_OK，无回滚。
+- 回环与公网列表确认移除顶部介绍、仅显示10张卡片，小说／剧本各5张；十份阅读页有第三章／集与阅读提示，十个TXT包含2026-10-27来源，十个新建回填入口正常；未知下载与错误类型拒收。旧四份不在列表，但原URL仍兼容。私有接口匿名401、空测试空间、无缓存头、管理边界、源文件哈希、数据库完整性与历史记录保留检查均通过。
+- 本机对十份公网TXT与源码生成文档逐字符比较，全部一致；大小依次为8398、8036、6942、8013、6924、6754、8067、6630、6691、8265字节。一次本机逐连接复核遇TLS连接中断，后以连接池完成全部复核，没有关闭证书校验。报告在独立副本Git忽略的`data/hot-samples-live-report.json`。
+- 中文版api／web／worker active，原duanju-agent PID1948834未变、日文站200；shared/data、模型凭据、恢复码和服务配置保持。没有站内付费模型调用，没有启动本机应用或浏览器，不将接口／格式检查宣称为文学质量或人工视觉交互验收。回滚只可回到仍支持私人空间的3be631ec版本，并按现有回滚保护流程保留数据。
