@@ -8,6 +8,9 @@ from fastapi import HTTPException
 import main
 from agent import studio_api as api
 from agent.studio_store import StudioStore
+from studio_test_scope import browser_scope
+
+_cookies = {}
 
 
 @pytest.fixture
@@ -34,12 +37,18 @@ def studio(tmp_path, monkeypatch):
 
     monkeypatch.setattr(api, 'get_kb', lambda: Knowledge())
     monkeypatch.setattr(api.llm, 'chat', chat)
-    return storage, calls
+    global _cookies
+    with browser_scope(main.app) as client:
+        _cookies = dict(client.cookies)
+        try:
+            yield storage, calls
+        finally:
+            _cookies = {}
 
 
 def request(method, path, body=None, headers=None):
     async def run():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url='http://localhost') as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url='http://localhost', cookies=_cookies) as client:
             return await client.request(method, '/api/studio' + path, json=body, headers=headers or {'X-Duanju-Site': 'china'})
     return asyncio.run(run())
 

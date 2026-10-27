@@ -37,7 +37,7 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 5. 查看解析结果，确认回填创作表单。此时尚未创建作品，也未生成正文。回填前的表单有浏览器备份，可点击“恢复回填前的表单”。改编／改写的原始素材另行保留。
 6. 在完整表单中继续编辑全部参数及世界观，确认后选择“创建并 AI 生成”或“仅创建草稿”，再进入正常创作流程。
 
-灵感草稿与作品分开保存，关闭窗口不会取消服务端任务。重开弹窗可读取最近草稿，也可手动刷新方案。失败或执行进程中断时保留已有方案，由用户主动重试；中断调用可能已经计费，不会静默重发。所有灵感操作与正文生成共用全站一个执行者、最多十个排队任务，重复请求键复用原任务。
+灵感草稿与作品分开保存，关闭窗口不会取消服务端任务。重开弹窗可读取最近草稿，也可手动刷新方案。失败或执行进程中断时保留已有方案，由用户主动重试；中断调用可能已经计费，不会静默重发。所有灵感操作与正文生成共用全站最多3个同时执行的模型请求、最多10个新排队任务，重复请求键在各独立空间内复用原任务。
 
 ## 剧本与小说创作
 
@@ -46,7 +46,7 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 - 两条生成路径按内容类型规范化旧mode；小说正文的场记／台词清单、缺少场次的剧本会标记失败而不覆盖作品。旧浏览器中的另一类型草稿保留可导出备份，不混入当前入口。
 - 生成前先保存编辑，结果存入独立生成稿，审阅后逐项或整稿采纳。版本变化会拒绝旧候选覆盖，候选仍能导出。失败不返回模板假结果。
 - “保存并进入下一步”衔接编辑；正文支持上一集／章、下一集／章及续写。计划数量不能小于已有正文的最大编号；数字输入确认有效后才修改保存值。
-- 新建表单在此浏览器保留草稿；已有作品自动保存，另有手动保存、离页保护及冲突备份。共享空间中，其他访客修改后的新版本不能被旧版本静默覆盖。
+- 新建表单在此浏览器保留草稿；已有作品自动保存，另有手动保存、离页保护及冲突备份。同一空间的多个标签页修改后，新版本不能被旧版本静默覆盖。
 - 世界库绑定会复制为作品独立世界。新建时可编辑世界概述和六类设定；作品右侧继续编辑，可另存世界库，不影响原件或其他作品。
 - 支持 TXT 导出、完整 JSON 备份导入、作品复制、归档恢复、浏览器旧草稿迁移及明确标记为中国市场的旧站历史导入。手动引用的语料保留来源，并与内容类型匹配。
 - “我的作品”统一展示小说、剧本与已归档作品，支持名称搜索、类型／状态筛选和最近更新／最近创建／名称排序。卡片显示正文进度、更新时间及复制／归档／恢复／删除操作；创建入口保留在侧栏，历史导入默认收起。
@@ -58,7 +58,9 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 - 前端 `ai-website-cloner-template/` 通过 `/api/backend/studio/*` 代理访问 `/api/studio/*`。
 - 推荐本机使用 `studio_main:app`；原 `main:app` 也挂载工作台与队列路由，其旧 `/generate` 入口仍保留兼容行为。使用旧入口时按需关闭 `DUANJU_SCHEDULER_ENABLED` 和 `DUANJU_WRITER_AUTO_RESUME_ENABLED`。
 - SQLite 增量增加灵感会话与任务表，不删除旧作品、候选和队列。工作者独占锁，只有取得锁的工作者恢复中断任务。
-- 工作台目前面向中文、中国市场，是访客共享的创作空间，没有账号与个人数据隔离。日本站保持原市场边界。
+- 工作台目前面向中文、中国市场，免注册按浏览器独立空间隔离作品、世界、灵感和任务；身份保存在HttpOnly Cookie中。更换浏览器或清除网站数据前须导出备份。同一浏览器／配置内的标签页共用一个空间，不是账号登录，也不隔离共用此浏览器的人。日本站保持原市场边界。
+- 全站使用原有单一模型Key，最多3个请求同时执行；不同空间优先分配空位，一键长任务完成一步后让出名额。只有一个空间有任务时，可同时生成不同作品或灵感任务，使用全部3个名额；同一作品的章节保持顺序，避免前文衔接丢失。遇到模型限流，暂缓新调度30秒，失败步骤仅主动重试。
+- 原共享作品不分配给第一个访问者。维护者准备一次性恢复码后，原用户在“我的空间 → 恢复以前的共享作品”领取，原稿、世界、候选和任务完整转入当前空间；没有恢复码的访客无法读取旧共享记录。操作说明见`PLOTLOOM_CONCURRENCY_AND_SPACES.md`。
 - 世界模块与草稿规范来源见 `third_party/storyforge/README.md`，不宣称完整嵌入 StoryForge。
 - 一键长篇生成的技术流程可测试；文学质量、内容一致性和真实模型稳定性仍需人工审阅。上下文超预算明确失败，不截去世界规则。
 
@@ -67,13 +69,13 @@ API与工作者默认使用同一个 `data/studio/studio.sqlite3`。如设置 `D
 在根目录，使用项目虚拟环境：
 
 ```powershell
-.venv\Scripts\python.exe -m pytest -q tests/test_library.py tests/test_writing_modes.py tests/test_inspiration.py tests/test_plotloom_mvp.py tests/test_studio.py test_market_features.py test_trilang_samples.py test_japan_adaptation.py
+.venv\Scripts\python.exe -m pytest -q tests/test_studio_isolation.py tests/test_studio_concurrency.py tests/test_library.py tests/test_writing_modes.py tests/test_inspiration.py tests/test_plotloom_mvp.py tests/test_studio.py test_market_features.py test_trilang_samples.py test_japan_adaptation.py
 ```
 
 在前端目录：
 
 ```powershell
-node --test scripts/studio.test.mjs scripts/inspiration.test.mjs scripts/writing.test.mjs scripts/library.test.mjs
+node --test scripts/studio.test.mjs scripts/inspiration.test.mjs scripts/writing.test.mjs scripts/library.test.mjs scripts/samples.test.mjs scripts/space.test.mjs
 npm run lint
 npm run typecheck
 npm run build -- --webpack

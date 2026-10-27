@@ -2140,6 +2140,7 @@ img {
 .library-confirm-delete{padding:10px 18px;background:#8e3a47;color:#fff;border:1px solid #ad5c68;border-radius:7px;font-size:13px}
 .library-skeletons>div{height:280px;border:1px solid #ffffff10;background:#18191f;border-radius:12px}
 @media(max-width:700px){.library-heading{margin-bottom:22px}.library-total{font-size:16px}.library-controls{padding:0 12px 12px}.library-type-tabs{gap:20px}.library-type-tabs button{font-size:13px}.library-toolbar{gap:9px}.library-search{flex-basis:100%}.library-toolbar select{flex:1;min-width:0}.library-toolbar .outline-button{padding:8px 10px}.library-import>summary span{display:block;margin:10px 0 0 16px}.library-card-main{padding:20px}.library-grid{gap:14px}}
+.space-recovery{margin-top:22px;border-top:1px solid #ffffff1a;padding-top:16px}.space-recovery summary{cursor:pointer;color:#c6b5e5;font-size:14px}.space-recovery form{display:grid;gap:14px;margin-top:14px}.space-recovery label{display:grid;gap:8px;font-size:13px}.space-recovery input{padding:10px 12px;background:#14151a;border:1px solid #ffffff24;border-radius:6px;width:100%;min-width:0}.space-recovery p{margin-top:12px}
 .plotloom-nav-toggle{display:none}
 @media(max-width:700px){.plotloom-shell .plotloom-nav{display:block;min-height:50px}.plotloom-nav-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px;font-size:13px;color:#c6bcdf}.plotloom-nav:not(.is-open)>.sidebar-link{display:none}.plotloom-nav.is-open>.sidebar-link{display:inline-flex;margin:5px 3px}}
 

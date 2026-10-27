@@ -14,6 +14,7 @@ from agent import studio_api as api
 from agent.studio_jobs import JobStore, JobInput, execute
 from agent.studio_store import StudioStore
 from agent.studio_worker import lock_worker
+from studio_test_scope import browser_scope
 
 
 @pytest.fixture
@@ -23,7 +24,9 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(api.llm, '_refresh_config', lambda: None)
     monkeypatch.setattr(api.llm, 'API_KEY', 'offline-test-only')
     monkeypatch.setattr(api, 'reference_context', lambda work: [])
-    return store, JobStore(store)
+    with browser_scope(studio_main.app) as client:
+        store.test_client = client
+        yield store, JobStore(store)
 
 
 def work(store, **changes):
@@ -189,7 +192,7 @@ def test_missing_outline_numbers_stop_all_generation(setup):
 
 def test_public_api_backup_import_archive_and_guards(setup):
     store, jobs = setup
-    client = TestClient(studio_main.app)
+    client = store.test_client
     assert client.get('/api/studio/status').status_code == 200
     for path in ['/api/llm/config', '/api/refresh', '/api/writer/tasks', '/api/backend/llm/config', '/openapi.json']:
         assert client.get(path).status_code == 404
@@ -210,10 +213,15 @@ def test_public_api_backup_import_archive_and_guards(setup):
 
 
 def test_legacy_market_is_explicit_and_import_is_idempotent(setup, tmp_path, monkeypatch):
+    store, _ = setup
     monkeypatch.setenv('PLOTLOOM_LEGACY_DIR', str(tmp_path))
     for name, market in [('cn', 'china'), ('jp', 'japan'), ('unknown', None)]:
         (tmp_path / f'{name}.json').write_text(json.dumps({'tid': name, 'req': {'market': market, 'episodes': 3}, 'agg': {'title': name, 'ep1_script': '旧稿原文'}}), encoding='utf-8')
-    client = TestClient(studio_main.app)
+    client = store.test_client
+    from agent.studio_identity import SpaceStore, current_owner
+    with store.transaction() as db:
+        SpaceStore.schema(db)
+        db.execute("UPDATE studio_spaces SET legacy_access=1 WHERE id=?", (current_owner(),))
     rows = client.get('/api/studio/history').json()['items']
     assert len(rows) == 1 and rows[0]['title'] == 'cn'
     path = f"/api/studio/history/{rows[0]['id']}"

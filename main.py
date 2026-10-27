@@ -124,6 +124,8 @@ def _cleanup_stale_writer_tasks():
 
 
 app = FastAPI(title="短剧剧本生成 Agent Demo", version="0.6.0", lifespan=lifespan)
+from agent.studio_identity import private_responses
+app.middleware("http")(private_responses)
 app.include_router(studio_router)
 from agent.studio_jobs import create_router as studio_jobs_router
 app.include_router(studio_jobs_router())

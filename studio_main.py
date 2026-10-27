@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from agent.studio_api import router, store
 from agent.studio_jobs import create_router
+from agent.studio_identity import private_responses
 
 @asynccontextmanager
 async def lifespan(app):
@@ -10,6 +11,7 @@ async def lifespan(app):
     yield
 
 app = FastAPI(title="Plotloom", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
+app.middleware("http")(private_responses)
 
 @app.middleware("http")
 async def chinese_market(request: Request, call_next):

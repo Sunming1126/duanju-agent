@@ -11,7 +11,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .studio_jobs import queue_records
+from .studio_queue import MAX_CONCURRENT, MAX_QUEUED, paused, pause_after_rate_limit
 from .studio_store import WORLD_FIELDS, now
+from .studio_identity import authorize, visible, current_owner, owner, request_key as scoped_key
 
 
 class Plan(BaseModel):
@@ -70,7 +72,7 @@ class InspirationStore:
         row = db.execute(f"SELECT data FROM {table} WHERE id=?", (ident,)).fetchone()
         if not row:
             raise HTTPException(404, "灵感草稿或任务不存在")
-        return json.loads(row[0])
+        return authorize(json.loads(row[0]))
 
     @staticmethod
     def write_session(db, session):
@@ -82,7 +84,7 @@ class InspirationStore:
     def write_job(db, job):
         job["updated_at"] = now()
         db.execute("INSERT INTO inspiration_jobs VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data",
-                   (job["id"], job["request_key"], job["session_id"], json.dumps(job, ensure_ascii=False)))
+                   (job["id"], scoped_key(job["request_key"], owner(job)), job["session_id"], json.dumps(job, ensure_ascii=False)))
 
     def view(self, ident):
         with self.transaction() as db:
@@ -92,24 +94,24 @@ class InspirationStore:
 
     def jobs(self):
         with self.transaction() as db:
-            return [json.loads(row[0]) for row in db.execute("SELECT data FROM inspiration_jobs").fetchall()]
+            return [job for row in db.execute("SELECT data FROM inspiration_jobs").fetchall() if visible(job := json.loads(row[0]))]
 
     def existing(self, db, key, payload, session_id=None):
-        row = db.execute("SELECT data FROM inspiration_jobs WHERE request_key=?", (key,)).fetchone()
+        row = db.execute("SELECT data FROM inspiration_jobs WHERE request_key=?", (scoped_key(key),)).fetchone()
         if row:
-            job = json.loads(row[0])
+            job = authorize(json.loads(row[0]))
             if job["input"] != payload or (session_id and job["session_id"] != session_id):
                 raise HTTPException(409, "请求标识已用于其他参数，请重新操作")
             return job
 
     @staticmethod
     def capacity(db):
-        if sum(j["status"] == "queued" for j in queue_records(db)) >= 10:
+        if sum(j["status"] == "queued" for j in queue_records(db)) >= MAX_QUEUED:
             raise HTTPException(429, "全站队列已满（最多10个排队任务），请稍后提交")
 
     def enqueue(self, db, session, payload, action):
         self.capacity(db)
-        job = {"id": str(uuid.uuid4()), "session_id": session["id"], "request_key": payload["request_key"],
+        job = {"id": str(uuid.uuid4()), "owner_id": owner(session), "session_id": session["id"], "request_key": payload["request_key"],
                "input": payload, "action": action, "base_revision": session["revision"],
                "snapshot": dict(session), "status": "queued", "error": "", "created_at": now()}
         session["job_id"] = job["id"]
@@ -123,7 +125,7 @@ class InspirationStore:
             old = self.existing(db, body.request_key, payload)
             if old:
                 return old["session_id"]
-            session = {"id": str(uuid.uuid4()), "revision": 1, "input": payload, "plans": [],
+            session = {"id": str(uuid.uuid4()), "owner_id": current_owner(), "revision": 1, "input": payload, "plans": [],
                        "analysis": None, "analyzed_plan_id": None, "created_at": now()}
             return self.enqueue(db, session, payload, "generate")
 
@@ -184,16 +186,17 @@ class InspirationStore:
                     job.update(status="interrupted", error="执行进程中断，已有方案保留。中断调用可能已计费，请确认后手动重试。")
                     self.write_job(db, job)
 
-    def claim(self):
+    def claim(self, ident=None):
         with self.transaction() as db:
             all_jobs = queue_records(db)
-            if any(j["status"] in {"running", "stopping"} for j in all_jobs):
+            if paused(db) or sum(j["status"] in {"running", "stopping"} for j in all_jobs) >= MAX_CONCURRENT:
                 return None
-            jobs = sorted((j for j in all_jobs if j["status"] == "queued" and "session_id" in j), key=lambda j: j["created_at"])
+            jobs = sorted((j for j in all_jobs if j["status"] == "queued" and "session_id" in j and (ident is None or j["id"] == ident)), key=lambda j: j["created_at"])
             if not jobs:
                 return None
             job = jobs[0]
             job["status"] = "running"
+            job["dispatched_at"] = now()
             self.write_job(db, job)
             return job
 
@@ -313,9 +316,12 @@ def parse_result(job, raw):
 async def execute(inspirations, job, generate=None):
     from . import llm
     try:
+        err = {}
         raw = await (generate or llm.chat)(messages_for(job), temperature=0.8, max_tokens=10000,
-                                           timeout=240, retries=1, reject_truncated=True)
+                                           timeout=240, retries=1, reject_truncated=True, err_box=err)
         if not raw or not raw.strip() or len(raw) > 60000:
+            if err.get("kind") == "rate_limit":
+                pause_after_rate_limit(inspirations.store)
             raise ValueError("模型未返回完整有效的灵感结果，请检查服务后手动重试")
         result = parse_result(job, raw)
         inspirations.finish(job["id"], result=result)

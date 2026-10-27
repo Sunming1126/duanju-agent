@@ -43,6 +43,18 @@ mkdir "$release"
 downtime=0
 switched=0
 
+private_data_exists() {
+    "$python" - "$db" <<'PY'
+import json, sqlite3, sys
+with sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True) as db:
+    for table in ('works', 'worlds', 'studio_jobs', 'candidates', 'inspiration_sessions', 'inspiration_jobs'):
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
+            if any((json.loads(row[0]).get('owner_id') or 'legacy') != 'legacy' for row in db.execute('SELECT data FROM ' + table)):
+                sys.exit(0)
+sys.exit(1)
+PY
+}
+
 rollback() {
     status=$?
     trap - ERR
@@ -51,6 +63,10 @@ rollback() {
     if [[ "$downtime" == 1 ]]; then
         if [[ "$switched" == 1 ]]; then
             systemctl stop "${services[@]}"
+            if [[ ! -f "$old/agent/studio_identity.py" ]] && private_data_exists; then
+                echo 'Private records exist. Refusing to restore a pre-isolation program; services remain stopped for an operator fix. Shared data and new release are retained.' >&2
+                exit "$status"
+            fi
             ln -s "$old" "$base/current-rollback-$stamp"
             mv -Tf "$base/current-rollback-$stamp" "$base/current"
         fi
@@ -98,6 +114,9 @@ async def check():
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://localhost') as client:
         response = await client.get('/api/studio/status')
         assert response.status_code == 200 and response.json()['llm_ready']
+        assert response.json()['max_concurrent_requests'] == 3
+        assert (await client.get('/api/studio/works')).status_code == 401
+        assert (await client.get('/api/studio/session')).json()['isolated']
         assert (await client.get('/api/studio/worlds')).json()['items'] == []
         assert (await client.post('/api/studio/inspirations', json={})).status_code == 422
         response = await client.get('/api/studio/inspirations/deployment-check')
@@ -144,6 +163,9 @@ with sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True) as source, sq
     assert target.execute('PRAGMA quick_check').fetchone()[0] == 'ok'
 PY
 chmod 600 "$backup"
+if [[ ! -f "$base/shared/data/studio/legacy-claim-code.txt" ]]; then
+    runuser -u plotloom-cn -- "$python" "$release/tools/studio_legacy_claim.py" --db "$db"
+fi
 ln -s "$release" "$base/current-next-$stamp"
 mv -Tf "$base/current-next-$stamp" "$base/current"
 switched=1
@@ -158,7 +180,7 @@ test "$ready" = 1
 "$python" - "$archive" "$release" "$db" "$backup" <<'PY'
 import hashlib, json, sqlite3, sys, zipfile
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen as anonymous_open, build_opener, HTTPCookieProcessor
 from urllib.error import HTTPError
 archive, release, database, backup = sys.argv[1:]
 with zipfile.ZipFile(archive) as bundle:
@@ -172,6 +194,19 @@ with sqlite3.connect('file:' + backup + '?mode=ro', uri=True) as previous, sqlit
         if previous.execute("SELECT 1 FROM sqlite_master WHERE name=?", (table,)).fetchone():
             assert current.execute('SELECT count(*) FROM ' + table).fetchone()[0] >= previous.execute('SELECT count(*) FROM ' + table).fetchone()[0], table
 for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
+    opener = build_opener(HTTPCookieProcessor())
+    urlopen = opener.open
+    try:
+        anonymous_open(base + '/api/backend/studio/works', timeout=30)
+        raise AssertionError('Anonymous requests must not read private records')
+    except HTTPError as error:
+        assert error.code == 401
+    with urlopen(base + '/api/backend/studio/session', timeout=30) as response:
+        assert json.load(response)['isolated']
+    for path in ('/works?view=summary', '/worlds', '/history'):
+        with urlopen(base + '/api/backend/studio' + path, timeout=30) as response:
+            assert json.load(response)['items'] == []
+            assert 'no-store' in response.headers.get('Cache-Control', '')
     for path in ('/', '/concepts', '/workspace', '/worlds', '/studio/scripts/new', '/studio/novels/new', '/samples', '/samples?type=novel', '/samples?type=short_drama'):
         with urlopen(base + path, timeout=30) as response:
             assert response.status == 200
@@ -212,7 +247,7 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
             raise AssertionError('Unexpected route response: ' + path)
         except HTTPError as error:
             assert error.code in expected, (path, error.code)
-with urlopen('https://juben.onesay.top', timeout=30) as response:
+with anonymous_open('https://juben.onesay.top', timeout=30) as response:
     assert response.status == 200
 print('Source hashes, retained database records, official samples/downloads/drafts, public pages, inspiration proxy and admin boundaries passed.')
 PY

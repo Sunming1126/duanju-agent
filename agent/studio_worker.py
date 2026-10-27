@@ -5,6 +5,7 @@ import os
 from .studio_api import store
 from .studio_jobs import JobStore, execute
 from .studio_inspiration import InspirationStore, execute as execute_inspiration
+from .studio_queue import MAX_CONCURRENT, next_job, records
 
 
 def lock_worker(path):
@@ -24,28 +25,70 @@ def lock_worker(path):
 
 
 async def run_once(jobs, inspirations):
-    queued = [(j["created_at"], "work") for j in jobs.list() if j["status"] == "queued"]
-    queued += [(j["created_at"], "inspiration") for j in inspirations.jobs() if j["status"] == "queued"]
-    if not queued:
+    claimed = claim_next(jobs, inspirations)
+    if not claimed:
         return False
-    if min(queued)[1] == "inspiration":
-        job = inspirations.claim()
-        if job:
-            await execute_inspiration(inspirations, job)
+    kind, job = claimed
+    if kind == "inspiration":
+        await execute_inspiration(inspirations, job)
     else:
-        job = jobs.claim()
-        if job:
-            await execute(jobs, job)
-    return bool(job)
+        await execute(jobs, job)
+    return True
+
+
+def claim_next(jobs, inspirations):
+    with jobs.store.transaction() as db:
+        candidate = next_job(records(db))
+    if not candidate:
+        return None
+    kind = "inspiration" if "session_id" in candidate else "work"
+    job = (inspirations if kind == "inspiration" else jobs).claim(candidate["id"])
+    return (kind, job) if job else None
+
+
+async def run_claimed(jobs, inspirations, claimed):
+    kind, job = claimed
+    try:
+        if kind == "inspiration":
+            await execute_inspiration(inspirations, job)
+        else:
+            await execute(jobs, job, max_steps=1)
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # One broken task must not stop the dispatcher or expose provider data.
+        if kind == "inspiration":
+            inspirations.finish(job["id"], error="执行失败，输入已保留，请主动重试。")
+        else:
+            jobs.finish_step(job["id"], error="执行失败，已完成部分保留，请主动继续。")
+
+
+async def serve(jobs, inspirations):
+    tasks = set()
+    try:
+        while True:
+            while len(tasks) < MAX_CONCURRENT:
+                claimed = claim_next(jobs, inspirations)
+                if not claimed:
+                    break
+                tasks.add(asyncio.create_task(run_claimed(jobs, inspirations, claimed)))
+            if not tasks:
+                await asyncio.sleep(0.5)
+                continue
+            done, tasks = await asyncio.wait(tasks, timeout=0.5, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                task.result()
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 async def run():
     jobs, inspirations = JobStore(store), InspirationStore(store)
     jobs.recover()
     inspirations.recover()
-    while True:
-        if not await run_once(jobs, inspirations):
-            await asyncio.sleep(1)
+    await serve(jobs, inspirations)
 
 
 if __name__ == '__main__':
