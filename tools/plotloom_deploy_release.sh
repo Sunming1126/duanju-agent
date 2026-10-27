@@ -128,7 +128,7 @@ PY
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund
 runuser -u plotloom-cn -- env PATH="$PATH" npm run lint
-runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs
+runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs
 runuser -u plotloom-cn -- env PATH="$PATH" DUANJU_BACKEND_URL=http://127.0.0.1:8766 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=1024 npm run build -- --webpack
 grep -R -q 'inspiration-flow' .next/static/chunks
 test "$(readlink -f "$base/current")" = "$old"

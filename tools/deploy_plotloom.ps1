@@ -30,7 +30,7 @@ Invoke-Checked -Program $checkPython -Arguments @("-m", "pytest", "-q", "tests/t
 
 Push-Location -LiteralPath (Join-Path $projectRoot "ai-website-cloner-template")
 try {
-    Invoke-Checked -Program "node" -Arguments @("--test", "scripts/studio.test.mjs", "scripts/inspiration.test.mjs", "scripts/inspiration-tags.test.mjs", "scripts/writing.test.mjs", "scripts/library.test.mjs", "scripts/samples.test.mjs", "scripts/space.test.mjs")
+    Invoke-Checked -Program "node" -Arguments @("--test", "scripts/studio.test.mjs", "scripts/inspiration.test.mjs", "scripts/inspiration-tags.test.mjs", "scripts/writing.test.mjs", "scripts/library.test.mjs", "scripts/samples.test.mjs", "scripts/space.test.mjs", "scripts/workflow.test.mjs")
     Invoke-Checked -Program "npm.cmd" -Arguments @("run", "lint")
     Invoke-Checked -Program "npm.cmd" -Arguments @("run", "typecheck")
 } finally { Pop-Location }

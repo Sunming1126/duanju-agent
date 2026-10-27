@@ -1,4 +1,4 @@
-import type { ContentType, Reference, WorkInput, WorldInput, NovelSettings, DramaSettings } from "./api";
+import type { Action, Chapter, ContentType, Reference, WorkInput, WorldInput, NovelSettings, DramaSettings } from "./api";
 import { creationMode, defaultNovelSettings, defaultDramaSettings } from "./writing";
 
 export type InspirationPlan = { id: string; title: string; summary: string; story: string };
@@ -38,6 +38,11 @@ export type CreationDraft = {
   tag_source?: { genres: string[]; core: string[]; styles: string[] };
   highlights: string;
   premise: string;
+  characters: string;
+  outline: string;
+  chapters: Chapter[];
+  step?: Action;
+  chapter_number?: number;
   source_text: string;
   world_id: string;
   world_snapshot: WorldInput | null;
@@ -50,6 +55,7 @@ export function initialCreationDraft(type: ContentType, reference?: Reference): 
     title: "", content_type: type, genre: reference?.genre || (type === "novel" ? "都市日常" : "都市"), units: "12",
     words: type === "novel" ? "2000" : "800", audience: "general", genres: "", core: "", styles: "",
     highlights: "", premise: reference ? `参考素材：${reference.title}\n${reference.logline}\n${reference.hook}\n\n我的创作方向：` : "", source_text: "",
+    characters: "", outline: "", chapters: [],
     world_id: "", world_snapshot: null,
     novel_settings: type === "novel" ? { ...defaultNovelSettings } : null,
     drama_settings: type === "short_drama" ? { ...defaultDramaSettings } : null,
@@ -94,13 +100,17 @@ export function creationPayload(draft: CreationDraft, mode: string, generate: bo
   if (!Number.isInteger(units) || units < 1 || units > 200) throw new Error("计划集／章数须为1至200的整数。");
   const maxWords = expectedType === "novel" ? 6000 : 3000;
   if (!Number.isInteger(words) || words < 300 || words > maxWords) throw new Error(`每集／章字数须为300至${maxWords}的整数。`);
+  const chapters = draft.chapters || [];
+  if (chapters.some(c => !Number.isInteger(c.number) || c.number < 1 || c.number > units) || new Set(chapters.map(c => c.number)).size !== chapters.length) throw new Error("计划集／章数不能小于已填写正文的最大编号，且正文编号不能重复。");
+  if ([draft.premise, draft.characters || "", draft.outline || ""].some(text => Array.from(text).length > 50000)) throw new Error("故事、人物或大纲不能超过50,000字。");
+  if (chapters.some(c => Array.from(c.content).length > 150000 || Array.from(c.title).length > 80)) throw new Error("正文不能超过150,000字，章节标题不能超过80字。");
   if (reference && reference.content_type !== draft.content_type) throw new Error("参考素材类型与作品不一致。");
   return {
     title: draft.title.trim(), content_type: draft.content_type, genre: draft.genre.trim() || "其他",
     mode: creationMode(expectedType, mode),
     novel_settings: expectedType === "novel" ? draft.novel_settings || { ...defaultNovelSettings } : null,
     drama_settings: expectedType === "short_drama" ? draft.drama_settings || { ...defaultDramaSettings } : null,
-    units, words_per_chapter: words, audience: draft.audience, premise: draft.premise.trim(), characters: "", outline: "", chapters: [],
+    units, words_per_chapter: words, audience: draft.audience, premise: draft.premise.trim(), characters: draft.characters || "", outline: draft.outline || "", chapters: chapters.map(c => ({ ...c })),
     // An edited/generated snapshot is already an independent copy, never re-copy a library world over it.
     world_id: draft.world_snapshot ? null : draft.world_id || null, world_snapshot: draft.world_snapshot,
     market: "china", output_locale: "zh-CN", reference_ids: reference ? [reference.id] : [],

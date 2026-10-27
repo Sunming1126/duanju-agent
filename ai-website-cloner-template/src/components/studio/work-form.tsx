@@ -2,16 +2,21 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Sparkles } from "lucide-react";
-import { backendRequest, jsonBody, downloadText, type ContentType, type Reference, type Section, type Work, type World, type WorkInput } from "@/lib/studio/api";
+import { jsonBody, downloadText, type Chapter, type ContentType, type Reference, type Section, type Work, type World, type WorkInput } from "@/lib/studio/api";
+import { createWorkForStep } from "@/lib/studio/creation";
 import { applyInspiration, creationPayload, initialCreationDraft, type CreationDraft } from "@/lib/studio/inspiration";
 import { Inspiration } from "./inspiration";
 import { WritingOptions } from "./writing-options";
 import { novelGenres, dramaGenres, creationDraftKeys } from "@/lib/studio/writing";
+import { writingLabels, writingSteps, type CreationIntent } from "@/lib/studio/workflow";
+import { WorkflowNav, revealWritingStage } from "./workflow-nav";
+import { CharacterEditor } from "./character-editor";
+import styles from "./workflow.module.css";
 
 export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleId, sampleInput, onCreated, onClose }: {
   mode: string; kind?: ContentType; worlds: World[]; reference?: Reference; sections?: Section[];
   sampleId?: string; sampleInput?: WorkInput;
-  onCreated: (work: Work, generate: boolean) => void | Promise<void>; onClose: () => void;
+  onCreated: (work: Work, intent: CreationIntent, warning: string) => void | Promise<void>; onClose: () => void;
 }) {
   const initialType: ContentType = kind || reference?.content_type || (mode === "小说创作" ? "novel" : "short_drama");
   const [draft, setDraft] = useState(() => {
@@ -24,8 +29,10 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [cacheError, setCacheError] = useState(false);
   const [otherTypeDraft, setOtherTypeDraft] = useState("");
   const lock = useRef(false);
+  const created = useRef<Work | null>(null);
   const snapshotRef = useRef(draft);
   const restoredKey = useRef("");
   const draftSourceId = sampleId ? `official-${sampleId}` : reference?.id;
@@ -61,8 +68,12 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   useEffect(() => {
     snapshotRef.current = draft;
     if (!ready) return;
+    let failed = false;
+    let disposed = false;
     try { localStorage.setItem(storageKey, jsonBody(draft)); }
-    catch { /* Form values remain available for manual saving. */ }
+    catch { failed = true; }
+    void Promise.resolve().then(() => { if (!disposed) setCacheError(failed); });
+    return () => { disposed = true; };
   }, [draft, ready, storageKey]);
 
   const update = (patch: Partial<CreationDraft>) => setDraft(current => ({ ...current, ...patch }));
@@ -72,40 +83,60 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       const next = applyInspiration(draft, analysis);
       setBackup(draft);
       try { localStorage.setItem(`${storageKey}-before-inspiration`, jsonBody(draft)); } catch { /* In-memory undo remains available. */ }
-      setDraft(next); setInspiration(false); setError("");
+      setDraft({ ...next, step: "premise" }); setInspiration(false); setError("");
       setNotice("方案已回填。请检查故事想法、题材、核心设定、世界观及生成参数，确认后再创建作品。");
     } catch (e) { setError(e instanceof Error ? e.message : "方案回填失败"); }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (lock.current || !ready) return;
+    if (lock.current || !ready || created.current) return;
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
-    const generate = !(submitter instanceof HTMLButtonElement && submitter.value === "draft");
+    const generate = submitter instanceof HTMLButtonElement && submitter.value === "generate";
     lock.current = true; setError(""); setBusy(true);
     try {
       const payload = creationPayload(draft, mode, generate, reference, initialType);
-      const work = await backendRequest<Work>("/studio/works", { method: "POST", body: jsonBody(payload) });
-      try { localStorage.removeItem(storageKey); if (restoredKey.current && restoredKey.current !== storageKey) localStorage.removeItem(restoredKey.current); } catch { /* A saved work must still open if browser storage is blocked. */ }
-      await onCreated(work, generate);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "创建失败"); }
+      if (generate && step === "chapter" && number > payload.units) throw new Error("当前正文编号超出计划，请先调整计划集／章数或选择范围内的正文。");
+      const intent = { generate, step, number };
+      const { work, warning } = await createWorkForStep(payload, intent, saved => {
+        created.current = saved;
+        try { localStorage.removeItem(storageKey); if (restoredKey.current && restoredKey.current !== storageKey) localStorage.removeItem(restoredKey.current); } catch { /* A saved work must still open if browser storage is blocked. */ }
+      });
+      await onCreated(work, intent, warning);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "创建失败"); if (!draft.title.trim() || !draft.premise.trim() && generate) update({ step: "premise" }); }
     finally { lock.current = false; setBusy(false); }
   }
 
   const world = draft.world_snapshot;
   const type = initialType;
+  const step = writingSteps.includes(draft.step!) ? draft.step! : "premise";
+  const labels = writingLabels(type);
+  const unit = type === "novel" ? "章" : "集";
+  const safeUnits = Math.min(200, Math.max(1, Math.floor(Number(draft.units) || 1)));
+  const number = draft.chapter_number && Number.isInteger(draft.chapter_number) && draft.chapter_number >= 1 && draft.chapter_number <= 200 ? draft.chapter_number : 1;
+  const chapter = draft.chapters.find(c => c.number === number);
+  const disabled = busy || !ready || !!created.current;
+  function selectStep(next: typeof step) { update({ step: next }); revealWritingStage(); }
+  function changeChapter(patch: Partial<Chapter>) {
+    const next = { number, title: `第${number}${unit}`, content: "", ...chapter, ...patch };
+    update({ chapters: [...draft.chapters.filter(c => c.number !== number), next].sort((a, b) => a.number - b.number) });
+  }
   function changeWorld(patch: Partial<NonNullable<CreationDraft["world_snapshot"]>>) {
     update({ world_id: "", world_snapshot: { name: world?.name || "作品专属世界", description: world?.description || "", sections: world?.sections || {}, ...patch } });
   }
 
   return <>
-    <form className="create-form studio-form" onSubmit={submit}>
+    <WorkflowNav type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => update({ step: next })} />
+    <form className={`create-form studio-form ${styles.newForm}`} onSubmit={submit} onKeyDown={event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement) event.preventDefault(); }} noValidate>
       {sampleInput && <p className="studio-inline-notice">已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
-      <div className="creation-intro"><p className="modal-description">确认下面的设定后，点击“创建并 AI 生成”完善故事设定，再依次生成人物、大纲和正文。也可先创建草稿。</p><button type="button" className="inspiration-primary" disabled={busy || !ready} onClick={() => setInspiration(true)}><Sparkles size={17} /> 灵感创作</button></div>
+      {cacheError && <p className="studio-inline-notice" role="status">当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。</p>}
+      <div className="creation-intro"><p className="modal-description">四个步骤均可先手动填写。点击 AI 生成时，会先保存全部内容为作品草稿，再生成当前步骤供你审阅。</p><button type="button" className="inspiration-primary" disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} /> 灵感创作</button></div>
       {notice && <p className="studio-inline-notice" role="status">{notice}{backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}</p>}
       {!notice && backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}
-      <fieldset disabled={busy || !ready} className="creation-fields">
+      <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={`${styles.stage} ${styles.newPanel}`}>
+      <div className={styles.stageHeading}><div><h2>{labels[step]}</h2><p>{step === "premise" ? "确定故事方向与创作参数。" : step === "characters" ? "选择右侧角色，完善人物经历与关系。" : step === "outline" ? `安排每${unit}发生的事件、冲突与转折。` : `选择要写的${unit}，开始编写正文。`}</p></div><button type="submit" name="intent" value="generate" className="inspiration-primary" disabled={disabled}><Sparkles size={16} /> AI 生成{labels[step]}</button></div>
+      {step === "premise" && <fieldset disabled={disabled} className="creation-fields">
         <label>{type === "novel" ? "书名" : "剧名"}<input name="title" required maxLength={80} value={draft.title} onChange={e => update({ title: e.target.value })} placeholder={type === "novel" ? "给小说起个名字" : "给剧本起个名字"} /></label>
         <WritingOptions kind={type} novel={draft.novel_settings} drama={draft.drama_settings} onChange={patch => update(patch)} />
         <div className="form-row"><label>计划{type === "novel" ? "章节" : "集数"}<input name="units" type="number" min={1} max={200} required value={draft.units} onChange={e => update({ units: e.target.value })} /></label>
@@ -140,10 +171,16 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
             update({ premise: text });
           } catch (cause) { setError(cause instanceof Error ? cause.message : "读取失败"); }
         }} /></label>
-      </fieldset>
+      </fieldset>}
+      {step === "characters" && <CharacterEditor value={draft.characters} disabled={disabled} onChange={characters => update({ characters })} />}
+      {step === "outline" && <label>{labels.outline}<textarea rows={18} maxLength={50000} disabled={disabled} value={draft.outline} onChange={e => update({ outline: e.target.value })} placeholder={`第1${unit}：开端与核心冲突……\n第2${unit}：矛盾升级与新变化……`} /></label>}
+      {step === "chapter" && <><div className="form-row"><label>正文目录<select disabled={disabled} value={number} onChange={e => update({ chapter_number: Number(e.target.value) })}>{[...new Set([...Array.from({ length: safeUnits }, (_, i) => i + 1), number, ...draft.chapters.map(c => c.number)])].sort((a, b) => a - b).map(n => <option key={n} value={n}>第{n}{unit}{draft.chapters.some(c => c.number === n && c.content.trim()) ? " · 已填写" : ""}</option>)}</select></label><label>本{unit}标题<input disabled={disabled} maxLength={80} value={chapter?.title || ""} onChange={e => changeChapter({ title: e.target.value })} placeholder={`第${number}${unit}`} /></label></div><label>{labels.chapter}<textarea rows={20} maxLength={150000} disabled={disabled} value={chapter?.content || ""} onChange={e => changeChapter({ content: e.target.value })} placeholder={type === "novel" ? "从一个具体场景开始，写下人物的行动、心理与对话……" : "场1 地点 日 内\n出场人物：……\n动作与对白……"} /></label></>}
+      <div className={styles.stageNext}><p>{step === "chapter" ? `已填写 ${draft.chapters.filter(c => c.content.trim()).length}/${safeUnits}${unit}正文` : "切换步骤会保留当前输入，无需按顺序填写。"}</p><div className={styles.stageActions}>{step !== "premise" && <button type="button" className="outline-button" disabled={disabled} onClick={() => selectStep(writingSteps[writingSteps.indexOf(step) - 1])}>上一步</button>}{step !== "chapter" && <button type="button" className="outline-button" disabled={disabled} onClick={() => selectStep(writingSteps[writingSteps.indexOf(step) + 1])}>继续：{labels[writingSteps[writingSteps.indexOf(step) + 1]]} →</button>}</div></div>
+      </div>
       <p className="form-note">中国市场 · 中文输出 · 新建草稿会在此浏览器保留。AI 生成结果需审阅采纳。</p>
       {error && <p className="studio-error" role="alert">{error}</p>}
-      <div className="modal-actions"><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button><button type="submit" name="intent" value="generate" className="pill light" disabled={busy || !ready}>{busy ? "正在创建…" : "确认设定，创建并 AI 生成"}</button><button type="submit" name="intent" value="draft" className="outline-button" disabled={busy || !ready}>仅创建草稿</button></div>
+      {created.current && <a className="text-button" href={`/studio/works/${created.current.id}`}>草稿已创建，打开作品 →</a>}
+      <div className="modal-actions"><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button><button type="submit" name="intent" value="draft" className="pill light" disabled={disabled}>{busy ? "正在保存…" : "保存全部内容，创建作品"}</button></div>
     </form>
     {inspiration && <Inspiration key={type} type={type} initialPrompt={draft.premise} onApply={apply} onClose={() => setInspiration(false)} />}
   </>;

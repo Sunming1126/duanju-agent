@@ -11,6 +11,10 @@ import { StudioNav } from "./navigation";
 import { worldDraftChecksum } from "@/lib/studio/world-codec";
 import { creationMode } from "@/lib/studio/writing";
 import { WritingOptions } from "./writing-options";
+import { WorkflowNav, revealWritingStage } from "./workflow-nav";
+import { CharacterEditor } from "./character-editor";
+import { writingDestination, writingLabels, workEditorUrl } from "@/lib/studio/workflow";
+import styles from "./workflow.module.css";
 
 type Result = { action: Action | "world"; number: number; text: string; adopted: boolean; references: Reference[] };
 type Job = { id: string; status: string; completed: number; total: number; error: string;
@@ -44,7 +48,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   const refreshSequence = useRef(0);
   const creation = creationMode(kind, mode);
   const isNovel = (work?.content_type || kind) === "novel";
-  const labels = { ...baseLabels, premise: isNovel ? "小说设定" : "剧本设定", characters: isNovel ? "人物档案" : "人物小传", outline: isNovel ? "章节大纲" : "分集大纲", chapter: isNovel ? "章节正文" : "分场剧本" };
+  const labels = { ...baseLabels, ...writingLabels(work?.content_type || kind) };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,6 +70,9 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     if (id) void api<Work>(`/studio/works/${id}`, { signal }).then(value => {
       if (signal.aborted) return;
       setWork(value);
+      const destination = writingDestination(window.location.search);
+      setTab(destination.step); setNumber(Math.min(destination.number, value.units));
+      if (new URLSearchParams(window.location.search).get("notice") === "generation-unconfirmed") setNotice("草稿及全部输入已保存，生成请求尚未确认成功。请先查看任务列表，再决定是否手动生成。");
       try {
         const raw = localStorage.getItem(`plotloom-unsaved-${id}`);
         if (raw) {
@@ -230,13 +237,10 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
       {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
       {recovery && <button className="outline-button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button>}
       {!id && !referenceReady ? <p role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <>
-        <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1><span className="studio-hint">{isNovel ? "01 小说设定 → 02 人物档案 → 03 章节大纲 → 04 小说正文" : "01 剧本设定 → 02 人物小传 → 03 分集大纲 → 04 分场剧本"}</span></div>
-        <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
-          if (auto) {
-            try { await api(`/studio/works/${value.id}/jobs`, { method: "POST", body: jsonBody({ revision: value.revision, action: "premise", request_key: `create-${value.id}` }) }); }
-            catch { try { localStorage.setItem(`plotloom-create-warning-${value.id}`, "草稿已创建，生成未确认提交，请查看任务列表后手动生成。"); } catch { /* The saved work must still open. */ } }
-          }
-          router.push(`/studio/works/${value.id}`);
+        <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1></div>
+        <section className={styles.newPage}><WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
+          if (warning) try { localStorage.setItem(`plotloom-create-warning-${value.id}`, warning); } catch { /* Saved work remains available. */ }
+          router.push(`${workEditorUrl(value.id, intent)}${warning ? "&notice=generation-unconfirmed" : ""}`);
         }} /></section>
       </> : !work ? <p>正在读取作品…</p> : <>
         <div className="editor-top"><div><input className="project-title-input" aria-label="作品名称" value={work.title} maxLength={80} disabled={busy} onChange={e => update({ title: e.target.value })} /><p>{work.content_type === "novel" ? "小说" : "短剧"} · {work.units}{unit} · v{work.revision}</p></div>
@@ -246,9 +250,9 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
             <button className="pill light" disabled={busy} onClick={() => void persist()}>保存</button>
             <button className="pill light" disabled={busy || pending} onClick={() => void generate("premise", true)}>一键生成全部 {work.units}{unit}</button>
           </div></div>
-        <div className="plotloom-editor-grid">
-          <div className="plotloom-writing">
-            <div className="editor-tabs" role="tablist" aria-label="创作步骤">{(["premise", "characters", "outline", "chapter"] as Action[]).map((a, i) => <button key={a} role="tab" aria-selected={a === tab} className={tab === a ? "active" : ""} onClick={() => setTab(a)}><span>0{i + 1}</span>{labels[a]}</button>)}</div>
+        <WorkflowNav type={work.content_type} current={tab} value={work} disabled={busy} onSelect={step => { setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); }} />
+        <div className={`plotloom-editor-grid ${tab === "characters" ? styles.characterWorkspace : ""}`}>
+          <div className={`plotloom-writing ${styles.stage}`} id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`}>
             {tab === "premise" && <section className="create-form plotloom-settings">
               <WritingOptions kind={work.content_type} novel={work.novel_settings} drama={work.drama_settings} disabled={busy} onChange={patch => update(patch)} />
               <div className="form-row"><label>目标受众<select value={work.audience} disabled={busy} onChange={e => update({ audience: e.target.value as Work["audience"] })}><option value="general">不限</option><option value="male">男性向</option><option value="female">女性向</option></select></label>
@@ -262,9 +266,9 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
               {tab === "chapter" && <select aria-label="正文目录" value={number} onChange={e => setNumber(Number(e.target.value))}>{Array.from({ length: work.units }, (_, i) => <option key={i} value={i + 1}>第{i + 1}{unit}{work.chapters.some(c => c.number === i + 1 && c.content) ? " · 已有正文" : ""}</option>)}</select>}
               <button className="pill light" disabled={busy || pending} onClick={() => void generate(tab)}>AI {text ? "重新生成" : "生成"}</button>
               {tab === "chapter" && text && <button className="outline-button" disabled={busy || pending} onClick={() => void generate("chapter", false, true)}>续写</button>}
-            </div></div><textarea className="script-editor" aria-label={labels[tab]} disabled={busy} value={text} maxLength={tab === "chapter" ? 150000 : 50000} onChange={e => changeText(e.target.value)} placeholder={tab === "premise" ? "写下故事梗概：人物、愿望与核心冲突…" : "编辑或生成此步骤内容…"} /><div className="editor-bottom"><span>{text.length} 字</span><span>候选不会自动覆盖原稿</span></div></section>
+            </div></div>{tab === "characters" ? <CharacterEditor value={work.characters} disabled={busy} onChange={characters => update({ characters })} /> : <textarea className="script-editor" aria-label={labels[tab]} disabled={busy} value={text} maxLength={tab === "chapter" ? 150000 : 50000} onChange={e => changeText(e.target.value)} placeholder={tab === "premise" ? "写下故事梗概：人物、愿望与核心冲突…" : "编辑或生成此步骤内容…"} />}<div className="editor-bottom"><span>{text.length} 字</span><span>候选不会自动覆盖原稿</span></div></section>
             <div className="editor-next"><p className="studio-hint">{tab === "chapter" ? `已写 ${work.chapters.filter(c => c.content.trim()).length}/${work.units}${unit}，生成结果请在下方审阅采纳。` : "可手动编辑或采纳 AI 候选，保存后进入下一步。"}</p>
-              {tab !== "chapter" ? <button className="outline-button" disabled={busy} onClick={async () => { if (await persist()) setTab(tab === "premise" ? "characters" : tab === "characters" ? "outline" : "chapter"); }}>保存并进入{tab === "premise" ? "人物" : tab === "characters" ? "大纲" : "正文"} →</button>
+              {tab !== "chapter" ? <button className="outline-button" disabled={busy} onClick={async () => { if (await persist()) { const step = tab === "premise" ? "characters" : tab === "characters" ? "outline" : "chapter"; setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); revealWritingStage(); } }}>保存并进入{tab === "premise" ? "人物" : tab === "characters" ? "大纲" : "正文"} →</button>
                 : <div className="studio-generate-controls"><button className="outline-button" disabled={busy || number <= 1} onClick={async () => { if (await persist()) setNumber(n => Math.max(1, n - 1)); }}>上一{unit}</button><button className="outline-button" disabled={busy || number >= work.units} onClick={async () => { if (await persist()) setNumber(n => Math.min(work.units, n + 1)); }}>下一{unit}</button></div>}</div>
             <section className="studio-candidates"><div className="studio-section-bar"><h2>生成任务与候选稿</h2><button onClick={() => void refreshJobs().catch(e => setNotice(e instanceof Error ? e.message : "读取任务失败"))}>刷新任务</button></div>
               {legacyCandidates.length > 0 && <details className="studio-candidate"><summary>旧版创作候选（{legacyCandidates.length}）</summary>{legacyCandidates.map(c => <article className="plotloom-result" key={c.id}><h3>{labels[c.action]} · {c.status === "adopted" ? "已采纳" : c.status === "proposed" ? "待确认" : "已中断或失败"}</h3>{c.error && <p className="studio-error">{c.error}</p>}<pre className="plotloom-pre">{c.text}</pre><button className="outline-button" onClick={() => downloadText(`${work.title}-旧候选.txt`, c.text)}>导出旧候选</button>{c.status === "proposed" && <button className="pill light" disabled={busy || dirty} onClick={() => void adoptLegacy(c)}>采纳旧候选</button>}</article>)}</details>}

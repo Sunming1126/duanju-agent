@@ -18,7 +18,7 @@ function load(path) {
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, name => {
     if (["react", "react/jsx-runtime", "lucide-react"].includes(name)) return require(name);
     if (name.endsWith(".module.css")) return { __esModule: true, default: {} };
-    const modules = { "@/lib/studio/api": "lib/studio/api.ts", "@/lib/studio/inspiration": "lib/studio/inspiration.ts", "@/lib/studio/writing": "lib/studio/writing.ts", "./writing": "lib/studio/writing.ts", "./writing-options": "components/studio/writing-options.tsx" };
+    const modules = { "@/lib/studio/api": "lib/studio/api.ts", "./api": "lib/studio/api.ts", "@/lib/studio/inspiration": "lib/studio/inspiration.ts", "@/lib/studio/writing": "lib/studio/writing.ts", "./writing": "lib/studio/writing.ts", "./writing-options": "components/studio/writing-options.tsx", "@/lib/studio/workflow": "lib/studio/workflow.ts", "@/lib/studio/creation": "lib/studio/creation.ts", "@/lib/studio/characters": "lib/studio/characters.ts", "./workflow-nav": "components/studio/workflow-nav.tsx", "./character-editor": "components/studio/character-editor.tsx" };
     if (name === "./inspiration") return { Inspiration: () => null };
     if (modules[name]) return load(modules[name]);
     throw new Error(`Unexpected dependency ${name}`);

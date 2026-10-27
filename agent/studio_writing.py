@@ -78,6 +78,9 @@ def step_instruction(work, action, number=1, json_chapter=True):
         "world": '完善作品世界六类设定。只返回JSON对象：{"name":"名称","description":"概述","sections":{"world_rules":"..."}}。sections仅可使用提供的字段；保留已有规则，补充不矛盾的设定。',
     }
     text = instructions[action]
+    if action == "characters":
+        text += ("每位人物以【人物：姓名】独占一行开头，随后分行使用定位：、年龄：、性格：、背景：、人物关系：。"
+                 "年龄未知写未设定；性格写简短标签，背景完整保留上述身份、欲望、弱点及成长等要求。不要用表格或JSON。")
     if action == "chapter" and json_chapter:
         text += '只返回JSON对象：{"text":"完整正文", "summary":"不超过220字的本单元事实摘要，记录事件、人物变化与伏笔"}。'
     return text
