@@ -231,7 +231,6 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
       {recovery && <button className="outline-button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button>}
       {!id && !referenceReady ? <p role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <>
         <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1><span className="studio-hint">{isNovel ? "01 小说设定 → 02 人物档案 → 03 章节大纲 → 04 小说正文" : "01 剧本设定 → 02 人物小传 → 03 分集大纲 → 04 分场剧本"}</span></div>
-        <p className="sample-new-entry">还不确定从哪里开始？<Link href={`/samples?type=${kind}`}>先读一份官方{isNovel ? "小说" : "剧本"}样例 →</Link></p>
         <section className="editor-panel plotloom-new"><WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={async (value, auto) => {
           if (auto) {
             try { await api(`/studio/works/${value.id}/jobs`, { method: "POST", body: jsonBody({ revision: value.revision, action: "premise", request_key: `create-${value.id}` }) }); }

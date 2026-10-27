@@ -1,0 +1,44 @@
+.options {
+  container-type: inline-size;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: #19151f;
+  border: 1px solid #aa8bd92b;
+  border-radius: 12px;
+}
+
+.options h3 {
+  margin: 0;
+  color: #e2d5f0;
+  font-size: 15px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.grid label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  color: #a7a0b4;
+  font-size: 12px;
+}
+
+.grid select {
+  width: 100%;
+  max-width: 100%;
+  padding: 9px 12px;
+}
+
+@container (min-width: 400px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@container (min-width: 800px) {
+  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

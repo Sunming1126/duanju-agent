@@ -17,6 +17,7 @@ function load(path) {
   cache.set(path, exports);
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, name => {
     if (["react", "react/jsx-runtime", "lucide-react"].includes(name)) return require(name);
+    if (name.endsWith(".module.css")) return { __esModule: true, default: {} };
     const modules = { "@/lib/studio/api": "lib/studio/api.ts", "@/lib/studio/inspiration": "lib/studio/inspiration.ts", "@/lib/studio/writing": "lib/studio/writing.ts", "./writing": "lib/studio/writing.ts", "./writing-options": "components/studio/writing-options.tsx" };
     if (name === "./inspiration") return { Inspiration: () => null };
     if (modules[name]) return load(modules[name]);

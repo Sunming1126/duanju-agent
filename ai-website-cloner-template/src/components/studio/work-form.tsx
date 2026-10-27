@@ -99,10 +99,9 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   }
 
   return <>
-    <div className="inspiration-entry"><div><span className="inspiration-eyebrow"><Sparkles size={16} /> 灵感创作</span><h2>有一个念头，还没想好怎么写？</h2><p>用自然语言描述想法，获得三个可修改的方案，再自动填写创作设定。</p></div><button type="button" className="inspiration-primary" disabled={busy || !ready} onClick={() => setInspiration(true)}><Sparkles size={17} /> 开始灵感创作</button></div>
     <form className="create-form studio-form" onSubmit={submit}>
       {sampleInput && <p className="studio-inline-notice">已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
-      <p className="modal-description">确认下面的设定后，点击“创建并 AI 生成”完善故事设定，再依次生成人物、大纲和正文。也可先创建草稿。</p>
+      <div className="creation-intro"><p className="modal-description">确认下面的设定后，点击“创建并 AI 生成”完善故事设定，再依次生成人物、大纲和正文。也可先创建草稿。</p><button type="button" className="inspiration-primary" disabled={busy || !ready} onClick={() => setInspiration(true)}><Sparkles size={17} /> 灵感创作</button></div>
       {notice && <p className="studio-inline-notice" role="status">{notice}{backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}</p>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}
       <fieldset disabled={busy || !ready} className="creation-fields">

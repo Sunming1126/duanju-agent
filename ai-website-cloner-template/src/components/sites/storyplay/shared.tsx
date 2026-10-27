@@ -12,11 +12,11 @@ export function Header({ workspace = false }: { workspace?: boolean }) {
   return <header className="site-header"><div className="header-inner"><Logo />
     <span className="preview-badge">中文创作空间</span>
     <nav aria-label="主导航">
-      {workspace ? <Link href="/" className="text-link"><ArrowLeft size={14} /> 返回首页</Link> : <>
-        <Link href="/samples" className="text-link">官方样例</Link>
-        <Link href="/corpus" className="text-link header-reference-link">语料参考</Link>
+      {workspace ? <Link href="/" className="pill light"><ArrowLeft size={14} /> 返回首页</Link> : <>
+        <Link href="/samples" className="text-link header-samples-link">官方样例</Link>
+        <Link href="/tutorial" className="text-link">教程说明</Link>
+        <Link className="pill light" href="/workspace">创作工作台</Link>
       </>}
-      <Link className="pill light" href="/workspace">{workspace ? "我的作品" : "创作工作台"}</Link>
     </nav>
   </div></header>;
 }
