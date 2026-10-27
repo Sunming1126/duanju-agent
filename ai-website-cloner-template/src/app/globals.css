@@ -2204,7 +2204,7 @@ img {
 .inspiration-progress p { color: #948b9e; font-size: 12px; }
 .inspiration-spinner { flex-shrink: 0; animation: inspiration-spin 1.5s linear infinite; }
 @keyframes inspiration-spin { to { transform: rotate(360deg); } }
-.inspiration-plan-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; align-items: start; }
+.inspiration-plan-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; align-items: stretch; }
 .inspiration-plan { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 22px; border: 1px solid #ffffff1f; border-radius: 16px; background: #19191f; }
 .inspiration-plan.selected { border-color: #ab7fe2; box-shadow: 0 0 0 1px #ab7fe230; }
 .inspiration-plan-number { font-size: 11px; color: #b79ad9; letter-spacing: .08em; }
@@ -2214,7 +2214,7 @@ img {
 .inspiration-plan .text-button { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12px; }
 .inspiration-plan .create-form { margin: 0; gap: 14px; }
 .inspiration-plan input,.inspiration-plan textarea,.inspiration-preference-grid input,.inspiration-preference-grid select { width: 100%; min-width: 0; padding: 10px 12px; font-size: 13px; line-height: 1.8; }
-.inspiration-plan-bottom { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid #ffffff16; }
+.inspiration-plan-bottom { display: grid; gap: 12px; margin-top: auto; padding-top: 16px; border-top: 1px solid #ffffff16; }
 .inspiration-plan-bottom label { display: grid; gap: 8px; color: #a9a3b8; font-size: 12px; }
 .inspiration-plan-bottom .outline-button { font-size: 12px; padding: 10px; }
 .inspiration-analysis { padding: 25px; border: 1px solid #ba92df50; background: #251c3050; border-radius: 16px; display: grid; gap: 20px; }
