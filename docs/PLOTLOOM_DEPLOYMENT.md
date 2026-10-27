@@ -136,3 +136,11 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 回环与公网列表确认移除顶部介绍、仅显示10张卡片，小说／剧本各5张；十份阅读页有第三章／集与阅读提示，十个TXT包含2026-10-27来源，十个新建回填入口正常；未知下载与错误类型拒收。旧四份不在列表，但原URL仍兼容。私有接口匿名401、空测试空间、无缓存头、管理边界、源文件哈希、数据库完整性与历史记录保留检查均通过。
 - 本机对十份公网TXT与源码生成文档逐字符比较，全部一致；大小依次为8398、8036、6942、8013、6924、6754、8067、6630、6691、8265字节。一次本机逐连接复核遇TLS连接中断，后以连接池完成全部复核，没有关闭证书校验。报告在独立副本Git忽略的`data/hot-samples-live-report.json`。
 - 中文版api／web／worker active，原duanju-agent PID1948834未变、日文站200；shared/data、模型凭据、恢复码和服务配置保持。没有站内付费模型调用，没有启动本机应用或浏览器，不将接口／格式检查宣称为文学质量或人工视觉交互验收。回滚只可回到仍支持私人空间的3be631ec版本，并按现有回滚保护流程保留数据。
+
+## 2026-10-27 教程入口与创作页面精简发布
+
+- 发布目标为 https://jubencn.onesay.top ，包含用户指定的 /studio/novels/new；源码 5263a4dc10a856678a9a52cd7b636a79a82770f0。发布前完成 GitHub 同步，核对线上 current 为 f06eb051；相对该版本的后端、测试和发布 runner 无变化。
+- 源码包 SHA-256：6064baece616d49971e1ccd8c10e1b673cdfccbf993585a60283f79f82454aae；runner SHA-256：0a7ba76cafb60000e275788581646dfb11f06ca5fa9a7d4ea0e56edd7c43dd26。包取自已提交源码，不含本机运行数据和凭据。
+- release：/opt/plotloom-cn/releases/20261027T052209Z-inspiration-5263a4dc；上一版：/opt/plotloom-cn/releases/20261027T043848Z-inspiration-f06eb051；数据库备份：/opt/plotloom-cn/backups/studio-20261027T052209Z-inspiration.sqlite3。发布器通过队列空闲、隔离接口、服务器 lint、5项样例测试、类型和生产构建、数据库与源码校验并输出 DEPLOYMENT_OK；中文版三个服务 active，旧站进程未变，日文站检查通过。
+- 公网核实首页有教程入口、教程页200，小说和剧本新建页及作品库200且导航仅含白底返回首页。客户端没有 Python 项目虚拟环境，本次未重跑本机后端测试；此前本机28项前端适配、lint、类型和构建通过。未调用付费模型，也未启动浏览器，视觉和实际点击仍待用户验收。
+- 回滚须先核对 current 仍为本次 release，再仅切回仍支持私人空间的上一版并按现有流程重启中文版服务；保留 shared/data，不使用旧数据库覆盖新作品。
