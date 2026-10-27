@@ -42,7 +42,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
           const cached = JSON.parse(raw) as CreationDraft;
           if (cached.content_type === initialType && typeof cached.premise === "string" && typeof cached.title === "string") {
             restoredKey.current = sourceKey;
-            setDraft({ ...initialCreationDraft(initialType, reference), ...cached }); setNotice("已恢复此浏览器的新建草稿，请继续编辑。");
+            setDraft({ ...initialCreationDraft(initialType, reference), ...cached });
           } else if (["novel", "short_drama"].includes(cached.content_type)) {
             localStorage.setItem(`${storageKey}-other-type`, raw); setOtherTypeDraft(raw);
             setNotice("旧版草稿类型与当前入口不同，已保留备份；本页按当前入口创建作品。");
@@ -103,6 +103,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       {sampleInput && <p className="studio-inline-notice">已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
       <div className="creation-intro"><p className="modal-description">确认下面的设定后，点击“创建并 AI 生成”完善故事设定，再依次生成人物、大纲和正文。也可先创建草稿。</p><button type="button" className="inspiration-primary" disabled={busy || !ready} onClick={() => setInspiration(true)}><Sparkles size={17} /> 灵感创作</button></div>
       {notice && <p className="studio-inline-notice" role="status">{notice}{backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}</p>}
+      {!notice && backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}
       <fieldset disabled={busy || !ready} className="creation-fields">
         <label>{type === "novel" ? "书名" : "剧名"}<input name="title" required maxLength={80} value={draft.title} onChange={e => update({ title: e.target.value })} placeholder={type === "novel" ? "给小说起个名字" : "给剧本起个名字"} /></label>
