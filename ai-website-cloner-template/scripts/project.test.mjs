@@ -25,6 +25,20 @@ const model=load('lib/studio/project.ts'), inspiration=load('lib/studio/inspirat
 const {wordDocument}=load('lib/studio/word-export.ts');
 const {WorkForm}=load('components/studio/work-form.tsx');
 const {ProjectToolbar}=load('components/studio/project-shell.tsx');
+const characterGeneration=load('lib/studio/character-generation.ts');
+
+test('latest standalone character generation fills cards only against the unchanged saved revision',()=>{
+  const generated={id:'new',mode:'single',status:'completed',base_revision:4,current:{action:'characters',number:1},results:[{action:'characters',text:'【人物：林晚】\n背景：原文',adopted:false}]};
+  const older={...generated,id:'old'},failed={...generated,id:'failed',status:'failed',results:[]};
+  assert.equal(characterGeneration.latestCharacterJob([failed,older]).id,'failed');
+  assert.equal(characterGeneration.canFillCharacterCards(generated,{revision:4},false),true);
+  assert.equal(characterGeneration.canFillCharacterCards(generated,{revision:4},true),false);
+  assert.equal(characterGeneration.canFillCharacterCards(generated,{revision:5},false),false);
+  assert.equal(characterGeneration.generatedCharacters({...generated,results:[{...generated.results[0],adopted:true}]}),undefined);
+  for(const candidate of [{...generated,status:'running'},{...generated,mode:'all'},{...generated,results:[{...generated.results[0],action:'chapter'}]},{...generated,results:[{...generated.results[0],text:'  '}]}])assert.equal(characterGeneration.generatedCharacters(candidate),undefined);
+  const cards=load('lib/studio/characters.ts').parseCharacters(characterGeneration.generatedCharacters(generated));
+  assert.equal(cards[0].name,'林晚');assert.equal(cards[0].background,'原文');
+});
 test('toolbar mouse and keyboard selection reveal the active editor; disabled controls cannot switch',()=>{
   const oldFrame=globalThis.requestAnimationFrame,oldDocument=globalThis.document;
   const selected=[],scrolled=[],focused=[];
