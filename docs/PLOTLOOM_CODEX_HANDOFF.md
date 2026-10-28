@@ -1,20 +1,15 @@
-# 发给另一台电脑 Codex 的执行提示词
+# 发给另一台电脑 Codex 的执行提示词（2026-10-28）
 
-请接手本仓库的 Plotloom 中文版上线及完整 MVP 任务，直接实施，不要只重新给方案。
+请接手 Plotloom 剧本／小说创作编辑器改版的最终检查、必要修复和中文版部署，直接实施。
 
-先定位本机已有的 `duanju-agent` 仓库（历史 Windows 路径为 `C:/Users/sun/Desktop/duanju-agent-plus/duanju-agent`，以本机实际情况为准），完整阅读根目录 `AGENTS.md`、`AGENT.md` 和前端目录规则。检查工作区，保留其他任务改动，不 reset、不强推、不盲目全量暂存。在干净工作区从 GitHub 获取并继续 `task/creative-studio-cn` 的最新版本，执行协作同步；不要仅从 main 开始，否则会遗漏目前前端与后端整合。若远端有新提交，重新核查最新记录。未提交的本机文件不会跨电脑同步。
+先定位这台电脑已有的 duanju-agent 仓库，完整阅读根 AGENTS.md、AGENT.md，按协作流程同步 GitHub 的 task/creative-studio-cn 最新版本，并读取 docs/PLOTLOOM_EDITOR_DEPLOY_HANDOFF.md 和前端目录规则。不要只拉 main；只到 a7c13f6 的独立原型还不够，必须包含正式 editor.tsx／work-form.tsx 引用 project-shell、project-settings、outline-editor、manuscript-editor 的后续改动，以及新增 outline.test.mjs／project.test.mjs。保留其他人的工作，不 reset、不强推、不盲目全量暂存。
 
-以 `docs/PLOTLOOM_MVP_PLAN.md` 为完整、已确认的执行规格，参考图在 `docs/design-references/plotloom-editor-reference.png`。该计划尚待实施，不要把计划描述当作功能已经实现或网站已经发布。
+我已认可四张参考截图的简洁效果，要求将其用于 Plotloom 的剧本和小说新建页及已有作品页。上台电脑已接入真实保存、人物、大纲、正文、灵感与候选队列；实现、67项前端及84项相关后端回归、浏览器已验收范围和未验收项都在交接文档。截图在 ai-website-cloner-template/docs/research/storyplay-creation/reference/。请先检查当前实现并修复具体问题，保留作品数据、类型专属参数、浏览器空间隔离、任务停止／恢复和候选审阅采纳，不扩大为首页重做。
 
-已确认顺序和范围：
-1. 先将当前可用 Plotloom 前后端替换到 `jubencn.onesay.top`，随后继续 MVP；独立部署中文版，保留日文站和其他服务。先备份并收紧公开接口，再切换代理，保留可验证的回滚路径。
-2. 剧本、小说改成完整创作页面，导航清楚，右侧均可编辑作品世界；左侧保留世界库管理。绑定世界默认复制独立副本，不联动改写其他作品。
-3. 同时提供分步生成与一键生成全部计划集／章，配套持久任务、进度、停止、失败继续、候选确认和完整导出。不能只接按钮、返回模板或只生成首章冒充“全部”。
-4. 完成当前 Plotloom 各入口的 MVP 闭环，不扩展旧平台所有图谱、采集和管理工具。保留现有 Plotloom 风格及已完成的品牌／海报清理，不再大幅重做首页。
-5. 公开访问，不加访问口令、登录、会员或多用户隔离，访客共用作品和世界库。模型配置只在服务端维护，公开页面只读；禁用绕过页面直接修改全站模型的接口和任意路径代理。
+优先补查小说完整创建／保存／刷新、两类作品桌面与窄屏、数字和标签边界、旧稿保留、世界副本、灵感回填、真实候选采纳以及TXT／JSON／Word导出。Word当前是兼容HTML的.doc，不冒充.docx。必须检查正式 /studio/scripts/new、/studio/novels/new、/studio/works/{真实ID}，不能用独立 /creation 原型代替。先做离线检查，再用隔离测试作品验收，不操作他人的真实作品。模型仅做必要小规模验收，不盲目执行长篇一键生成，不打印／提交凭据。
 
-模型使用 `deepseek-v4.1-flash`，兼容地址 `https://ark.cn-beijing.volces.com/api/coding/v3`。密钥不在 GitHub；检查本机或服务器实际配置，不从聊天历史找密钥，不打印、不提交、不放前端。缺少 SSH／模型配置时继续完成不依赖它们的实现与离线测试，明确记录被阻塞的验收，不假称上线成功。
+上台电脑按我“先不部署”的要求尚未发布本次改版；现在我授权你在这台电脑完成必要本地服务／浏览器检查，并在检查修复通过后直接部署到 https://jubencn.onesay.top，不必再问一次部署确认。仅此中文版；日文站 https://juben.onesay.top、旧 duanju-agent 和其他项目保持。禁止模拟器／设备。部署前重新核查服务器 current、RELEASE_COMMIT、服务和数据，不能直接相信历史版本。使用这台电脑已有 SSH 凭据／别名，不从聊天记录提取密钥，不上传本机 data。
 
-用户已授权替换此中文版及必要的网页服务启动、浏览器验证；不要反复询问同一部署授权。仍禁止启动模拟器／设备或修改其他站点。部署前重查服务器和端口：上次只读检查中日站共用 `/opt/duanju-agent/app` 的旧后端 8765，计划新增独立目录 `/opt/plotloom-cn`、前端 3001、后端 8766；这些不是实时保证。服务器全局 Node 20 不满足新前端，使用项目专用 Node 24，不改变其他项目运行时。不要把本机 data 整目录覆盖到服务器。
+前端需Node24，在 ai-website-cloner-template 运行全部Node测试（包括本次两份新测试）、lint、typecheck和webpack生产构建，按交接文档完成后端回归。现有入口 tools/deploy_plotloom.ps1 与 tools/plotloom_deploy_release.sh 的细节、完整发布／前端发布区别和回滚边界见交接文档。按干净、已提交且同步的源码发布，保留新release、双哈希、队列空闲、SQLite备份、原子切换、健康检查和兼容回滚。不要覆盖线上数据，不要回滚到没有私人空间隔离的早期版本。
 
-每阶段完成适当自动测试和实际页面／接口验收，更新 `AGENT.md` 与发布记录，明确哪些只是静态检查、哪些做过浏览器和真实生成验证。只提交本任务文件，推送 GitHub 并确认远端一致。出现阻碍时保留数据与现场，尽可能完成其余已授权工作。
+完成后核验公网新界面、保存／生成候选／采纳、隔离和接口限制、中文服务与日文站／旧站健康，更新AGENT.md及发布记录，显式提交本任务文件并推送GitHub。报告实际源码SHA、release和备份路径、通过的检查及未验收项。SSH、环境或模型受阻时先完成可做部分并清楚报告，不能把历史发布或本地构建当作本次上线成功。

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { test } from "node:test";
+import { posix } from "node:path";
 import vm from "node:vm";
 
 const require = createRequire(import.meta.url);
@@ -18,9 +19,11 @@ function load(path) {
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, name => {
     if (["react", "react/jsx-runtime", "lucide-react"].includes(name)) return require(name);
     if (name.endsWith(".module.css")) return { __esModule: true, default: {} };
-    const modules = { "@/lib/studio/api": "lib/studio/api.ts", "./api": "lib/studio/api.ts", "@/lib/studio/inspiration": "lib/studio/inspiration.ts", "@/lib/studio/writing": "lib/studio/writing.ts", "./writing": "lib/studio/writing.ts", "./writing-options": "components/studio/writing-options.tsx", "@/lib/studio/workflow": "lib/studio/workflow.ts", "@/lib/studio/creation": "lib/studio/creation.ts", "@/lib/studio/characters": "lib/studio/characters.ts", "./workflow-nav": "components/studio/workflow-nav.tsx", "./character-editor": "components/studio/character-editor.tsx" };
+    if (name === "next/link") return { __esModule: true, default: props => React.createElement("a",props) };
     if (name === "./inspiration") return { Inspiration: () => null };
-    if (modules[name]) return load(modules[name]);
+    const base = name.startsWith("@/") ? name.slice(2) : posix.normalize(posix.join(posix.dirname(path),name));
+    const target = [`${base}.ts`, `${base}.tsx`].find(candidate => existsSync(new URL(`../src/${candidate}`,import.meta.url)));
+    if (target) return load(target);
     throw new Error(`Unexpected dependency ${name}`);
   });
   return exports;
