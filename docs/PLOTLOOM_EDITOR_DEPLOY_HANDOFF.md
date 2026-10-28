@@ -71,7 +71,8 @@
 - 中文目录`/opt/plotloom-cn`，数据`shared/data`；服务`plotloom-cn-web`／`plotloom-cn-api`／`plotloom-cn-worker`，通常端口3001／8766。旧`duanju-agent`、日文站保持；使用项目专用Node24，不改全局运行时。
 - SSH别名／凭据不随Git同步。此Mac曾用`onesay-server`，Windows脚本默认`duanju-server`，以接手机器已有可用别名为准，不复制私钥、不打印密钥。
 - Windows入口`tools/deploy_plotloom.ps1`，服务端runner`tools/plotloom_deploy_release.sh`。先读脚本和`PLOTLOOM_DEPLOYMENT.md`；准备本机Python虚拟环境、Node24与SSH。`-PrepareOnly`只做本地准备、不上线。
-- 现有发布入口测试清单尚未加入本次两份新测试，入口前须显式跑全部67项及后续新增检查。runner目前走完整发布，会停止并启动中文api／worker／web，不能称仅重启前端。若确认后端源码与线上完全一致且采用已有前端专用流程，才仅重启web；不要擅自删备份和健康检查。
+- 接手修复版本已将outline.test.mjs／project.test.mjs加入发布入口；新增导航交互回归后为68项前端检查。仍须显式跑全量及后续新增检查。runner正常模式走完整发布，会停止并启动中文api／worker／web，不能称仅重启前端。若确认后端源码与线上完全一致且采用已有前端专用流程，才仅重启web；不要擅自删备份和健康检查。
+- 需要先在服务器验收候选时，可对已核对双哈希的包使用`sudo env PLOTLOOM_REVIEW_ONLY=1 bash runner.sh archive.zip SOURCE_SHA`。该模式仅建立新release并完成隔离接口、测试与构建，输出REVIEW_READY，不停服务、不改current、不备份或改写线上数据库。候选仅在回环端口临时运行，使用独立QA浏览器空间，不公开预览原型；通过后仍按正常模式发布同一已提交源码，执行备份、切换和健康检查，不能把REVIEW_READY当作上线成功。
 - 新建release，仅打包已提交Git跟踪源码；核对包与runner双SHA-256，构建和隔离检查通过、队列空闲后SQLite backup、原子切换、保留回滚。不得上传本机data覆盖线上作品／世界／任务，不用旧SQLite覆盖新作品。
 - 回滚只能回到仍支持私人空间的兼容程序，保留shared/data，不退回早期共享空间版本。不因本轮前端改版修改Nginx、systemd或模型配置。
 

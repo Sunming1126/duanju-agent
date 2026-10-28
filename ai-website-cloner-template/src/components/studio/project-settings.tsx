@@ -79,7 +79,7 @@ function ProjectTagPicker({ label, max, placeholder, options, value, disabled, o
     else { setError(`最多选择${max}项，请先移除已有标签。`); return; }
     setError(""); setQuery(""); inputRef.current?.focus();
   }
-  return <div className={styles.tagPicker} ref={ref} onKeyDown={event => { if (event.key === "Escape") { setOpen(false); inputRef.current?.focus(); } }}>
+  return <div className={styles.tagPicker} ref={ref} onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); inputRef.current?.focus(); setOpen(false); } }}>
     <label className={styles.field} htmlFor={id}><span>{label} <b>*</b>（不超过{max}个）</span></label>
     <div className={styles.tagControl} onClick={() => { if (!disabled) { setOpen(true); inputRef.current?.focus(); } }}>
       <div className={styles.tagValues}>{value.map((text, index) => <span key={`${index}:${text}`} className={styles.tag}>{text}<button type="button" disabled={disabled} aria-label={`移除${label}：${text}`} onClick={event => { event.stopPropagation(); if (!disabled) onChange(value.filter((_, position) => position !== index)); }}><X size={12} /></button></span>)}
