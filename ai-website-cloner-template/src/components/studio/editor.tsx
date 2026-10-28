@@ -7,6 +7,8 @@ import { Download, RotateCcw, RotateCw, Settings, Sparkles } from "lucide-react"
 import { backendRequest as api, jsonBody, workPayload, downloadText, localExport, unitLabel,
   type Work, type WorkInput, type World, type StudioStatus, type Action, type Reference, type WorldInput, type Candidate } from "@/lib/studio/api";
 import { WorkForm } from "./work-form";
+import { Header } from "@/components/sites/storyplay/shared";
+import { StudioNav } from "./navigation";
 import { ProjectShell, ProjectTitle, ProjectToolbar } from "./project-shell";
 import { ProjectSettings } from "./project-settings";
 import { OutlineEditor } from "./outline-editor";
@@ -264,9 +266,13 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
             <button className="pill light" disabled={busy || pending} onClick={() => void generate("world")}>AI 辅助完善（先审阅）</button><Link href="/worlds">管理世界库原件 →</Link>
 
   </div>;
-  return <ProjectShell><div onClickCapture={e => {
+  return <div className="workspace-page" onClickCapture={e => {
     if ((dirty || busy) && e.target instanceof Element && e.target.closest("a")) { e.preventDefault(); e.stopPropagation(); setNotice("请先保存或导出当前编辑后离开。"); }
   }}>
+    <Header workspace />
+    <div className="plotloom-shell">
+      <StudioNav selected={isNovel ? "小说创作" : "剧本创作"} />
+      <div className={styles.editorPane}><ProjectShell>
       {error && <div className={styles.notice}><p className="studio-error" role="alert">{error}<button onClick={() => window.location.reload()}>重新加载</button></p></div>}
       {notice && notice !== "已保存" && <div className={styles.notice}><p className="studio-inline-notice" role="status">{notice}</p></div>}
       {recovery && <div className={styles.notice}><button className={styles.tool} onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button></div>}
@@ -310,7 +316,9 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
         </main>
         {inspiration && <Inspiration type={work.content_type} initialPrompt={work.premise} onApply={applySettings} onClose={() => setInspiration(false)} />}
       </>}
-  </div></ProjectShell>;
+      </ProjectShell></div>
+    </div>
+  </div>;
 }
 
 function jobStatus(status: string) {

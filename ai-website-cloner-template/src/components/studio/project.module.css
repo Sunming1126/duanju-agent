@@ -1,7 +1,7 @@
 .project {
   --surface: #19191c;
   --muted: #9da1ad;
-  min-height: 100dvh;
+  min-height: calc(100dvh - var(--project-header-offset, 0px));
   padding-bottom: 54px;
   background-color: #000;
   background-image: repeating-linear-gradient(135deg, #ffffff06 0, #ffffff06 1px, transparent 1px, transparent 7px);
@@ -21,7 +21,7 @@
 .backLink { color: #77737f; white-space: nowrap; font-size: 12px; }
 .backLink:hover { color: #d9c8ef; }
 .workspace { margin: 0 5.8% 0 6.4%; max-width: 2000px; min-width: 0; }
-.toolbar { position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 22px; min-height: 42px; margin: 25px 5.8% 34px 6.4%; padding: 8px 0; background: #000e; }
+.toolbar { position: sticky; top: var(--project-header-offset, 0px); z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 22px; min-height: 42px; margin: 25px 5.8% 34px 6.4%; padding: 8px 0; background: #000e; }
 .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 0 0 360px; max-width: 100%; padding: 4px; background: var(--surface); border-radius: 8px; gap: 3px; }
 .tabs button { display: flex; align-items: center; justify-content: center; white-space: nowrap; padding: 6px 9px; min-height: 33px; border-radius: 5px; font-size: 14px; font-weight: 500; color: #eee; background: transparent; border: 0; }
 .tabs button:hover:enabled { background: #ffffff08; }
@@ -36,12 +36,12 @@
 .whiteButton:hover:enabled { background: #e9e6ee; }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 24px; padding: 13px 16px; border: 1px solid #8b6ca955; border-radius: 8px; color: #c8bdd6; background: #1a1420; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
 .status { font-size: 12px; color: #918a9b; line-height: 1.8; }
-.stage { min-width: 0; scroll-margin-top: 95px; }
+.stage { min-width: 0; scroll-margin-top: calc(var(--project-header-offset, 0px) + 95px); }
 .settingsLayout { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 55px; }
 .settings { min-width: 0; }
 .settings > h2 { font-size: 16px; font-weight: 500; margin: 0 0 30px; color: #eee; }
 .settingGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 31px 33px; }
-.field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 400; color: #bfc1c9; min-width: 0; scroll-margin-top: 100px; }
+.field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 400; color: #bfc1c9; min-width: 0; scroll-margin-top: calc(var(--project-header-offset, 0px) + 150px); }
 .field b { font-weight: 600; color: #ef1d24; }
 .field input, .field textarea, .field select, .tagControl { width: 100%; min-width: 0; border: 1px solid transparent; border-radius: 8px; background: var(--surface); padding: 9px 12px; color: #e9e8ee; font-size: 14px; line-height: 1.75; box-shadow: none; }
 .field textarea { resize: vertical; min-height: 66px; }
@@ -56,7 +56,7 @@
 .male.chosen { background: #4eaee71a; box-shadow: inset 0 0 0 1px #4eaee7; }
 .female.chosen { background: #e9a22c1a; box-shadow: inset 0 0 0 1px #e9a22c; }
 .general.chosen { background: #a4a0ae1a; box-shadow: inset 0 0 0 1px #a4a0ae; color: #ddd7e9; }
-.tagPicker { position: relative; min-width: 0; scroll-margin-top: 100px; }
+.tagPicker { position: relative; min-width: 0; scroll-margin-top: calc(var(--project-header-offset, 0px) + 150px); }
 .tagPicker > .field { margin-bottom: 8px; }
 .tagControl { display: flex; align-items: center; gap: 7px; min-height: 41px; cursor: text; padding: 4px 12px; }
 .tagControl:focus-within { border-color: #a88acc88; }
@@ -70,7 +70,7 @@
 .tagOptions button { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; width: 100%; font-size: 14px; border-radius: 5px; text-align: left; color: #c1bdca; overflow-wrap: anywhere; }
 .tagOptions button:hover, .tagOptions button[aria-selected=true] { background: #ffffff0b; color: #fff; }
 .tagError { display: block; color: #e6a08e; margin-top: 5px; font-size: 12px; }
-.settingRail { padding-top: 53px; align-self: start; position: sticky; top: 95px; }
+.settingRail { padding-top: 53px; align-self: start; position: sticky; top: calc(var(--project-header-offset, 0px) + 95px); }
 .settingRail button { position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 16px; width: 100%; height: 61px; white-space: nowrap; color: #7e7e85; font-size: 14px; }
 .settingRail button::after { content: ""; position: absolute; right: 8px; top: 50%; height: 100%; width: 2px; background: #202025; z-index: 0; }
 .settingRail button:last-child::after { display: none; }
@@ -149,4 +149,21 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .project * { transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Respond to the editor pane, which shares the viewport with StudioNav. */
+@container plotloom-editor (max-width: 950px) {
+  .header { flex-wrap: wrap; row-gap: 12px; }
+  .header > input { flex: 1; width: 0; }
+  .headerActions { flex-basis: 100%; flex-wrap: wrap; justify-content: flex-end; }
+  .toolbar { flex-wrap: wrap; row-gap: 10px; }
+  .tabs { flex: 1 1 100%; max-width: none; }
+  .actions { margin-left: auto; gap: 10px; }
+  .settingsLayout { display: block; }
+  .settingRail { display: none; }
+  .parameterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container plotloom-editor (max-width: 520px) {
+  .settingGrid, .parameterGrid { grid-template-columns: 1fr; }
+  .fullWidth { grid-column: auto; }
 }
