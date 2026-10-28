@@ -237,7 +237,6 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
       {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
       {recovery && <button className="outline-button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button>}
       {!id && !referenceReady ? <p role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <>
-        <div className="workspace-title"><h1>{creation === "灵感创作" ? `${isNovel ? "小说" : "剧本"}灵感创作` : creation}</h1></div>
         <section className={styles.newPage}><WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
           if (warning) try { localStorage.setItem(`plotloom-create-warning-${value.id}`, warning); } catch { /* Saved work remains available. */ }
           router.push(`${workEditorUrl(value.id, intent)}${warning ? "&notice=generation-unconfirmed" : ""}`);

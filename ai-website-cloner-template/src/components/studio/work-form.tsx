@@ -126,16 +126,15 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   }
 
   return <>
-    <WorkflowNav type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => update({ step: next })} />
+    <WorkflowNav type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => update({ step: next })} action={step === "premise" && <button type="button" className="inspiration-primary" disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} /> 灵感创作</button>} />
     <form className={`create-form studio-form ${styles.newForm}`} onSubmit={submit} onKeyDown={event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement) event.preventDefault(); }} noValidate>
       {sampleInput && <p className="studio-inline-notice">已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
       {cacheError && <p className="studio-inline-notice" role="status">当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。</p>}
-      <div className="creation-intro"><p className="modal-description">四个步骤均可先手动填写。点击 AI 生成时，会先保存全部内容为作品草稿，再生成当前步骤供你审阅。</p><button type="button" className="inspiration-primary" disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} /> 灵感创作</button></div>
       {notice && <p className="studio-inline-notice" role="status">{notice}{backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}</p>}
       {!notice && backup && <button type="button" className="text-button" disabled={busy} onClick={() => { setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}
       <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={`${styles.stage} ${styles.newPanel}`}>
-      <div className={styles.stageHeading}><div><h2>{labels[step]}</h2><p>{step === "premise" ? "确定故事方向与创作参数。" : step === "characters" ? "选择右侧角色，完善人物经历与关系。" : step === "outline" ? `安排每${unit}发生的事件、冲突与转折。` : `选择要写的${unit}，开始编写正文。`}</p></div><button type="submit" name="intent" value="generate" className="inspiration-primary" disabled={disabled}><Sparkles size={16} /> AI 生成{labels[step]}</button></div>
+      <div className={styles.stageHeading}><div><h2>{labels[step]}</h2><p>{step === "premise" ? "确定故事方向与创作参数。" : step === "characters" ? "选择右侧角色，完善人物经历与关系。" : step === "outline" ? `安排每${unit}发生的事件、冲突与转折。` : `选择要写的${unit}，开始编写正文。`}</p></div>{step !== "premise" && <button type="submit" name="intent" value="generate" className="inspiration-primary" disabled={disabled}><Sparkles size={16} /> AI 生成{labels[step]}</button>}</div>
       {step === "premise" && <fieldset disabled={disabled} className="creation-fields">
         <label>{type === "novel" ? "书名" : "剧名"}<input name="title" required maxLength={80} value={draft.title} onChange={e => update({ title: e.target.value })} placeholder={type === "novel" ? "给小说起个名字" : "给剧本起个名字"} /></label>
         <WritingOptions kind={type} novel={draft.novel_settings} drama={draft.drama_settings} onChange={patch => update(patch)} />

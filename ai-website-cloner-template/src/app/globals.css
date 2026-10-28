@@ -2179,8 +2179,6 @@ img {
 .creation-world details { border-top: 1px solid #ffffff15; padding-top: 14px; }
 .creation-world details label { margin-top: 14px; }
 .creation-world summary { color: #c6bcdf; cursor: pointer; font-size: 13px; }
-.creation-intro { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; }
-.creation-intro .modal-description { margin: 0; min-width: 0; }
 .inspiration-eyebrow { display: inline-flex; align-items: center; gap: 7px; color: #c3a6ec; font-size: 12px; letter-spacing: .06em; }
 .inspiration-primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 20px; border-radius: 999px; background: linear-gradient(110deg,#7650c9,#ad536e); color: #fff; font-size: 13px; font-weight: 500; min-height: 44px; flex-shrink: 0; }
 .inspiration-primary:hover:not(:disabled) { filter: brightness(1.13); }
@@ -2243,8 +2241,6 @@ img {
   .inspiration-preference-grid { grid-template-columns: 1fr; }
   .inspiration-compose-actions { flex-wrap: wrap; }
   .inspiration-compose-actions .inspiration-primary { width: 100%; }
-  .creation-intro { flex-wrap: wrap; }
-  .creation-intro .inspiration-primary { margin-left: auto; }
   .creation-world { padding: 15px; }
   .creation-fields { gap: 20px; }
   .inspiration-analysis dl>div { grid-template-columns: 60px minmax(0,1fr); gap: 10px; }
