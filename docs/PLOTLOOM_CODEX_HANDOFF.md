@@ -1,5 +1,7 @@
 # 发给另一台电脑 Codex 的执行提示词（2026-10-28）
 
+> 执行状态：本交接已完成，运行版本6fbbedee（包含e326477），最终检查与发布路径见PLOTLOOM_EDITOR_DEPLOY_HANDOFF.md末尾及PLOTLOOM_DEPLOYMENT.md。以下为当时的原执行提示，继续工作前应重新同步和核实线上版本，不应将其“尚未部署”当作当前状态。
+
 请接手 Plotloom 剧本／小说创作编辑器改版的最终检查、必要修复和中文版部署，直接实施。
 
 先定位这台电脑已有的 duanju-agent 仓库，完整阅读根 AGENTS.md、AGENT.md，按协作流程同步 GitHub 的 task/creative-studio-cn 最新版本，并读取 docs/PLOTLOOM_EDITOR_DEPLOY_HANDOFF.md 和前端目录规则。不要只拉 main；只到 a7c13f6 的独立原型还不够，必须包含正式 editor.tsx／work-form.tsx 引用 project-shell、project-settings、outline-editor、manuscript-editor 的后续改动，以及新增 outline.test.mjs／project.test.mjs。保留其他人的工作，不 reset、不强推、不盲目全量暂存。

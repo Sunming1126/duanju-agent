@@ -169,3 +169,14 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 服务器隔离 API 检查、ESLint、16 项样例／四步流程测试、TypeScript 与 webpack 生产构建通过；队列空闲后备份并原子切换，发布器输出 `DEPLOYMENT_OK`。源码哈希、数据库完整性及原记录保留、样例／下载／设定回填、回环和公网主要入口、灵感与管理边界检查通过；中文 api／worker／web 均 active，旧站进程未变且日文站 200。没有重新运行本机后端测试；本次代码在实现阶段的 53 项前端适配与构建结果仍适用。
 - 上线后直接读取公网剧本与小说新建页，均 200、四个页签存在、设定页仅一个灵感按钮、没有 AI 生成设定按钮，顶部标题及旧介绍已移除，紧凑样式已加载。首次额外检查读取共享样式时发生一次 TLS EOF，缓存样式后完整复核两页通过；未关闭证书校验。
 - 未调用付费模型、修改模型配置或用户作品，未启动本机应用或浏览器。以上为构建和 HTTP／页面结构检查，实际视觉与点击仍待用户验收。需要回滚时先确认 current 仍为本次 release，仅切回上述支持私人空间的上一版，保留 shared/data，不用旧 SQLite 覆盖新增作品。
+
+## 2026-10-28 截图风格正式编辑器验收及发布
+
+- **运行源码：`6fbbedee7148bcde8ea386a17d8c440fdd30506a`**，包含e326477正式接入、原先未推送的发布记录以及页签滚动定位／标签Escape修复。GitHub Git链路临时不可达时通过官方Git数据库API发布同一tree与commit，非强制快进并读取ref核对；没有改提交身份、关闭证书校验或把凭据写文件／传服务器。
+- **release：`/opt/plotloom-cn/releases/20261028T084205Z-inspiration-6fbbedee`**；previous：`/opt/plotloom-cn/releases/20261028T025705Z-inspiration-8141b6ef`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261028T084205Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261028T084205Z-inspiration.txt`。
+- 包：`plotloom-20261028T082336Z-6fbbedee7148.zip`，SHA-256 `dcd7edd208950f05593705b03b2d1160594226cd8f2a7ce19671a113696e8299`；runner SHA-256 `af9046b41adf6136dda03fa9adaa868e4e64af0ce83db128c6883a83012c76fa`。包只含Git跟踪源码，上传后双哈希一致，不含本机运行数据、模型配置或密钥。
+- 发布前68项前端、115项后端／市场／并发／隔离检查、lint／类型通过。先使用REVIEW_ONLY模式构建服务器候选，不动current；修复版候选`20261028T083522Z-inspiration-6fbbedee`完成31项Linux流程／项目／大纲／样例检查及webpack构建。通过回环专用预览和独立浏览器空间完成验收后，结束候选进程，再正常完整发布，同一源码重新构建后执行队列空闲、SQLite备份、原子切换与健康检查，输出DEPLOYMENT_OK，无回滚。
+- Chrome实测两类新建及已有作品1440px桌面／390px窄屏的四步、键盘、标签上限／内部标点、人物新增删除／撤销、起承转合大纲、多个正文标题与目录、草稿及保存刷新、世界副本不改库原件、灵感回填前备份、TXT／完整JSON／Word下载。补充审计确认旧自由文本仅打开不改revision或内容、越界数字不保存、已有作品撤销重做不回退revision、窄屏灵感弹窗和控制台正常。
+- 候选正式路由的小规模真实模型验收：小说正文423字符、短剧381字符，均验证保存后入队、请求键幂等、停止／继续、候选不覆盖原文、逐项采纳、第二单元保留、刷新类型与内容及空间隔离。另做一次小说灵感generate与一次analyze，真实三个方向、关闭恢复、解析回填及原草稿恢复通过；未生成整部作品、未静默重试付费请求。发布runner自身没有模型调用。报告real-report.json／inspiration-real-report.json和截图在本机Git忽略的`data/editor-handoff-qa/`。
+- 发布后直接公网HTTPS复跑两类完整手动流程和补充审计，`manual-report.json`及`audit-report.json`均ok，无页面脚本／控制台错误、无横向溢出；使用本轮创建的独立QA作品，未操作他人内容。源文件SHA、数据库quick_check与原记录保留、十份样例全文／下载／回填、匿名401和管理边界通过；current及RELEASE_COMMIT一致，中文三服务和旧站active、旧PID1948834未变、日文站200。模型配置指纹与发布前一致，Nginx／systemd／恢复码保持。
+- 临时API、候选Web及SSH转发已关闭，验收资料留在忽略目录。无已知阻断问题；Word仍为兼容HTML `.doc`，不是原生`.docx`。若需程序回滚，先确认current仍为本次release，只切回上述8141b6ef兼容版本并重启中文版三服务；保持shared/data，禁止用旧SQLite覆盖新增作品。
