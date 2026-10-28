@@ -12,7 +12,7 @@ export function serializeOutline(document: Pick<OutlineDocument, "rough" | "entr
   ]), END].join("\n");
 }
 
-/** Recognize only the backend's exact one-line-per-unit format, retaining its entire text. */
+/** Explicit numbered headings delimit units; retain every following paragraph verbatim. */
 function parsePlainOutline(value: string): OutlineDocument | null {
   const chunks = value.match(/[^\n]*\n|[^\n]+$/g) || [];
   const entries: OutlineEntry[] = [];
@@ -26,7 +26,12 @@ function parsePlainOutline(value: string): OutlineDocument | null {
       continue;
     }
     const marker = /^第([1-9]\d*)(集|章)：/.exec(line);
-    if (!marker || (unit && marker[2] !== unit)) return null;
+    if (!marker) {
+      if (!entries.length || /^第[\d一二三四五六七八九十百]+(?:集|章)[：:]/.test(line)) return null;
+      entries[entries.length - 1].text += chunk;
+      continue;
+    }
+    if (unit && marker[2] !== unit) return null;
     const number = Number(marker[1]);
     if (!Number.isSafeInteger(number) || entries.some(entry => entry.number === number)) return null;
     unit = marker[2];

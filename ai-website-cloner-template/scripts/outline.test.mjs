@@ -68,19 +68,32 @@ test("exact backend unit lines become cards with no invented plot phases and no 
   }
 });
 
-test("duplicate, unsafe, mixed-mode and prose-extended AI lines remain wholly raw", () => {
+test("duplicate, unsafe, mixed-mode and ambiguous headings remain wholly raw", () => {
   for (const value of [
     "第1集：甲\n第1集：重复编号",
     "第9007199254740992集：超安全整数",
     "第1集：甲\n第2章：类型不一致",
-    "第1集：甲\n附注：不能丢失",
     "# 第1集：Markdown标题",
     " 第1集：前缀存在缩进",
     "第0集：零编号",
     "第01章：含前导零",
     "第1集: 非约定冒号",
-    "第1集：甲\n第二段继续故事",
+    "第1集：甲\n第02集：不安全的编号",
   ]) assert.deepEqual(parseOutline(value), { rough: value, entries: [], structured: false });
+});
+
+test("multiline generated units fill real outline cards without dropping headings, paragraphs or notes", () => {
+  for (const unit of ["集", "章"]) {
+    const value = `第1${unit}：夹层里的信\r\n\r\n**开场钩子**：父女发现信封。\r\n\r\n第二段继续争执。\r\n\r\n第2${unit}：收件人\n\n**转折**：父亲承认错误。\n附注：此句也要保留。\n`;
+    const result = parseOutline(value);
+    assert.deepEqual(result.entries.map(entry => entry.number), [1, 2]);
+    assert.equal(result.source, value);assert.equal(result.rough + result.entries.map(entry => entry.text).join(""), value);
+    assert.ok(result.entries.every(entry => entry.phase === 0));
+    assert.deepEqual(parseOutline(serializeOutline(result)).entries, result.entries);
+    const html = renderToStaticMarkup(React.createElement(OutlineEditor, { value, type: unit === "集" ? "short_drama" : "novel", units: 2, onChange() { assert.fail("opening must not rewrite"); } }));
+    assert.ok(html.includes(`aria-label="第1${unit}${unit}纲"`) && html.includes(`aria-label="第2${unit}${unit}纲"`));
+    assert.ok(html.includes("父亲承认错误"));
+  }
 });
 
 test("opening recognized AI outline is read-only until editing and exposes real unit cards", () => {
