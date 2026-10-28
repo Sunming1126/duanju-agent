@@ -32,6 +32,19 @@ const creation = load("lib/studio/creation.ts");
 const { CharacterEditor } = load("components/studio/character-editor.tsx");
 const { WorkflowNav } = load("components/studio/workflow-nav.tsx");
 
+test("AI introduction is preserved as text without becoming a role; explicit numeric ages stay editable", () => {
+  const intro = "按作品前提限定，只设计两位人物。\n\n";
+  const text = intro + "【人物：林知】\n定位：主角\n年龄：28岁\n背景：修表师\n\n【人物：林成】\n定位：父亲\n背景：修表铺店主";
+  const cards = characters.parseCharacters(text);
+  assert.deepEqual(cards.map(card => card.name), ["林知", "林成"]);
+  assert.equal(cards[0].age, "28");assert.equal(cards[0].preamble, intro);
+  assert.equal(characters.serializeCharacters(cards), text);
+  const edited = characters.serializeCharacters([{ ...cards[0], background: "修改后的经历", source: undefined }, cards[1]]);
+  assert.ok(edited.startsWith(intro));assert.equal(characters.parseCharacters(edited).length, 2);
+  const mixed = "### 李明（主角）\n欲望：找到父亲。\n\n【人物：张河】\n定位：对手\n背景：守门人";
+  assert.deepEqual(characters.parseCharacters(mixed).map(card => card.name), ["李明", "张河"]);
+});
+
 test("character cards round-trip empty fields, literal labels, punctuation and trailing newlines while typing", () => {
   const card = { ...characters.newCharacter(), name: "", role: "Love interest \n背景：仍属定位", age: "约三十岁", traits: ["聪明，嘴硬", "善良、怕事"], background: "  第一行\n背景：这句话属于经历\n【人物：这是经历中的标题】\n【人物结束】\n\n", relationships: "姐姐：未命名\n人物关系：原文标签\n" };
   const text = characters.serializeCharacters([card]);

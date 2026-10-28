@@ -2,6 +2,8 @@ export type CharacterCard = {
   name: string; role: string; age: string; traits: string[]; background: string; relationships: string;
   /** Unedited blocks retain their original prose, including unknown fields. */
   source?: string;
+  /** Model introductions stay in the full text, without becoming fake roles. */
+  preamble?: string;
 };
 
 export function newCharacter(): CharacterCard {
@@ -38,7 +40,9 @@ function readBlock(source: string): CharacterCard {
     else (values[field] ||= []).push(line.replace(/^  /, ""));
   }
   const value = (key: string) => encoded ? (values[key] || []).join("\n") : (values[key] || []).join("\n").trim();
-  card.role = value("定位"); card.age = value("年龄");
+  card.role = value("定位");
+  const age = value("年龄");
+  card.age = age.match(/^(\d{1,3})\s*岁$/)?.[1] || age;
   const traits = value("性格");
   card.traits = traits.includes("\n") || traits.startsWith("- ")
     ? traits.split("\n").map(s => s.replace(/^- /, "").trim()).filter(Boolean)
@@ -65,13 +69,20 @@ export function parseCharacters(text: string): CharacterCard[] {
     if (line === "【人物结束】") insideCanonical = false;
   }
   if (current.some(s => s.trim())) blocks.push(current.join("\n"));
+  const firstLabelled = blocks.findIndex(block => marker.test(block.split("\n")[0]));
+  const profileEvidence = (block: string) => /^\s*(?:[-*]\s*)?(?:姓名|定位|角色定位|年龄|性格|背景|人物关系|身份|欲望|弱点|内在冲突|成长弧|成长|对白口吻|对抗关系)[：:]/m.test(block) || /^[^\s，,：:。]{1,12}[，,]\s*\d{1,3}岁/.test(block);
+  if (firstLabelled > 0 && blocks.slice(0, firstLabelled).every(block => !profileEvidence(block))) {
+    const cards = blocks.slice(firstLabelled).map(block => readBlock(block.trim()));
+    cards[0].preamble = blocks.slice(0, firstLabelled).join("\n") + "\n";
+    return cards;
+  }
   return blocks.map(block => readBlock(block.trim()));
 }
 
 export function serializeCharacters(cards: CharacterCard[]): string {
   const indent = (value: string) => value.split("\n").map(line => `  ${line}`).join("\n");
-  return cards.map(card => card.source ?? [
+  return cards.map(card => (card.preamble || "") + (card.source ?? [
     `【人物：${card.name.replace(/[\r\n]/g, " ")}】`, "定位：", indent(card.role), "年龄：", indent(card.age),
     "性格：", ...card.traits.map(trait => `  - ${trait}`), "背景：", indent(card.background), "人物关系：", indent(card.relationships), "【人物结束】",
-  ].join("\n")).join("\n\n");
+  ].join("\n"))).join("\n\n");
 }
