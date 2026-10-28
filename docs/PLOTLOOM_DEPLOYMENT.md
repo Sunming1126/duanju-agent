@@ -151,3 +151,12 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - release /opt/plotloom-cn/releases/20261027T055012Z-inspiration-c00860fa；上一版 /opt/plotloom-cn/releases/20261027T052209Z-inspiration-5263a4dc；SQLite 备份 /opt/plotloom-cn/backups/studio-20261027T055012Z-inspiration.sqlite3。服务端隔离检查、lint、5项样例测试及 webpack 构建通过，空闲队列后备份并切换，发布器输出 DEPLOYMENT_OK。数据库完整性与记录保留、源码哈希、公开页面与安全边界检查通过；中文三服务 active，旧站进程不变，日文站200。
 - 本地42项前端测试、lint、类型和构建通过；发布后以线上代码复验20项灵感状态／标签测试通过。公网小说、剧本新建页及作品库200，发布脚本包含新进度／结果入口与逐行标签提示，旧草稿提示和作品库多余标题文案不存在。未启动浏览器或调用付费模型，不将上述检查视为真实点击／视觉验收。
 - 旧版已回填且含逗号的草稿如果仍提示标签超限，应在同一浏览器打开原灵感解析结果并重新确认回填；旧版已拼接文本无法可靠推断项目边界，回填前表单保留备份。回滚须先核对 current，仅切回保留私人空间能力的上一版并保留 shared/data，不用旧 SQLite 覆盖新作品。
+
+## 2026-10-28 创作页顶部与四步导航精简发布
+
+- 用户明确授权“部署一下”，发布目标为 https://jubencn.onesay.top 。成功 start 同步；实际运行源码 `8141b6ef6f5d0f63c3e82c75170c300afaad6917`，相对服务器原版本 `bacd11ef3be8362c423910fcc02f7934503d5290` 仅改变前端及文档，后端代码不变。Mac 使用本机既有 `onesay-server` SSH 别名，上传已提交 Git 源码包并调用包内原版发布 runner，不上传本机数据或配置。
+- 源码包 SHA-256：`67ae8525923457386cdb5a029096f7ba843de8ad9b967b445103fbc34ab31b7d`；runner SHA-256：`f35833b65875371282ce2deec73437c35fd922033bb32d6af36dac1f2847439d`；上传后双校验通过。
+- release：`/opt/plotloom-cn/releases/20261028T025705Z-inspiration-8141b6ef`；上一版：`/opt/plotloom-cn/releases/20261027T234740Z-inspiration-bacd11ef`；SQLite 备份：`/opt/plotloom-cn/backups/studio-20261028T025705Z-inspiration.sqlite3`（0600）；回滚目标记录：`/opt/plotloom-cn/backups/previous-20261028T025705Z-inspiration.txt`。
+- 服务器隔离 API 检查、ESLint、16 项样例／四步流程测试、TypeScript 与 webpack 生产构建通过；队列空闲后备份并原子切换，发布器输出 `DEPLOYMENT_OK`。源码哈希、数据库完整性及原记录保留、样例／下载／设定回填、回环和公网主要入口、灵感与管理边界检查通过；中文 api／worker／web 均 active，旧站进程未变且日文站 200。没有重新运行本机后端测试；本次代码在实现阶段的 53 项前端适配与构建结果仍适用。
+- 上线后直接读取公网剧本与小说新建页，均 200、四个页签存在、设定页仅一个灵感按钮、没有 AI 生成设定按钮，顶部标题及旧介绍已移除，紧凑样式已加载。首次额外检查读取共享样式时发生一次 TLS EOF，缓存样式后完整复核两页通过；未关闭证书校验。
+- 未调用付费模型、修改模型配置或用户作品，未启动本机应用或浏览器。以上为构建和 HTTP／页面结构检查，实际视觉与点击仍待用户验收。需要回滚时先确认 current 仍为本次 release，仅切回上述支持私人空间的上一版，保留 shared/data，不用旧 SQLite 覆盖新增作品。

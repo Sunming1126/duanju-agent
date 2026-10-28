@@ -344,3 +344,9 @@
 - 新建小说／剧本设定页移除单独 AI 生成设定按钮；人物、大纲、正文仍保留各自生成入口，设定可手动填写或通过灵感方案确认回填。教程同步按钮位置和生成范围。已有作品的保存、生成、候选与世界编辑逻辑保持原样。
 - 参考本仓库 clone-website 流程；用户提供的 StoryPlay 四个链接通过网页读取工具均不可访问，未绕过登录或访问控制。以用户截图为布局依据，不宣称完整复刻原站：/creation/…/1 至 /4 分别对应现有 /studio/scripts/new 与 /studio/novels/new 的 premise、characters、outline、chapter 状态，由 work-form.tsx 与 workflow-nav.tsx／workflow.module.css 维护。
 - 验证：53 项现有前端适配测试、ESLint、TypeScript 与 webpack 生产构建通过；额外只读组件渲染检查覆盖两种类型共八个步骤，确认仅设定页有导航右侧灵感入口、只有另外三步有分步生成按钮，四个页签始终存在。未调用模型、改写用户作品、启动应用／开发服务器／浏览器或执行部署；实际视觉、移动端布局与交互仍由用户启动验收。最终提交和远端同步状态以交付说明为准。
+
+### 2026-10-28：创作页顶部精简部署完成
+
+- 用户明确授权部署，成功 start 同步，使用已提交 `8141b6ef6f5d0f63c3e82c75170c300afaad6917` 发布至 jubencn.onesay.top。只读核实线上原版本为 bacd11ef、中文三个服务及专用运行时正确；相对此线上版本仅前端与文档改变。Mac 通过本机 onesay-server 别名上传 Git 源码包并双 SHA-256 校验，再执行包内已有发布 runner。
+- 新 release `/opt/plotloom-cn/releases/20261028T025705Z-inspiration-8141b6ef`；上一版 `/opt/plotloom-cn/releases/20261027T234740Z-inspiration-bacd11ef`；SQLite 备份 `/opt/plotloom-cn/backups/studio-20261028T025705Z-inspiration.sqlite3`。服务器隔离接口、lint、16 项样例／流程测试、类型与生产构建通过，空闲队列后备份并原子切换，输出 DEPLOYMENT_OK；源码哈希、数据保留、页面与管理边界均通过，中文三服务正常、旧站进程未变、日文站 200。
+- 公网剧本及小说新建页复核通过：四个页签、设定页单个灵感按钮、移除 AI 生成设定及顶部旧文案，紧凑样式存在。本机首次额外读取共享样式时遇临时 TLS EOF，缓存共享样式后两页完整复核通过。未关闭证书校验、调用付费模型、改用户作品或启动浏览器；实际视觉／点击仍待用户验收。详细包哈希、发布及回滚记录见 docs/PLOTLOOM_DEPLOYMENT.md。
