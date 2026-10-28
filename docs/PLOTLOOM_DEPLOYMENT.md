@@ -1,5 +1,16 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-28 人物生成直接进入角色卡片
+
+- **运行源码：`6d757d6360dfe26764c1ffbd1d6306275eea9614`**。包含47fcdb28人物自动回填、5454d4b只读候选人物切换及6d757d6前言解析修复。人物页的单独生成完成后，经原服务器版本校验接口直接填入作品及角色卡片，可编辑、撤销重做和刷新恢复；隐藏人物页旧任务候选表单及底部候选说明。手动或外部修改会阻止自动覆盖，保留生成稿的卡片预览和导出。其他步骤和整部生成维持审阅，原站页头、左侧导航及其他页面源码不变。
+- **release：`/opt/plotloom-cn/releases/20261028T141851Z-inspiration-6d757d63`**；previous：`/opt/plotloom-cn/releases/20261028T121608Z-inspiration-0e52caa7`；数据库备份：`/opt/plotloom-cn/backups/studio-20261028T141851Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261028T141851Z-inspiration.txt`。
+- 包`plotloom-20261028T132936Z-6d757d6360df.zip`，SHA-256 `ca541769759d900447562679d128e655cc62f72c3bf2c0931add01ce2af09394`；runner SHA-256 `af9046b41adf6136dda03fa9adaa868e4e64af0ce83db128c6883a83012c76fa`；上传后双哈希验证。只发布已提交源码，不传本机数据或配置；Git HTTPS临时重置后，通过官方Git数据库API严格校验相同tree／commit并非强制快进到同一SHA，已同步GitHub。
+- 71项前端、115项后端、lint／类型通过。最终review候选`20261028T135903Z-inspiration-6d757d63`及正式Linux34项检查、webpack构建通过；正常runner输出DEPLOYMENT_OK，队列空闲、SQLite备份、原子切换、源文件哈希、数据库及旧记录保留、主要页面／样例／下载／管理边界通过，无回滚。完整日志在服务器`/tmp/plotloom-characters-6d757d63-publish.log`。
+- 真实模型验收仅在首个候选47fcdb28、独立QA空间内，小说与剧本人物各生成一次：直接卡片、自动采纳一次、撤销重做、编辑刷新、桌面和窄屏通过。实际短剧结果的说明前言被识别成额外人物，随后在最终源码修正；最终前言／数字年龄／冲突保护用明确标注的前端任务fixture复验，不增加付费调用、不冒充模型结果。
+- 最终候选与公网fixture通过两类自动回填、真实后端保存／刷新、年龄加减、不把前言变成角色、保留前言及原大纲正文；冲突fixture通过手写不覆盖、候选只读、多角色切换和刷新保护。公网navigation复验1920／1440／1024／768／390两类四步与主要功能切换通过；三个公网报告均ok、无页面错误。人物页没有旧“生成任务与候选稿”表单。测试只操作新建QA空间和作品，结束清理本轮作品；报告与截图留在忽略目录`data/editor-handoff-qa/`。
+- current和RELEASE_COMMIT匹配；中文api／worker／web及旧站active，旧PID1948834保持、日文站200，模型配置指纹与发布前一致。无用户数据、Nginx、systemd或日本站改动；两个候选Web及专用转发已关闭，无已知本次阻断问题。
+- 回滚前重新核实current；仅切回上述支持私人空间的0e52caa7版本并重启中文三服务，保留shared/data，不用旧SQLite覆盖新增作品。回滚会恢复人物需要人工采纳的旧行为。
+
 ## 2026-10-28 创作页侧栏恢复与编辑区域收窄
 
 - 运行源码：`0e52caa7f40e128f89ed2a977c3d4dc28d16e550`，GitHub已正常同步。修复正式创作页漏用原页头／StudioNav导致进入编辑器后无法看到其他功能入口的问题，新编辑器仅占右侧，局部容器查询适配剩余宽度，顶部流程避开固定页头；其他页面、全局样式与后端源码没有修改。
