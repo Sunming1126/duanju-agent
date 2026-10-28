@@ -34,6 +34,11 @@ class JobInput(BaseModel):
     continuation: bool = False
 
 
+class AdoptInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ready_only: bool = False
+
+
 class JobStore:
     def __init__(self, store):
         self.store = store
@@ -167,10 +172,10 @@ class JobStore:
             self.write(db, job)
             return job
 
-    def adopt(self, ident, index=None):
+    def adopt(self, ident, index=None, *, ready_only=False):
         with self.transaction() as db:
             job = self.read(db, ident)
-            if index is None and job["status"] != "completed":
+            if index is None and job["status"] != "completed" and not ready_only:
                 raise HTTPException(409, "整稿尚未完成，可逐项采纳已完成部分")
             if index is not None and (index < 0 or index >= len(job["results"])):
                 raise HTTPException(404, "此候选尚未生成")
@@ -194,8 +199,9 @@ class JobStore:
 def apply_result(work, result):
     if result["action"] == "chapter":
         number = result["number"]
+        existing = next((c for c in work["chapters"] if c["number"] == number), None)
         work["chapters"] = sorted([c for c in work["chapters"] if c["number"] != number] +
-                                  [{"number": number, "title": f"第{number}{'章' if work['content_type']=='novel' else '集'}", "content": result["text"]}], key=lambda c: c["number"])
+                                  [{"number": number, "title": existing["title"] if existing else f"第{number}{'章' if work['content_type']=='novel' else '集'}", "content": result["text"]}], key=lambda c: c["number"])
     elif result["action"] == "world":
         work["world_snapshot"] = result["world"]
     else:
@@ -204,7 +210,7 @@ def apply_result(work, result):
 
 def summary(job):
     return {key: job[key] for key in ("id", "work_id", "status", "error", "base_revision", "created_at", "updated_at")} | {
-        "completed": len(job["results"]), "total": len(job["steps"]),
+        "completed": len(job["results"]), "total": len(job["steps"]), "adoption_revision": job.get("adoption_revision", job["base_revision"]),
         "current": job["steps"][min(len(job["results"]), len(job["steps"])-1)], "mode": job["input"]["mode"]}
 
 
@@ -324,8 +330,8 @@ def create_router():
         return summary(jobs().control(ident, "resume"))
 
     @router.post("/jobs/{ident}/adopt")
-    def adopt_all(ident: str):
-        return jobs().adopt(ident)
+    def adopt_all(ident: str, body: AdoptInput | None = None):
+        return jobs().adopt(ident, ready_only=body.ready_only if body else False)
 
     @router.post("/jobs/{ident}/results/{index}/adopt")
     def adopt_one(ident: str, index: int):

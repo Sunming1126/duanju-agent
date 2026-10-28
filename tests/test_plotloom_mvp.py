@@ -168,6 +168,46 @@ def test_partial_adoption_and_external_revision_conflicts(setup):
     assert len(jobs.get(job['id'])['draft']['chapters']) == 3
 
 
+def test_ready_results_fill_incrementally_with_atomic_revision_and_idempotency(setup):
+    from agent.studio_jobs import summary
+    store, jobs = setup
+    w = work(store)
+    job = create(jobs, w, mode='all')
+    jobs.claim(job['id'])
+    jobs.finish_step(job['id'], {'action': 'premise', 'number': 1, 'text': '新的故事梗概'})
+    client = store.test_client
+    assert client.post(f"/api/studio/jobs/{job['id']}/adopt", json={}).status_code == 409
+    response = client.post(f"/api/studio/jobs/{job['id']}/adopt", json={'ready_only': True})
+    assert response.status_code == 200
+    saved = response.json()
+    assert saved['premise'] == '新的故事梗概'
+    assert summary(jobs.get(job['id']))['adoption_revision'] == saved['revision']
+    assert jobs.adopt(job['id'], ready_only=True)['revision'] == saved['revision']
+    jobs.finish_step(job['id'], {'action': 'characters', 'number': 1, 'text': '新人物'})
+    jobs.finish_step(job['id'], {'action': 'outline', 'number': 1, 'text': '新大纲'})
+    saved = jobs.adopt(job['id'], ready_only=True)
+    assert saved['characters'] == '新人物' and saved['outline'] == '新大纲'
+    assert all(result['adopted'] for result in jobs.get(job['id'])['results'])
+    jobs.finish_step(job['id'], {'action': 'chapter', 'number': 1, 'text': '生成的第一章'})
+    store.update_work(w['id'], {'premise': '生成期间手动修改'}, saved['revision'])
+    assert client.post(f"/api/studio/jobs/{job['id']}/adopt", json={'ready_only': True}).status_code == 409
+    assert not store.get('works', w['id'])['chapters']
+    assert client.post(f"/api/studio/jobs/{job['id']}/adopt", json={'unexpected': True}).status_code == 422
+
+
+def test_generated_manuscript_retains_custom_title_and_other_units(setup):
+    store, jobs = setup
+    original = [{'number': 1, 'title': '不可改变的第一章', 'content': '原来的第一章'},
+                {'number': 2, 'title': '自定义的第二章名', 'content': '原来的第二章'}]
+    w = work(store, chapters=original)
+    job = create(jobs, w, action='chapter', number=2, continuation=True)
+    run(jobs)
+    saved = jobs.adopt(job['id'], ready_only=True)
+    assert saved['chapters'][0] == original[0]
+    assert saved['chapters'][1]['title'] == original[1]['title']
+    assert saved['chapters'][1]['content'] != original[1]['content']
+
+
 @pytest.mark.parametrize('response', ['', '正文太短', '{"text":"正文缺少摘要"}', '{broken json'])
 def test_invalid_output_is_not_a_fake_success(setup, response):
     store, jobs = setup

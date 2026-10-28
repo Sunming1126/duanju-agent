@@ -25,19 +25,34 @@ const model=load('lib/studio/project.ts'), inspiration=load('lib/studio/inspirat
 const {wordDocument}=load('lib/studio/word-export.ts');
 const {WorkForm}=load('components/studio/work-form.tsx');
 const {ProjectToolbar}=load('components/studio/project-shell.tsx');
-const characterGeneration=load('lib/studio/character-generation.ts');
+const generation=load('lib/studio/inline-generation.ts');
 
-test('latest standalone character generation fills cards only against the unchanged saved revision',()=>{
-  const generated={id:'new',mode:'single',status:'completed',base_revision:4,current:{action:'characters',number:1},results:[{action:'characters',text:'【人物：林晚】\n背景：原文',adopted:false}]};
-  const older={...generated,id:'old'},failed={...generated,id:'failed',status:'failed',results:[]};
-  assert.equal(characterGeneration.latestCharacterJob([failed,older]).id,'failed');
-  assert.equal(characterGeneration.canFillCharacterCards(generated,{revision:4},false),true);
-  assert.equal(characterGeneration.canFillCharacterCards(generated,{revision:4},true),false);
-  assert.equal(characterGeneration.canFillCharacterCards(generated,{revision:5},false),false);
-  assert.equal(characterGeneration.generatedCharacters({...generated,results:[{...generated.results[0],adopted:true}]}),undefined);
-  for(const candidate of [{...generated,status:'running'},{...generated,mode:'all'},{...generated,results:[{...generated.results[0],action:'chapter'}]},{...generated,results:[{...generated.results[0],text:'  '}]}])assert.equal(characterGeneration.generatedCharacters(candidate),undefined);
-  const cards=load('lib/studio/characters.ts').parseCharacters(characterGeneration.generatedCharacters(generated));
-  assert.equal(cards[0].name,'林晚');assert.equal(cards[0].background,'原文');
+test('all four steps target their latest job and protect edits, chapters and already applied results',()=>{
+  for(const action of ['premise','characters','outline','chapter']){
+    const result={action,number:2,text:'生成内容',adopted:false};
+    const job={id:action,mode:'single',status:'completed',base_revision:4,current:{action,number:2},results:[result]};
+    const failed={...job,id:'failed',status:'failed',results:[]};
+    assert.equal(generation.latestGeneration([failed,job],action,2).id,'failed');
+    assert.equal(generation.canFillGeneration(job,{revision:4},false),true);
+    assert.equal(generation.canFillGeneration(job,{revision:4},true),false);
+    assert.equal(generation.canFillGeneration(job,{revision:5},false),false);
+    assert.deepEqual(generation.pendingResults({...job,results:[{...result,adopted:true}]}),[]);
+    if(action==='chapter')assert.equal(generation.latestGeneration([job],action,1),undefined);
+  }
+});
+
+test('partial all-step jobs follow the adoption revision and preview preserves custom titles and unrelated fields',()=>{
+  const first={action:'premise',number:1,text:'已回填',adopted:true},second={action:'chapter',number:2,text:'新正文',adopted:false};
+  const job={id:'all',mode:'all',status:'running',base_revision:1,adoption_revision:2,current:{action:'chapter',number:2},results:[first,second]};
+  assert.equal(generation.canFillGeneration(job,{revision:2},false),true);
+  assert.equal(generation.canFillGeneration(job,{revision:1},false),false);
+  assert.equal(generation.generationSignature(job),'all:1');
+  assert.equal(generation.latestGeneration([job],'outline',1).id,'all');
+  const work={content_type:'novel',premise:'原梗概',characters:'原人物',outline:'原大纲',chapters:[{number:1,title:'第一章',content:'原文1'},{number:2,title:'自定义章名',content:'原文2'}]};
+  const preview=generation.previewGeneration(work,second);
+  assert.equal(preview.chapters[1].title,'自定义章名');assert.equal(preview.chapters[1].content,'新正文');
+  assert.deepEqual(preview.chapters[0],work.chapters[0]);assert.equal(work.chapters[1].content,'原文2');
+  for(const field of ['premise','characters','outline'])assert.equal(preview[field],work[field]);
 });
 
 test('conflicting generation can be read as cards without enabling edits or blocking role selection',()=>{

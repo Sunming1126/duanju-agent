@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, RotateCcw, RotateCw, Settings, Sparkles } from "lucide-react";
 import { backendRequest as api, jsonBody, workPayload, downloadText, localExport, unitLabel,
-  type Work, type WorkInput, type World, type StudioStatus, type Action, type Reference, type WorldInput, type Candidate } from "@/lib/studio/api";
+  type Work, type WorkInput, type World, type StudioStatus, type Action, type Reference, type WorldInput } from "@/lib/studio/api";
 import { WorkForm } from "./work-form";
 import { Header } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "./navigation";
@@ -22,20 +22,21 @@ import { creationMode } from "@/lib/studio/writing";
 import { revealWritingStage } from "./workflow-nav";
 import { CharacterEditor } from "./character-editor";
 import { writingDestination, writingLabels, workEditorUrl } from "@/lib/studio/workflow";
-import { canFillCharacterCards, generatedCharacters, latestCharacterJob } from "@/lib/studio/character-generation";
+import { activeGeneration, canFillGeneration, generationSignature, latestGeneration, pendingResults, previewGeneration, type GenerationResult } from "@/lib/studio/inline-generation";
 import styles from "./integration.module.css";
 
-type Result = { action: Action | "world"; number: number; text: string; adopted: boolean; references: Reference[] };
+type Result = { action: Action | "world"; number: number; text: string; adopted: boolean; references: Reference[]; world?: WorldInput };
 type Job = { id: string; status: string; completed: number; total: number; error: string;
-  current: { action: string; number: number }; results?: Result[]; base_revision: number; mode: "single" | "all" };
+  current: { action: string; number: number }; results?: Result[]; base_revision: number; adoption_revision?: number; mode: "single" | "all" };
 const baseLabels = { premise: "故事设定", characters: "人物小传", outline: "大纲", chapter: "正文", world: "作品世界" };
-const active = ["queued", "running", "stopping"];
+const active = activeGeneration;
 
 export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "", sampleId, sampleInput }: {
   id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string; sampleId?: string; sampleInput?: WorkInput;
 }) {
   const router = useRouter();
   const history = useEditHistory<WorkInput>();
+  const recordSnapshot = useRef(history.record);
   const [inspiration, setInspiration] = useState(false);
   const [settingsBackup, setSettingsBackup] = useState<Partial<Work>>();
   const [numericInput, setNumericInput] = useState<{units?: string; words_per_chapter?: string}>({});
@@ -53,16 +54,15 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   const [tab, setTab] = useState<Action>("premise");
   const [number, setNumber] = useState(1);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [legacyCandidates, setLegacyCandidates] = useState<Candidate[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job>();
   const [recovery, setRecovery] = useState("");
   const mutating = useRef(false);
   const requestKey = useRef("");
   const refreshSequence = useRef(0);
-  const characterAttempts = useRef(new Set<string>());
-  const [characterError, setCharacterError] = useState("");
-  const [characterPreview, setCharacterPreview] = useState(false);
-  const [characterFill, setCharacterFill] = useState(0);
+  const generationAttempts = useRef(new Set<string>());
+  const [generationError, setGenerationError] = useState<{ signature: string; message: string }>();
+  const [preview, setPreview] = useState<GenerationResult>();
+  const [filled, setFilled] = useState<Record<Action, number>>({ premise: 0, characters: 0, outline: 0, chapter: 0 });
   const creation = creationMode(kind, mode);
   const isNovel = (work?.content_type || kind) === "novel";
   const labels = { ...baseLabels, ...writingLabels(work?.content_type || kind) };
@@ -81,15 +81,12 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     if (referenceId) void api<Reference>(`/studio/references/${encodeURIComponent(referenceId)}`, { signal }).then(value => {
       if (!signal.aborted) { setReference(value); setReferenceReady(true); }
     }).catch(cause => { if (!signal.aborted) setError(cause.message); });
-    if (id) void api<{ items: Candidate[] }>(`/studio/works/${id}/candidates`, { signal }).then(value => {
-      if (!signal.aborted) setLegacyCandidates(value.items);
-    }).catch(auxiliaryError);
     if (id) void api<Work>(`/studio/works/${id}`, { signal }).then(value => {
       if (signal.aborted) return;
       setWork(value);
       const destination = writingDestination(window.location.search);
       setTab(destination.step); setNumber(Math.min(destination.number, value.units));
-      if (new URLSearchParams(window.location.search).get("notice") === "generation-unconfirmed") setNotice("草稿及全部输入已保存，生成请求尚未确认成功。请先查看任务列表，再决定是否手动生成。");
+      if (new URLSearchParams(window.location.search).get("notice") === "generation-unconfirmed") setNotice("草稿及全部输入已保存，生成请求尚未确认成功。可在当前步骤查看进度或重新打开作品核对。");
       try {
         const raw = localStorage.getItem(`plotloom-unsaved-${id}`);
         if (raw) {
@@ -143,18 +140,26 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     return () => window.removeEventListener("beforeunload", protect);
   }, [dirty]);
 
-  const selectedId = selectedJob?.id;
   const refreshJobs = useCallback(async (signal?: AbortSignal) => {
     if (!id) return;
     const sequence = ++refreshSequence.current;
     const data = await api<{ items: Job[] }>(`/studio/works/${id}/jobs`, { signal });
     if (signal?.aborted || sequence !== refreshSequence.current) return;
-    const target = (tab === "characters" ? latestCharacterJob(data.items)?.id : undefined) || selectedId || data.items[0]?.id;
+    const target = latestGeneration(data.items, tab, number)?.id || data.items[0]?.id;
     const detail = target ? await api<Job>(`/studio/jobs/${target}`, { signal }) : undefined;
     if (signal?.aborted || sequence !== refreshSequence.current) return;
     setJobs(data.items);
-    if (detail) setSelectedJob(detail);
-  }, [id, selectedId, tab]);
+    if (detail) setSelectedJob(previous => previous?.id === detail.id && (previous.adoption_revision ?? previous.base_revision) > (detail.adoption_revision ?? detail.base_revision) ? previous : detail);
+    // A lost adoption response must not leave the editor empty after the server
+    // already committed. Re-read saved content without repeating the mutation.
+    if (detail && work && !dirty && !mutating.current && (detail.adoption_revision ?? detail.base_revision) > work.revision) {
+      const saved = await api<Work>(`/studio/works/${id}`, { signal });
+      if (signal?.aborted || sequence !== refreshSequence.current || mutating.current) return;
+      recordSnapshot.current(workPayload(work));
+      setWork(saved); setBlocked(false); setGenerationError(undefined);
+      setFilled(current => ({ premise: current.premise + 1, characters: current.characters + 1, outline: current.outline + 1, chapter: current.chapter + 1 }));
+    }
+  }, [id, tab, number, work, dirty]);
   useEffect(() => {
     if (!id) return;
     let disposed = false;
@@ -169,27 +174,32 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     return () => { disposed = true; controller.abort(); clearTimeout(timer); };
   }, [id, refreshJobs]);
 
-  // Character generation writes directly into the real card editor. The existing
-  // adoption endpoint still checks the saved revision atomically on the server.
+  // Every committed result enters its real editor, including partial all-step jobs.
+  // The server batches available results and atomically verifies adoption_revision.
   useEffect(() => {
-    if (tab !== "characters" || !work || busy || mutating.current || !selectedJob ||
-        latestCharacterJob(jobs)?.id !== selectedJob.id ||
-        characterAttempts.current.has(selectedJob.id) || !canFillCharacterCards(selectedJob, work, dirty)) return;
-    characterAttempts.current.add(selectedJob.id);
+    const signature = generationSignature(selectedJob);
+    if (!work || busy || mutating.current || !selectedJob || generationAttempts.current.has(signature) ||
+        !canFillGeneration(selectedJob, work, dirty)) return;
+    generationAttempts.current.add(signature);
     mutating.current = true;
+    const ready = pendingResults(selectedJob);
     void Promise.resolve().then(async () => {
-      setBusy(true); setCharacterError("");
+      setBusy(true); setGenerationError(undefined);
       try {
-        const saved = await api<Work>(`/studio/jobs/${selectedJob.id}/results/0/adopt`, { method: "POST", body: "{}" });
-        history.record(workPayload(work));
-        setWork(saved); setDirty(false); setBlocked(false); setCharacterPreview(false); setNotice("");
-        setCharacterFill(value => value + 1);
-        setSelectedJob({ ...selectedJob, results: selectedJob.results?.map(result => ({ ...result, adopted: true })) });
+        const saved = await api<Work>(`/studio/jobs/${selectedJob.id}/adopt`, { method: "POST", body: jsonBody({ ready_only: true }) });
+        if (saved.revision > work.revision) history.record(workPayload(work));
+        setWork(saved); setDirty(false); setBlocked(false); setPreview(undefined); setNotice("");
+        setFilled(current => {
+          const next = { ...current };
+          for (const action of new Set(ready.map(result => result.action))) if (action !== "world") next[action]++;
+          return next;
+        });
+        setSelectedJob({ ...selectedJob, adoption_revision: saved.revision, results: selectedJob.results?.map(result => ready.includes(result) ? { ...result, adopted: true } : result) });
       } catch (cause) {
-        setCharacterError(cause instanceof Error ? cause.message : "人物回填未确认，请刷新查看；生成稿仍保留。");
+        setGenerationError({ signature, message: cause instanceof Error ? cause.message : "生成内容回填未确认，请刷新核对；原稿和生成稿均保留。" });
       } finally { mutating.current = false; setBusy(false); }
     });
-  }, [tab, work, busy, selectedJob, jobs, dirty, history]);
+  }, [work, busy, selectedJob, dirty, history]);
 
   async function generate(action: Action | "world", all = false, continuation = false) {
     if (!work || mutating.current) return;
@@ -206,38 +216,16 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
       if (!requestKey.current.startsWith(signature + ":")) requestKey.current = `${signature}:${crypto.randomUUID()}`;
       const job = await api<Job>(`/studio/works/${saved.id}/jobs`, { method: "POST", body: jsonBody({ revision: saved.revision, action, number: targetNumber, mode: all ? "all" : "single", request_key: requestKey.current, continuation }) });
       setSelectedJob(await api<Job>(`/studio/jobs/${job.id}`));
-      setNotice(action === "characters" && !all ? "" : all ? `已排队生成全部 ${saved.units}${unitLabel(saved.content_type)}，原稿将保留。` : "已提交分步生成，完成后请审阅并采纳。");
+      setNotice(""); setPreview(undefined); setGenerationError(undefined);
       setJobs((await api<{ items: Job[] }>(`/studio/works/${saved.id}/jobs`)).items);
       requestKey.current = "";
-    } catch (e) { setNotice(e instanceof Error ? e.message : "提交失败，请刷新任务列表核对"); }
+    } catch (e) { setNotice(e instanceof Error ? e.message : "提交未确认，请刷新当前步骤核对。"); }
     finally { mutating.current = false; setBusy(false); }
   }
 
   async function control(job: Job, action: "stop" | "resume") {
     try { await api(`/studio/jobs/${job.id}/${action}`, { method: "POST", body: "{}" }); await refreshJobs(); }
     catch (e) { setNotice(e instanceof Error ? e.message : "操作失败"); }
-  }
-
-  async function adopt(index?: number) {
-    if (!selectedJob || !work || busy || mutating.current) return;
-    if (dirty) { setNotice("请先保存或导出当前编辑；修改后的作品会阻止旧稿覆盖。"); return; }
-    mutating.current = true; setBusy(true);
-    try {
-      const saved = await api<Work>(`/studio/jobs/${selectedJob.id}${index === undefined ? "/adopt" : `/results/${index}/adopt`}`, { method: "POST", body: "{}" });
-      history.clear(); setNumericInput({}); setWork(saved); setDirty(false); setNotice("已采纳并保存"); await refreshJobs();
-    } catch (e) { setNotice(e instanceof Error ? e.message : "采纳失败"); }
-    finally { mutating.current = false; setBusy(false); }
-  }
-
-  async function adoptLegacy(candidate: Candidate) {
-    if (!work || busy || dirty || mutating.current) return;
-    mutating.current = true; setBusy(true);
-    try {
-      const saved = await api<Work>(`/studio/works/${work.id}/candidates/${candidate.id}/adopt`, { method: "POST", body: "{}" });
-      history.clear(); setNumericInput({}); setWork(saved); setDirty(false); setNotice("旧版候选已采纳并保存");
-      setLegacyCandidates(items => items.map(item => item.id === candidate.id ? { ...item, status: "adopted" } : item));
-    } catch (e) { setNotice(e instanceof Error ? e.message : "采纳失败，候选仍保留"); }
-    finally { mutating.current = false; setBusy(false); }
   }
 
   async function saveWorldLibrary() {
@@ -259,11 +247,25 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   }
 
   const unit = unitLabel(work?.content_type || kind);
-  const world = work?.world_snapshot;
-  const pending = jobs.some(j => active.includes(j.status));
-  const characterJob = selectedJob?.id === latestCharacterJob(jobs)?.id ? selectedJob : undefined;
-  const characterText = generatedCharacters(characterJob);
-  const characterConflict = !!characterText && (dirty || characterJob?.base_revision !== work?.revision || !!characterError);
+  const pending = jobs.some(job => active.includes(job.status));
+  const ready = pendingResults(selectedJob);
+  const signature = generationSignature(selectedJob);
+  const fillError = generationError?.signature === signature ? generationError.message : "";
+  const conflict = ready.length > 0 && (!!fillError || !!work && !canFillGeneration(selectedJob, work, dirty));
+  const previewResult = preview && ready.find(result => result.action === preview.action && result.number === preview.number && result.text === preview.text);
+  const shownWork = work && previewResult ? previewGeneration(work, previewResult) : work;
+  const editingDisabled = busy || !!previewResult;
+  const world = shownWork?.world_snapshot;
+
+  function showGenerated() {
+    const result = ready.find(item => item.action === tab && (tab !== "chapter" || item.number === number)) || ready[0];
+    if (!result || !work) return;
+    const step = result.action === "world" ? "premise" : result.action;
+    const targetNumber = result.action === "chapter" ? result.number : number;
+    setPreview(result); setTab(step); setNumber(targetNumber);
+    window.history.replaceState(null, "", workEditorUrl(work.id, { step, number: targetNumber }));
+    revealWritingStage();
+  }
   function changeWorld(patch: Partial<WorldInput>) {
     update({ world_snapshot: { name: world?.name || "作品专属世界", description: world?.description || "", sections: world?.sections || {}, ...patch } });
   }
@@ -288,76 +290,64 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     } catch (cause) { setNotice(cause instanceof Error ? cause.message : "回填失败"); }
   }
   const worldControls = work && <div className={`create-form ${styles.worldArea}`}>
-            <label>从世界库复制<select disabled={busy} value={work.world_id || ""} onChange={e => { const w = worlds.find(x => x.id === e.target.value); if (w) update({ world_id: w.id, world_snapshot: { name: w.name, description: w.description, sections: { ...w.sections } } }); }}><option value="">选择世界库原件</option>{worlds.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label>
-            {!world && <button className="pill light" disabled={busy} onClick={() => changeWorld({})}>新建作品专属世界</button>}
-            {world && <><label>副本名称<input value={world.name} maxLength={80} disabled={busy} onChange={e => changeWorld({ name: e.target.value })} /></label><label>概述<textarea rows={3} value={world.description} maxLength={5000} disabled={busy} onChange={e => changeWorld({ description: e.target.value })} /></label>
-              {status?.world_sections.map(s => <details key={s.id}><summary>{s.label}</summary>{s.fields.map(f => <label key={f.key}>{f.label}<textarea disabled={busy} rows={4} maxLength={20000} value={world.sections[f.key] || ""} onChange={e => changeWorld({ sections: { ...world.sections, [f.key]: e.target.value } })} /></label>)}</details>)}
-              <button className="outline-button" disabled={busy} onClick={() => void saveWorldLibrary()}>另存世界库新条目</button><button className="outline-button" onClick={() => void exportWorld()}>导出副本</button></>}
-            <button className="pill light" disabled={busy || pending} onClick={() => void generate("world")}>AI 辅助完善（先审阅）</button><Link href="/worlds">管理世界库原件 →</Link>
+            <label>从世界库复制<select disabled={editingDisabled} value={work.world_id || ""} onChange={e => { const w = worlds.find(x => x.id === e.target.value); if (w) update({ world_id: w.id, world_snapshot: { name: w.name, description: w.description, sections: { ...w.sections } } }); }}><option value="">选择世界库原件</option>{worlds.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label>
+            {!world && <button className="pill light" disabled={editingDisabled} onClick={() => changeWorld({})}>新建作品专属世界</button>}
+            {world && <><label>副本名称<input value={world.name} maxLength={80} disabled={editingDisabled} onChange={e => changeWorld({ name: e.target.value })} /></label><label>概述<textarea rows={3} value={world.description} maxLength={5000} disabled={editingDisabled} onChange={e => changeWorld({ description: e.target.value })} /></label>
+              {status?.world_sections.map(s => <details key={s.id}><summary>{s.label}</summary>{s.fields.map(f => <label key={f.key}>{f.label}<textarea disabled={editingDisabled} rows={4} maxLength={20000} value={world.sections[f.key] || ""} onChange={e => changeWorld({ sections: { ...world.sections, [f.key]: e.target.value } })} /></label>)}</details>)}
+              <button className="outline-button" disabled={editingDisabled} onClick={() => void saveWorldLibrary()}>另存世界库新条目</button><button className="outline-button" onClick={() => void exportWorld()}>导出副本</button></>}
+            <button className="pill light" disabled={editingDisabled || pending} onClick={() => void generate("world")}>AI 完善世界</button><Link href="/worlds">管理世界库原件 →</Link>
 
   </div>;
-  return <div className="workspace-page" onClickCapture={e => {
-    if ((dirty || busy) && e.target instanceof Element && e.target.closest("a")) { e.preventDefault(); e.stopPropagation(); setNotice("请先保存或导出当前编辑后离开。"); }
+  return <div className="workspace-page" onClickCapture={event => {
+    if ((dirty || busy) && event.target instanceof Element && event.target.closest("a")) { event.preventDefault(); event.stopPropagation(); setNotice("请先保存或导出当前编辑后离开。"); }
   }}>
     <Header workspace />
     <div className="plotloom-shell">
       <StudioNav selected={isNovel ? "小说创作" : "剧本创作"} />
       <div className={styles.editorPane}><ProjectShell>
-      {error && <div className={styles.notice}><p className="studio-error" role="alert">{error}<button onClick={() => window.location.reload()}>重新加载</button></p></div>}
-      {notice && notice !== "已保存" && <div className={styles.notice}><p className="studio-inline-notice" role="status">{notice}</p></div>}
-      {recovery && <div className={styles.notice}><button className={styles.tool} onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button></div>}
-      {!id && !referenceReady ? <p className={styles.workspace} role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
+        {error && <p className={styles.inlineMessage} role="alert">{error}<button type="button" onClick={() => window.location.reload()}>重新加载</button></p>}
+        {recovery && <div className={styles.inlineMessage}><button type="button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button></div>}
+        {!id && !referenceReady ? <p className={styles.workspace} role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
           if (warning) try { localStorage.setItem(`plotloom-create-warning-${value.id}`, warning); } catch { /* Saved work remains available. */ }
           router.push(`${workEditorUrl(value.id, intent)}${warning ? "&notice=generation-unconfirmed" : ""}`);
-        }} /> : !work ? <p className={styles.workspace}>正在读取作品…</p> : <>
-        <ProjectTitle type={work.content_type} title={work.title} disabled={busy} onChange={title => update({ title })} actions={<div className={styles.utility}><span className={styles.saveState}>{busy ? "处理中…" : blocked ? "保存失败" : dirty ? "等待自动保存" : "已保存"}</span><button type="button" onClick={() => downloadText(`${work.title}.txt`,localExport(work))}>导出 TXT</button><button type="button" onClick={() => downloadText(`${work.title}.json`,jsonBody({schema:"plotloom.work",version:1,work:workPayload(work)}),"application/json")}>完整备份</button><button type="button" disabled={busy} onClick={() => void persist()}>保存</button><button type="button" disabled={busy || pending} onClick={() => void generate("premise",true)}>一键生成全部 {work.units}{unit}</button></div>} />
-        <ProjectToolbar type={work.content_type} current={tab} value={work} disabled={busy} onSelect={step => { setTab(step); window.history.replaceState(null,"",workEditorUrl(work.id,{step,number})); }} actions={<>
-          <div className={styles.history}><button type="button" title="撤销" aria-label="撤销" disabled={busy || !history.canUndo} onClick={() => { setNumericInput({}); history.undo(workPayload(work),value => update(value,false)); }}><RotateCcw size={20} /></button><button type="button" title="重做" aria-label="重做" disabled={busy || !history.canRedo} onClick={() => { setNumericInput({}); history.redo(workPayload(work),value => update(value,false)); }}><RotateCw size={20} /></button></div>
-          {tab === "premise" ? <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={busy || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button> : <>
-            {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title,work.chapters)}><Download size={17} />导出为Word</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />正文字数</button></>}
-            <button type="button" className={styles.primary} disabled={busy || pending} onClick={() => void generate(tab)}><Sparkles size={17} />AI 生成{labels[tab]}</button>
-          </>}
-        </>} />
-        <main className={styles.workspace}>
-          {settingsBackup && tab === "premise" && <button type="button" className="text-button" disabled={busy} onClick={() => { setNumericInput({}); update(settingsBackup); setSettingsBackup(undefined); setNotice("已恢复灵感回填前的设定。"); }}>恢复回填前的设定</button>}
-          {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={`每${unit}目标字数`} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={busy} onChange={value => { setNumericInput(current => ({...current,words_per_chapter:String(value)})); update({words_per_chapter:value}); }} /></div>}
-          <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`} className={styles.stage}>
-            {tab === "premise" && <ProjectSettings type={work.content_type} value={{...work,...numericInput}} disabled={busy} onChange={changeSettings}>{worldControls}{work.creative?.source_text && <details><summary>改编／改写原始素材</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
-            {tab === "characters" && <>
-              {characterJob && active.includes(characterJob.status) && <div className={styles.characterStatus} role="status"><span>{characterJob.status === "queued" ? "人物正在排队生成…" : characterJob.status === "stopping" ? "正在停止人物生成…" : "正在生成人物，完成后将直接显示在角色卡片中…"}</span><button type="button" onClick={() => void control(characterJob, "stop")}>停止</button></div>}
-              {characterJob && ["failed", "stopped", "interrupted"].includes(characterJob.status) && <div className={styles.characterStatus} role="status"><span>{characterJob.error || "人物生成已停止，已有人物保留。"}</span><button type="button" onClick={() => void control(characterJob, "resume")}>继续生成</button></div>}
-              {characterConflict && <div className={styles.characterStatus} role="status"><span>{characterError || "生成期间作品已有修改，未覆盖当前人物。"}</span><button type="button" onClick={() => setCharacterPreview(!characterPreview)}>{characterPreview ? "返回当前人物" : "查看生成的人物"}</button><button type="button" onClick={() => downloadText(`${work.title}-生成人物.txt`, characterText!)}>导出生成的人物</button></div>}
-              <CharacterEditor key={`${characterFill}:${characterPreview}`} value={characterConflict && characterPreview ? characterText! : work.characters} disabled={busy} readOnly={characterConflict && characterPreview} onChange={characters => update({characters})} onGenerate={() => void generate("characters")} generating={pending} />
-            </>}
-            {tab === "outline" && <OutlineEditor value={work.outline} type={work.content_type} units={work.units} disabled={busy} onChange={outline => update({outline})} />}
-            {tab === "chapter" && <ManuscriptEditor type={work.content_type} chapters={work.chapters} units={work.units} number={number} disabled={busy} generating={pending} onNumber={next => { setNumber(next); window.history.replaceState(null,"",workEditorUrl(work.id,{step:"chapter",number:next})); }} onChange={chapters => update({chapters})} onGenerate={() => void generate("chapter")} onContinue={() => void generate("chapter",false,true)} />}
-          </div>
-          {tab !== "premise" && tab !== "characters" && <details className={styles.supplement}><summary>作品世界</summary>{worldControls}</details>}
-          {tab !== "characters" && <div className={styles.bottom}><p>原稿保留 · AI生成结果请在候选区审阅采纳</p>{tab !== "chapter" && <button type="button" className={styles.tool} disabled={busy} onClick={async () => { if (await persist()) { const next = tab === "premise" ? "characters" : "chapter"; setTab(next); window.history.replaceState(null,"",workEditorUrl(work.id,{step:next,number})); revealWritingStage(); } }}>保存并进入{tab === "premise" ? "人物" : "正文"} →</button>}</div>}
-            {tab !== "characters" && <details className={styles.candidates} open={pending || !!selectedJob?.results?.some(result => !result.adopted)}><summary>生成任务与候选稿{pending ? " · 生成处理中" : ""}</summary><section className="studio-candidates"><div className="studio-section-bar"><h2>生成任务与候选稿</h2><button onClick={() => void refreshJobs().catch(e => setNotice(e instanceof Error ? e.message : "读取任务失败"))}>刷新任务</button></div>
-              {legacyCandidates.length > 0 && <details className="studio-candidate"><summary>旧版创作候选（{legacyCandidates.length}）</summary>{legacyCandidates.map(c => <article className="plotloom-result" key={c.id}><h3>{labels[c.action]} · {c.status === "adopted" ? "已采纳" : c.status === "proposed" ? "待确认" : "已中断或失败"}</h3>{c.error && <p className="studio-error">{c.error}</p>}<pre className="plotloom-pre">{c.text}</pre><button className="outline-button" onClick={() => downloadText(`${work.title}-旧候选.txt`, c.text)}>导出旧候选</button>{c.status === "proposed" && <button className="pill light" disabled={busy || dirty} onClick={() => void adoptLegacy(c)}>采纳旧候选</button>}</article>)}</details>}
-              {!jobs.length && <p className="studio-hint">尚无任务。可分步生成，也可一键生成设定、人物、大纲与全部正文。</p>}
-              <div className="plotloom-job-list">{jobs.map(j => <button className={selectedJob?.id === j.id ? "active" : ""} key={j.id} onClick={() => { ++refreshSequence.current; setSelectedJob(j); }}>{jobStatus(j.status)} · {j.completed}/{j.total} 步</button>)}</div>
-              {selectedJob && <article className="studio-candidate"><div className="studio-section-bar"><h3>{jobStatus(selectedJob.status)} · {selectedJob.completed}/{selectedJob.total} 步</h3><span>基于作品 v{selectedJob.base_revision}</span></div>
-                <progress value={selectedJob.completed} max={selectedJob.total} aria-label="生成进度" /><p className="studio-hint">{labels[selectedJob.current.action as keyof typeof labels]}{selectedJob.current.action === "chapter" ? ` · 第${selectedJob.current.number}${unit}` : ""}。停止会等待当前请求结束并保存；已完成步骤不会重复生成。</p>
-                {selectedJob.error && <p className="studio-error" role="alert">{selectedJob.error}</p>}
-                <div className="studio-candidate-actions">{active.includes(selectedJob.status) && <button className="outline-button" onClick={() => void control(selectedJob, "stop")}>停止任务</button>}
-                  {["failed", "stopped", "interrupted"].includes(selectedJob.status) && <button className="pill light" onClick={() => void control(selectedJob, "resume")}>从失败／未完成处继续</button>}
-                  <button className="outline-button" onClick={async () => { try { downloadText(`${work.title}-生成稿.txt`, await api<string>(`/studio/jobs/${selectedJob.id}/export`)); } catch (e) { setNotice(String(e)); } }}>导出本次生成稿</button>
-                  {selectedJob.status === "completed" && <button className="pill light" disabled={busy || dirty} onClick={() => void adopt()}>采纳整稿</button>}</div>
-                {selectedJob.results?.map((r, i) => <details className="plotloom-result" key={i} open={selectedJob.results?.length === 1}><summary>{labels[r.action]}{r.action === "chapter" ? ` · 第${r.number}${unit}` : ""} · {r.adopted ? "已采纳" : "待确认"}</summary><pre className="plotloom-pre">{r.text}</pre>{r.references.length > 0 && <p className="studio-hint">参考：{r.references.map(x => x.title).join("、")}</p>}<button className="pill light" disabled={busy || dirty || r.adopted} onClick={() => void adopt(i)}>采纳此项</button></details>)}
-              </article>}
-            </section></details>}
-        </main>
-        {inspiration && <Inspiration type={work.content_type} initialPrompt={work.premise} onApply={applySettings} onClose={() => setInspiration(false)} />}
-      </>}
+        }} /> : !work || !shownWork ? <p className={styles.workspace}>正在读取作品…</p> : <>
+          <ProjectTitle type={work.content_type} title={work.title} disabled={editingDisabled} onChange={title => update({ title })} actions={<div className={styles.utility}>
+            <span className={styles.saveState}>{busy ? "处理中…" : blocked ? "保存失败" : dirty ? "等待自动保存" : "已保存"}</span>
+            <button type="button" onClick={() => downloadText(`${work.title}.txt`, localExport(work))}>导出 TXT</button>
+            <button type="button" onClick={() => downloadText(`${work.title}.json`, jsonBody({ schema: "plotloom.work", version: 1, work: workPayload(work) }), "application/json")}>完整备份</button>
+            <button type="button" disabled={editingDisabled} onClick={() => void persist()}>保存</button>
+            <button type="button" disabled={editingDisabled || pending} onClick={() => void generate("premise", true)}>一键生成全部 {work.units}{unit}</button>
+          </div>} />
+          <ProjectToolbar type={work.content_type} current={tab} value={work} disabled={busy} onSelect={step => { setPreview(undefined); setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); }} actions={<>
+            <div className={styles.history}>
+              <button type="button" title="撤销" aria-label="撤销" disabled={editingDisabled || !history.canUndo} onClick={() => { setNumericInput({}); history.undo(workPayload(work), value => update(value, false)); }}><RotateCcw size={20} /></button>
+              <button type="button" title="重做" aria-label="重做" disabled={editingDisabled || !history.canRedo} onClick={() => { setNumericInput({}); history.redo(workPayload(work), value => update(value, false)); }}><RotateCw size={20} /></button>
+            </div>
+            {tab === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={editingDisabled || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
+            {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title, shownWork.chapters)}><Download size={17} />导出为Word</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />正文字数</button></>}
+            <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab)}><Sparkles size={17} />AI 生成{tab === "premise" ? "故事梗概" : labels[tab]}</button>
+          </>} />
+          <main className={styles.workspace}>
+            {notice && notice !== "已保存" && <p className={styles.inlineMessage} role="status">{notice}</p>}
+            {selectedJob && (active.includes(selectedJob.status) || ["failed", "stopped", "interrupted"].includes(selectedJob.status) || conflict) && <div className={styles.generationStatus} role="status">
+              {active.includes(selectedJob.status) ? <><span>{selectedJob.mode === "all" ? `全部生成 ${selectedJob.completed}/${selectedJob.total} · ` : ""}{labels[selectedJob.current.action as keyof typeof labels]}{selectedJob.current.action === "chapter" ? ` · 第${selectedJob.current.number}${unit}` : ""} · {selectedJob.status === "queued" ? "排队中" : selectedJob.status === "stopping" ? "正在停止" : "生成中"}</span><button type="button" onClick={() => void control(selectedJob, "stop")}>停止</button></> : ["failed", "stopped", "interrupted"].includes(selectedJob.status) ? <><span>{selectedJob.error || "生成已停止，已完成内容保留。"}</span><button type="button" onClick={() => void control(selectedJob, "resume")}>继续生成</button></> : null}
+              {conflict && <><span>{fillError || "生成期间内容有修改，当前编辑已保留。"}</span><button type="button" onClick={() => previewResult ? setPreview(undefined) : showGenerated()}>{previewResult ? "返回当前内容" : "查看生成稿"}</button><button type="button" onClick={() => downloadText(`${work.title}-生成稿.txt`, ready.map(result => result.text).join("\n\n"))}>导出生成稿</button>{fillError && <button type="button" onClick={() => window.location.reload()}>刷新核对</button>}</>}
+            </div>}
+            {settingsBackup && tab === "premise" && <button type="button" className="text-button" disabled={editingDisabled} onClick={() => { setNumericInput({}); update(settingsBackup); setSettingsBackup(undefined); setNotice("已恢复灵感回填前的设定。"); }}>恢复回填前的设定</button>}
+            {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={`每${unit}目标字数`} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={editingDisabled} onChange={value => { setNumericInput(current => ({ ...current, words_per_chapter: String(value) })); update({ words_per_chapter: value }); }} /></div>}
+            <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`} className={styles.stage}>
+              {tab === "premise" && <ProjectSettings type={work.content_type} value={previewResult ? shownWork : { ...work, ...numericInput }} disabled={editingDisabled} onChange={changeSettings}>{worldControls}{work.creative?.source_text && <details><summary>改编／改写原始素材</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
+              {tab === "characters" && <CharacterEditor key={`${filled.characters}:${!!previewResult}`} value={shownWork.characters} disabled={busy} readOnly={!!previewResult} onChange={characters => update({ characters })} onGenerate={() => void generate("characters")} generating={pending} />}
+              {tab === "outline" && <OutlineEditor key={`${filled.outline}:${!!previewResult}`} value={shownWork.outline} type={work.content_type} units={work.units} disabled={editingDisabled} onChange={outline => update({ outline })} />}
+              {tab === "chapter" && <ManuscriptEditor type={work.content_type} chapters={shownWork.chapters} units={work.units} number={number} disabled={editingDisabled} generating={pending} onNumber={next => { setPreview(undefined); setNumber(next); window.history.replaceState(null, "", workEditorUrl(work.id, { step: "chapter", number: next })); }} onChange={chapters => update({ chapters })} onGenerate={() => void generate("chapter")} onContinue={() => void generate("chapter", false, true)} />}
+            </div>
+            {tab !== "chapter" && <div className={styles.bottom}><button type="button" className={styles.tool} disabled={editingDisabled} onClick={async () => { if (await persist()) { const next = tab === "premise" ? "characters" : tab === "characters" ? "outline" : "chapter"; setTab(next); window.history.replaceState(null, "", workEditorUrl(work.id, { step: next, number })); revealWritingStage(); } }}>保存并进入{tab === "premise" ? "人物" : tab === "characters" ? "大纲" : "正文"} →</button></div>}
+          </main>
+          {inspiration && <Inspiration type={work.content_type} initialPrompt={work.premise} onApply={applySettings} onClose={() => setInspiration(false)} />}
+        </>}
       </ProjectShell></div>
     </div>
   </div>;
-}
-
-function jobStatus(status: string) {
-  return ({ queued: "排队中", running: "生成中", stopping: "停止中", stopped: "已停止", failed: "失败", interrupted: "重启中断", completed: "生成完成" } as Record<string, string>)[status] || status;
 }
 
 function NumberSetting({ label, value, min, max, disabled, onChange }: {

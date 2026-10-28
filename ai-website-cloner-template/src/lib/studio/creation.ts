@@ -13,7 +13,7 @@ export async function createWorkForStep(payload: WorkInput, intent: CreationInte
         request_key: `create-${work.id}-${intent.step}-${intent.number}`,
       }) });
     } catch {
-      warning = "草稿及全部输入已保存，生成请求尚未确认成功。请先查看任务列表，再决定是否手动生成。";
+      warning = "草稿及全部输入已保存，生成请求暂未确认。可在当前步骤查看进度或重新打开作品核对。";
     }
   }
   return { work, warning };

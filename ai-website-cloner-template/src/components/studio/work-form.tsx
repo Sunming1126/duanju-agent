@@ -133,15 +133,16 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
     <ProjectTitle type={type} title={draft.title} disabled={disabled} onChange={title => update({ title })} actions={<span className={styles.saveState}>新建草稿 · 此浏览器自动保存</span>} />
     <ProjectToolbar type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => setDraft(current => ({ ...current, step: next }))} actions={<>
       <div className={styles.history}><button type="button" title="撤销" aria-label="撤销" disabled={disabled || !history.canUndo} onClick={() => history.undo(draft,setDraft)}><RotateCcw size={20} /></button><button type="button" title="重做" aria-label="重做" disabled={disabled || !history.canRedo} onClick={() => history.redo(draft,setDraft)}><RotateCw size={20} /></button></div>
-      {step === "premise" ? <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button> : <>
+      {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
+      <>
         {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />导出为Word</button>}
-        <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />AI 生成{labels[step]}</button>
-      </>}
+        <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />AI 生成{step === "premise" ? "故事梗概" : labels[step]}</button>
+      </>
     </>} />
     <div className={styles.workspace}><form ref={formRef} id="plotloom-create-form" className={styles.form} onSubmit={submit} onKeyDown={event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.defaultPrevented && event.target.getAttribute("role") !== "combobox") event.preventDefault(); }} noValidate>
-      {sampleInput && <p className="studio-inline-notice">已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
-      {cacheError && <p className="studio-inline-notice" role="status">当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。</p>}
-      {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
+      {sampleInput && <p className={styles.inlineMessage}>已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
+      {cacheError && <p className={styles.inlineMessage} role="status">当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。</p>}
+      {notice && <p className={styles.inlineMessage} role="status">{notice}</p>}
       {backup && <button type="button" className="text-button" disabled={busy} onClick={() => { history.record(draft); setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}
       <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={styles.stage}>
@@ -164,7 +165,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       </div>
       {error && <p className="studio-error" role="alert">{error}</p>}
       {created.current && <a className="text-button" href={`/studio/works/${created.current.id}`}>草稿已创建，打开作品 →</a>}
-      <div className={styles.bottom}><p>步骤随时切换 · 全部输入一起保存 · AI 结果需审阅采纳</p><div>{step !== "chapter" && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(writingSteps[writingSteps.indexOf(step)+1])}>继续：{labels[writingSteps[writingSteps.indexOf(step)+1]]} →</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{busy ? "正在保存…" : "保存全部内容，创建作品"}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button></div></div>
+      <div className={styles.bottom}><div>{step !== "chapter" && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(writingSteps[writingSteps.indexOf(step)+1])}>继续：{labels[writingSteps[writingSteps.indexOf(step)+1]]} →</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{busy ? "正在保存…" : "保存全部内容，创建作品"}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button></div></div>
     </form></div>
     {inspiration && <Inspiration key={type} type={type} initialPrompt={draft.premise} onApply={apply} onClose={() => setInspiration(false)} />}
   </>;
