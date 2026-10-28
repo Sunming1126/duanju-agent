@@ -39,6 +39,15 @@ test('latest standalone character generation fills cards only against the unchan
   const cards=load('lib/studio/characters.ts').parseCharacters(characterGeneration.generatedCharacters(generated));
   assert.equal(cards[0].name,'林晚');assert.equal(cards[0].background,'原文');
 });
+
+test('conflicting generation can be read as cards without enabling edits or blocking role selection',()=>{
+  const {CharacterEditor}=load('components/studio/character-editor.tsx');
+  const html=renderToStaticMarkup(React.createElement(CharacterEditor,{value:'【人物：甲】\n背景：甲的经历\n\n【人物：乙】\n背景：乙的经历',readOnly:true,onChange(){assert.fail('read only');}}));
+  assert.match(html,/<input[^>]*disabled=""[^>]*value="甲"/);
+  const list=html.match(/role="group" aria-label="角色列表">([\s\S]*?)<\/div>/)?.[1];
+  const buttons=list.match(/<button[^>]*>/g);
+  assert.equal(buttons.length,3);assert.ok(!buttons[0].includes('disabled'));assert.ok(!buttons[1].includes('disabled'));assert.ok(buttons[2].includes('disabled'));
+});
 test('toolbar mouse and keyboard selection reveal the active editor; disabled controls cannot switch',()=>{
   const oldFrame=globalThis.requestAnimationFrame,oldDocument=globalThis.document;
   const selected=[],scrolled=[],focused=[];

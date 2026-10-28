@@ -5,7 +5,8 @@ import { ContactRound, Minus, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { newCharacter, parseCharacters, serializeCharacters, type CharacterCard } from "@/lib/studio/characters";
 import styles from "./characters.module.css";
 
-export function CharacterEditor({ value, disabled = false, onChange, onGenerate, generating = false }: { value: string; disabled?: boolean; onChange: (text: string) => void; onGenerate?: () => void; generating?: boolean }) {
+export function CharacterEditor({ value, disabled: busy = false, readOnly = false, onChange, onGenerate, generating = false }: { value: string; disabled?: boolean; readOnly?: boolean; onChange: (text: string) => void; onGenerate?: () => void; generating?: boolean }) {
+  const disabled = busy || readOnly;
   const cards = parseCharacters(value);
   const [selected, setSelected] = useState(0);
   const [raw, setRaw] = useState(false);
@@ -40,7 +41,7 @@ export function CharacterEditor({ value, disabled = false, onChange, onGenerate,
           <div className={styles.delete}>{removing ? <><span>删除“{card.name || "未命名角色"}”及其小传？</span><button type="button" disabled={disabled} onClick={() => { if (commit(cards.filter((_, i) => i !== index))) select(Math.max(0, index - 1)); }}>确认删除</button><button type="button" onClick={() => setRemoving(false)}>取消</button></> : <button type="button" disabled={disabled} onClick={() => setRemoving(true)}><Trash2 size={14} /> 删除此角色</button>}</div>
         </>}
       </section>
-      <div className={styles.cards} role="group" aria-label="角色列表">{cards.map((item, i) => <button type="button" className={`${styles.card} ${i === index ? styles.selected : ""}`} aria-pressed={i === index} key={i} disabled={disabled} onClick={() => select(i)}><strong>{item.name || "未命名角色"}</strong>{item.role && <small>{item.role}</small>}</button>)}<button type="button" className={`${styles.card} ${styles.add}`} aria-label={cards.length ? "添加角色" : "添加第一位角色"} title="添加角色" disabled={disabled} onClick={() => { if (commit([...cards, newCharacter()])) select(cards.length); }}><UserPlus size={40} strokeWidth={1.5} /></button></div>
+      <div className={styles.cards} role="group" aria-label="角色列表">{cards.map((item, i) => <button type="button" className={`${styles.card} ${i === index ? styles.selected : ""}`} aria-pressed={i === index} key={i} disabled={busy} onClick={() => select(i)}><strong>{item.name || "未命名角色"}</strong>{item.role && <small>{item.role}</small>}</button>)}<button type="button" className={`${styles.card} ${styles.add}`} aria-label={cards.length ? "添加角色" : "添加第一位角色"} title="添加角色" disabled={disabled} onClick={() => { if (commit([...cards, newCharacter()])) select(cards.length); }}><UserPlus size={40} strokeWidth={1.5} /></button></div>
     </div>}
     <div className={styles.toolbar}><span>{cards.length} 位人物</span><button type="button" disabled={disabled} aria-pressed={raw} onClick={() => { setRaw(!raw); setTrait(""); setRemoving(false); }}>切换{raw ? "卡片" : "全文"}编辑</button></div>
     {error && <p className="studio-error" role="alert">{error}</p>}
