@@ -1,5 +1,15 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-28 创作页侧栏恢复与编辑区域收窄
+
+- 运行源码：`0e52caa7f40e128f89ed2a977c3d4dc28d16e550`，GitHub已正常同步。修复正式创作页漏用原页头／StudioNav导致进入编辑器后无法看到其他功能入口的问题，新编辑器仅占右侧，局部容器查询适配剩余宽度，顶部流程避开固定页头；其他页面、全局样式与后端源码没有修改。
+- release：`/opt/plotloom-cn/releases/20261028T121608Z-inspiration-0e52caa7`；previous：`/opt/plotloom-cn/releases/20261028T084205Z-inspiration-6fbbedee`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261028T121608Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261028T121608Z-inspiration.txt`。
+- 源码包`plotloom-20261028T105647Z-0e52caa7f40e.zip`，SHA-256 `5f52c41469177119ab4bd728e90bdfc6b9cd980f952ede32d4f5d4e05553ff1f`；runner SHA-256 `af9046b41adf6136dda03fa9adaa868e4e64af0ce83db128c6883a83012c76fa`，上传后双核验。未上传本机配置、作品、密钥或其他运行数据。
+- 115项后端、68项前端、lint／类型通过；服务器候选及正式31项检查、webpack构建通过。候选Chrome两类新建／已有作品四步、人物及大纲编辑、撤销重做、灵感fixture回填与恢复、创建保存刷新、世界副本、TXT／JSON／Word下载回归通过。只用独立QA空间，清理本轮测试作品；没有调用付费模型。候选构建尾端SSH曾断开，远程构建已完成且锁释放，之后实际启动候选完成验收；正式runner使用持久日志执行，输出DEPLOYMENT_OK。
+- 公网Chrome验证1920／1440／1024／768／390宽度下，两类新建页全部四步不横向溢出，桌面侧栏与编辑器不重叠，滚动时侧栏可点、流程栏避开页头。我的作品、官方样例（仍10份）、世界模型、语料参考、小说／剧本入口、模型信息／我的空间弹窗实际切换通过。公网navigation-report.json和候选manual-report.json均ok，无页面脚本错误；截图与报告留在本机Git忽略目录。
+- 发布器验证源码哈希、原数据保留、数据库完整性、样例／下载／回填、公开页面及管理边界通过。current与RELEASE_COMMIT匹配，中文三服务active，旧站PID1948834不变、日文站200，模型配置指纹保持；未改Nginx、systemd、日本站或用户作品。候选Web和SSH专用转发均已关闭，无已知本次布局阻断问题。
+- 若需程序回滚，先重新核实current仍指向本次release，仅切回上述6fbbedee兼容版本并重启中文三服务；保留shared/data，不用旧SQLite覆盖新增作品。发布日志：服务器`/tmp/plotloom-sidebar-release-0e52caa7.log`。
+
 ## 2026-10-27 三请求并发与浏览器隔离
 
 - 运行源码：`3be631ec36f4a8187924c8439bba757b5d7c7f12`，继续使用原服务器模型Key。`llm_config.json`的发布前后文件指纹一致，额外测试凭据没有写入或启用。首次GitHub同步因连接重置／超时失败；从明确的本地已提交版本打包部署，远端同步后续重试，不能据发布成功推断GitHub当时已更新。
