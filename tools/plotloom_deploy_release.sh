@@ -128,10 +128,18 @@ PY
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund
 runuser -u plotloom-cn -- env PATH="$PATH" npm run lint
-runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs
+runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs
 runuser -u plotloom-cn -- env PATH="$PATH" DUANJU_BACKEND_URL=http://127.0.0.1:8766 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=1024 npm run build -- --webpack
 grep -R -q 'inspiration-flow' .next/static/chunks
 test "$(readlink -f "$base/current")" = "$old"
+
+# Build a review candidate without changing current, services or the live database.
+# Browser acceptance can use this directory before a normal approved release.
+if [[ "${PLOTLOOM_REVIEW_ONLY:-0}" == 1 ]]; then
+    trap - ERR
+    echo "REVIEW_READY source=$source_commit release=$release current=$old"
+    exit 0
+fi
 
 active_tasks() {
     "$python" - "$db" <<'PY'

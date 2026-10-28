@@ -24,6 +24,25 @@ function load(path) {
 const model=load('lib/studio/project.ts'), inspiration=load('lib/studio/inspiration.ts');
 const {wordDocument}=load('lib/studio/word-export.ts');
 const {WorkForm}=load('components/studio/work-form.tsx');
+const {ProjectToolbar}=load('components/studio/project-shell.tsx');
+test('toolbar mouse and keyboard selection reveal the active editor; disabled controls cannot switch',()=>{
+  const oldFrame=globalThis.requestAnimationFrame,oldDocument=globalThis.document;
+  const selected=[],scrolled=[],focused=[];
+  try {
+    globalThis.requestAnimationFrame=callback=>{callback();return 1;};
+    globalThis.document={getElementById:id=>({scrollIntoView:options=>scrolled.push({id,...options}),focus:()=>focused.push(id)})};
+    const props={type:'novel',current:'premise',value:{premise:'设定',characters:'',outline:'',chapters:[],units:2},onSelect:step=>selected.push(step)};
+    const buttons=ProjectToolbar(props).props.children[0].props.children;
+    buttons[2].props.onClick();
+    buttons[0].props.onKeyDown({key:'ArrowRight',preventDefault(){}});
+    assert.deepEqual(selected,['outline','characters']);
+    assert.equal(scrolled.length,2);assert.ok(scrolled.every(item=>item.id==='writing-stage-panel'&&item.block==='start'));
+    assert.deepEqual(focused,['writing-tab-characters']);
+    const disabled=ProjectToolbar({...props,disabled:true}).props.children[0].props.children;
+    disabled[1].props.onClick();disabled[0].props.onKeyDown({key:'End',preventDefault(){assert.fail('disabled');}});
+    assert.equal(selected.length,2);
+  } finally {globalThis.requestAnimationFrame=oldFrame;globalThis.document=oldDocument;}
+});
 test('multiline and punctuated inspiration tags survive editing another setting and creation',()=>{
   const draft=inspiration.initialCreationDraft('novel');draft.title='验收';
   Object.assign(draft,{genres:'悬疑，都市\n科幻',core:'身份\n反差\n时间循环',styles:'温暖、克制',tag_format:'lines',tag_source:{genres:['悬疑，都市','科幻'],core:['身份\n反差','时间循环'],styles:['温暖、克制']}});
