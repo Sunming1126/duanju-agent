@@ -163,3 +163,72 @@ def test_novel_guard_rejects_script_and_planning_but_never_retries(setup, text):
 @pytest.mark.parametrize('text', [PROSE, '“场1 店铺 日 内，这是你写的剧本？”她问。\n她没有翻开第二页。', '他心中涌起一阵熟悉的酸意，仍旧把信递了出去。'])
 def test_format_guard_is_not_a_vocabulary_blacklist(text):
     novel.validate_chapter_format(text)
+
+@pytest.mark.parametrize('raw,reason', [
+    (PROSE, '正文与事实摘要JSON'),
+    ('```json', '正文与事实摘要JSON'),
+    ('{"text":"未转义的\n换行","summary":"摘要"}', '第1行'),
+    ('[]', '不是对象'),
+    ('"正文"', '不是对象'),
+    ('{"text":123,"summary":"摘要"}', '正文无效'),
+    (json.dumps({'text': PROSE}), '事实摘要'),
+])
+def test_bad_chapter_delivery_is_specific_and_never_adopted_or_retried(setup, raw, reason):
+    store, jobs = setup
+    saved = work(store)
+    create(jobs, saved, action='chapter')
+    calls = []
+    async def generate(*args, **kwargs):
+        calls.append(kwargs)
+        return raw
+    failed = asyncio.run(execute(jobs, jobs.claim(), generate))
+    assert failed['status'] == 'failed' and failed['results'] == []
+    assert reason in failed['error'] and PROSE not in failed['error']
+    assert len(calls) == 1 and calls[0]['retries'] == 1
+    assert store.get('works', saved['id'])['chapters'] == []
+
+
+@pytest.mark.parametrize('kind,action', [('novel','chapter'), ('novel','premise'), ('short_drama','chapter')])
+def test_actual_transport_enforces_json_only_for_novel_chapters(setup, monkeypatch, kind, action):
+    import httpx
+    store, jobs = setup
+    monkeypatch.setattr(api.llm, '_refresh_config', lambda: None)
+    monkeypatch.setattr(api.llm, 'MODEL', 'deepseek-v4.1-flash')
+    monkeypatch.setattr(api.llm, 'API_KEY', 'offline-only')
+    monkeypatch.setattr(api.llm, 'API_BASE', 'https://offline.invalid')
+    captured = []
+    async def post(client, url, **kwargs):
+        captured.append(kwargs['json'])
+        text = PROSE if kind == 'novel' else '场1 书店 日 内\n出场人物：叶宁\n△叶宁推门进来，放下旧书。\n叶宁：我来核对那张收条，书主还没有找到。\n△她翻开账页，指着尚未结清的一行。'
+        raw = json.dumps({'text': text, 'summary': '核对收条，书主尚未确认。'}) if action == 'chapter' else PROSE
+        return httpx.Response(200, request=httpx.Request('POST', url), json={'choices':[{'finish_reason':'stop','message':{'content':raw}}]})
+    monkeypatch.setattr(api.llm.httpx.AsyncClient, 'post', post)
+    saved = work(store, content_type=kind)
+    create(jobs, saved, action=action)
+    done = asyncio.run(execute(jobs, jobs.claim()))
+    assert done['status'] == 'completed', done['error']
+    assert len(captured) == 1 and captured[0]['max_tokens'] == 12000
+    assert 'thinking' not in captured[0]
+    assert captured[0].get('response_format') == ({'type':'json_object'} if kind == 'novel' and action == 'chapter' else None)
+    assert store.get('works', saved['id'])['chapters'] == []
+    if kind == 'novel' and action == 'chapter':
+        assert '【本次交付协议】' in captured[0]['messages'][0]['content']
+        assert jobs.adopt(done['id'])['chapters'][0]['content'] == PROSE
+
+
+@pytest.mark.parametrize('reason,content,expected', [('length', PROSE, 'incomplete'), ('stop', None, 'empty_content')])
+def test_transport_preserves_empty_or_truncated_failure_without_retry(monkeypatch, reason, content, expected):
+    import httpx
+    monkeypatch.setattr(api.llm, '_refresh_config', lambda: None)
+    monkeypatch.setattr(api.llm, 'API_BASE', 'https://offline.invalid')
+    monkeypatch.setattr(api.llm, 'API_KEY', 'offline-only')
+    calls = []
+    async def post(client, url, **kwargs):
+        calls.append(kwargs['json'])
+        return httpx.Response(200, request=httpx.Request('POST', url), json={'choices':[{'finish_reason':reason,'message':{'content':content}}]})
+    monkeypatch.setattr(api.llm.httpx.AsyncClient, 'post', post)
+    err = {}
+    raw = asyncio.run(api.llm.chat([{'role':'user','content':'JSON'}], json_mode=True, reject_truncated=True, retries=1, err_box=err))
+    assert raw is None and len(calls) == 1 and err['kind'] == expected
+    assert PROSE not in str(err)
+    if expected == 'incomplete': assert err['finish_reason'] == reason

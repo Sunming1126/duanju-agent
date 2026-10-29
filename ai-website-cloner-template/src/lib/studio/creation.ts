@@ -7,12 +7,13 @@ export async function createWorkForStep(payload: WorkInput, intent: CreationInte
   onSaved(work);
   let warning = "";
   if (intent.generate) {
-    const action = intent.step === "settings" ? "world" : intent.step;
+    const action = intent.all ? "premise" : intent.step === "settings" ? "world" : intent.step;
     const number = action === "chapter" ? intent.number : 1;
     try {
       await backendRequest(`/studio/works/${work.id}/jobs`, { method: "POST", body: jsonBody({
         revision: work.revision, action, number,
-        request_key: `create-${work.id}-${action}-${number}`,
+        mode: intent.all ? "all" : "single",
+        request_key: `create-${work.id}-${intent.all ? "all" : `${action}-${number}`}`,
       }) });
     } catch {
       warning = "草稿及全部输入已保存，生成请求暂未确认。可在当前步骤查看进度或重新打开作品核对。";

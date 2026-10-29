@@ -3,7 +3,7 @@ import type { Action, ContentType, WorkInput } from "./api";
 export const writingSteps: Action[] = ["premise", "characters", "outline", "chapter"];
 export type EditorStep = Action | "settings";
 export const editorSteps: EditorStep[] = ["premise", "settings", "characters", "outline", "chapter"];
-export type CreationIntent = { step: EditorStep; number: number; generate: boolean };
+export type CreationIntent = { step: EditorStep; number: number; generate: boolean; all?: boolean };
 
 export function editorLabels(type: ContentType): Record<EditorStep, string> {
   return { ...writingLabels(type), premise: "故事梗概", settings: "参数与世界", chapter: type === "novel" ? "小说正文" : "剧本正文" };

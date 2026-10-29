@@ -1,5 +1,26 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-29 小说正文JSON交付修复及一键生成入口发布
+
+- **运行源码：`5a0b84fac2c6d28acdfc2d6bc8dffb96f487a25b`**，已推送GitHub，包含e3791aa一键生成入口。持久小说正文调用开启JSON格式约束，系统提示明确text／summary及转义；格式、非对象、正文／摘要缺失、空响应与截断分别提示。模型、默认思考、12000 Token预算及一次请求保持，无数据库迁移，不自动重跑旧失败任务。新建／已有两类作品的五页工具栏左侧统一“一键生成全部”，替换撤销／重做图标。
+- **release：`/opt/plotloom-cn/releases/20261029T125728Z-inspiration-5a0b84fa`**；previous：`/opt/plotloom-cn/releases/20261029T122700Z-inspiration-84a22fb5`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261029T125728Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261029T125728Z-inspiration.txt`。
+- 源码包`plotloom-20261029T125608Z-5a0b84fac2c6.zip`，SHA-256 `eacd5e5e4309bc028286c0cafb88ecaa0162a483e354892e449828757d3f374d`；runner SHA-256 `310f568de16a92d1d183e541d9e5b7d0b065e5f30d4aa5e4e2f11dcc9b553af8`。只包含Git跟踪文件，无密钥或本机运行数据。首次哈希检查时上传尚未完成，门槛在发布器执行前拒绝，线上未改；确认传输退出成功后双哈希一致，正式发布器只执行一次。
+- 162项完整后端／市场、79项前端通过；服务器隔离接口、lint、42项样例／流程／大纲／项目测试及webpack生产构建通过。队列空闲后备份、原子切换，输出DEPLOYMENT_OK，无回滚。日志`/tmp/plotloom-novel-json-5a0b84fa-publish.log`；源码哈希、页面、十份样例／下载／回填、匿名与管理边界通过。正式代理8766，current／RELEASE_COMMIT及策略哈希一致。
+- 补验SQLite quick_check及所有旧记录逐条data与本次备份一致：作品16、世界15、持久任务42、候选0、灵感会话14、灵感任务27，之后另建一份QA作品／任务。正文原失败响应未保留，不能追溯具体语法字符；已确认的缺口是只在提示词要求JSON而未开启传输约束，历史原创实验也曾出现裸正文。自动审批拒绝重传用户冻结输入后，未重试该动作，全部真实测试使用独立原创旧书店素材。
+- **发布后平台真实正文验收通过**：公网API新建独立空间，目标2000字，只提交一次正文任务`d6b4c6d7-8a2f-4ae7-bd17-19b3e7083512`，48.26秒完成，正文2084字符、摘要210字符。采纳后重新读取逐字一致，梗概／人物／大纲保留；仅将本轮QA作品`eb046869-2de7-4082-82a8-08902f9b6068`归档，不操作用户作品。报告`/tmp/plotloom-novel-json-live-9fphjamm/report.json`；本机副本`data/deployment-bundles/novel-json-live-smoke-report.json`，凭据不进入报告或Git。本轮加上发布前普通／JSON对照共3次真实模型请求，均为原创输入、零重试；不是重跑用户任务或整部长篇验收。
+- 公网两类新建页200，均有唯一关联真实表单的“一键生成全部”，位于灵感前且无原撤销／重做图标。此为HTML与组件／模拟接口验证，未启动浏览器或宣称人工点击／视觉、真实整部生成完成。初次补验以普通用户运行受限venv被拒绝，改用既有sudo只读权限；另一次健康检查连接断开后仅重读，无重复生成。
+- 中文三服务active，旧站PID1948834不变、日文站200，模型配置指纹与0600权限保持；未改Nginx、systemd、用户原稿或恢复码。需要重试旧失败章节时由用户主动点击继续，沿用原版本保护；不会自动产生费用。回滚前核对current仍为本release，仅切回上述支持私人空间的84a22fb5并重启中文版服务，保留shared/data，不用旧SQLite覆盖新作品；回滚会撤销本次正文JSON约束和工具栏按钮调整。
+
+## 2026-10-29 小说独立写作策略与分段改进发布
+
+- **运行源码：`84a22fb563997b65daf68ac25f0a06b74f8ba68f`**，已同步GitHub。包含28a1c39小说独立策略／连续性、84a22fb自然分段／视角／判断依据／数量与物件状态规则，以及e04f199已完成的导入弹窗、世界工具栏、标题精简及模型信息并入我的空间。旧稿、空间隔离、短剧行为及原五页／流式大纲保留；无数据库结构、依赖、模型配置或预算变更，不默认关闭思考、不增加付费审稿。
+- **release：`/opt/plotloom-cn/releases/20261029T122700Z-inspiration-84a22fb5`**；previous：`/opt/plotloom-cn/releases/20261029T094122Z-inspiration-6e921db9`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261029T122700Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261029T122700Z-inspiration.txt`。
+- 源码包`plotloom-20261029T122621Z-84a22fb56399.zip`，SHA-256 `1baac5a94a72e38bbe81d46e80efea73f211d55e7103a5d27fb373bb52d920a5`；runner SHA-256 `310f568de16a92d1d183e541d9e5b7d0b065e5f30d4aa5e4e2f11dcc9b553af8`。仅含已提交跟踪文件，上传后双核验，不传本机数据或凭据。
+- start同步成功；发布前150项后端／市场回归、77项前端及lint／类型通过。服务器隔离接口、lint、40项流程／项目／大纲／样例及webpack生产构建通过，队列空闲后备份并原子切换，输出DEPLOYMENT_OK，无回滚。发布日志`/tmp/plotloom-novel-84a22fb5-publish.log`；单独监控连接曾中断，原发布连接成功退出，没有重新发布。
+- 源码哈希、主要页面、十份样例／下载／回填及匿名／管理权限检查通过。上线补验两条小说路径均加载新版分段、判断依据及生活常识规则；策略哈希与实测候选一致，正式Next代理8766，current／RELEASE_COMMIT匹配。SQLite quick_check通过；作品15、世界15、持久任务38、候选0、灵感会话13、灵感任务25条与本次备份逐条data一致。补验使用release内独立临时数据库，未写生产作品。
+- 中文api／worker／web均active；旧duanju-agent PID1948834不变、日文站200，模型配置SHA-256及0600权限保持。未改Nginx、systemd、恢复码或用户原稿。发布及补验零模型调用、未启动浏览器／本机应用；此前24次真实研究样本另见小说质量研究，不冒充上线后文学或长篇验收。本机忽略目录报告：`data/deployment-bundles/novel-84a22fb-live-report.json`。
+- 后续生成使用新规则，已有正文不自动重排或重写。本次前端变化仅有静态／构建／HTTP检查，人工视觉与点击待用户验收。回滚前先核对current仍为本次release，仅切回上述支持私人空间的6e921db9并重启中文三服务，保留shared/data，禁止用旧SQLite覆盖新增作品；回滚后小说策略恢复为旧版。
+
 ## 2026-10-29 参数与世界独立页签、粗纲流式预览
 
 - **运行源码：`6e921db939ec58ab7a3fd192456fe15055eb7fa5`**，包含2002aaec五页编辑器及6e921db大纲完整生成／流式预览。顺序为故事梗概、参数与世界、人物、大纲、正文；世界观概述统一放第二页，专属参数与世界采用两张深色卡片，保留复制、六类设定、另存、导出及已有作品AI完善。原四类写作动作不增加参数阶段；旧链接、草稿、下一步、键盘及手机导航兼容，原页头与侧栏保持。

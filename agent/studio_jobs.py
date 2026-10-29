@@ -287,20 +287,27 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
                         last_update, last_text = time.monotonic(), rough
                 raw = await chat_outline(messages, on_text=on_text, err_box=err)
             else:
-                raw = await generate(messages, temperature=0.8, max_tokens=12000, timeout=240, retries=1, err_box=err, reject_truncated=True)
+                options = {"json_mode": True} if step["action"] == "chapter" and job["draft"]["content_type"] == "novel" else {}
+                raw = await generate(messages, temperature=0.8, max_tokens=12000, timeout=240, retries=1, err_box=err, reject_truncated=True, **options)
             if not raw or not raw.strip():
                 if err.get("kind") == "rate_limit":
                     pause_after_rate_limit(jobs.store)
-                reasons = {"rate_limit": "模型限流", "incomplete": "模型输出被截断或未正常结束", "http_error": "模型服务拒绝请求", "error": "模型连接失败"}
+                reasons = {"rate_limit": "模型限流", "incomplete": "模型输出被截断或未正常结束", "http_error": "模型服务拒绝请求", "error": "模型连接失败", "empty_content": "模型正常结束但未返回正文"}
                 raise ValueError(reasons.get(err.get("kind"), "模型没有返回有效内容") + "。已完成结果保留，请检查服务后主动继续。")
             if len(raw) > 100000:
                 raise ValueError("模型输出超出单步保存容量")
             result = {**step, "text": raw.strip(), "references": refs}
             if step["action"] in {"chapter", "world"}:
                 clean = raw.strip()
-                if clean.startswith('```'):
+                if clean.startswith('```') and '\n' in clean:
                     clean = clean.split('\n', 1)[1].rsplit('```', 1)[0]
-                parsed = json.loads(clean)
+                try:
+                    parsed = json.loads(clean)
+                except json.JSONDecodeError as exc:
+                    label = "正文与事实摘要" if step["action"] == "chapter" else "作品世界"
+                    raise ValueError(f"模型未返回有效的{label}JSON（第{exc.lineno}行，第{exc.colno}列）；未保存本步结果，请主动继续。") from None
+                if not isinstance(parsed, dict):
+                    raise ValueError("模型返回的JSON不是对象；未保存本步结果，请主动继续。")
                 if step["action"] == "world":
                     result["world"] = api.WorldInput.model_validate(parsed).model_dump()
                     result["text"] = json.dumps(result["world"], ensure_ascii=False, indent=2)

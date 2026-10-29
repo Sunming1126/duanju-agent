@@ -195,3 +195,40 @@ test("creation conflict blocks AI, while a failed job retains the saved work wit
     assert.equal(calls, 1);
   } finally { globalThis.fetch = previous; }
 });
+
+test('one-click creation saves both work types and submits one full-plan job from every editor view', async () => {
+  const previous = globalThis.fetch;
+  try {
+    for (const type of ['novel', 'short_drama']) for (const step of workflow.editorSteps) {
+      const calls = [];
+      globalThis.fetch = async (url, options) => {
+        if (url.endsWith('/session')) return Response.json({space_id:'all-create',isolated:true});
+        calls.push({url, body:JSON.parse(options.body)});
+        return Response.json(url.endsWith('/jobs') ? {id:'all-job'} : {id:'all-work',revision:7});
+      };
+      const draft = inspiration.initialCreationDraft(type);
+      Object.assign(draft, {title:'完整创作',premise:'原创故事',units:'3',characters:'手写人物',outline:'手写大纲',chapters:[{number:2,title:'保留章名',content:'手写正文'}]});
+      let saved = false;
+      const result = await creation.createWorkForStep(inspiration.creationPayload(draft, type === 'novel' ? '小说创作' : '剧本创作', true), {generate:true,all:true,step,number:2}, () => { saved=true;assert.equal(calls.length,1); });
+      assert.equal(result.warning,'');assert.ok(saved);assert.equal(calls.length,2);
+      assert.equal(calls[0].body.content_type,type);assert.equal(calls[0].body.units,3);
+      assert.equal(calls[0].body.chapters[0].content,'手写正文');
+      assert.deepEqual(calls[1].body,{revision:7,action:'premise',number:1,mode:'all',request_key:'create-all-work-all'});
+    }
+  } finally { globalThis.fetch=previous; }
+});
+
+test('one-click creation retains the saved draft and never retries an unconfirmed full-plan job', async () => {
+  const previous = globalThis.fetch;const calls=[];let saved;
+  try {
+    globalThis.fetch = async (url, options) => {
+      if(url.endsWith('/session'))return Response.json({space_id:'all-error',isolated:true});
+      calls.push({url,body:JSON.parse(options.body)});
+      if(url.endsWith('/jobs'))throw new Error('response lost');
+      return Response.json({id:'retained-all',revision:1});
+    };
+    const result=await creation.createWorkForStep({}, {generate:true,all:true,step:'settings',number:2}, work=>{saved=work;});
+    assert.equal(saved.id,'retained-all');assert.equal(result.work.id,saved.id);
+    assert.match(result.warning,/已保存/);assert.equal(calls.length,2);assert.equal(calls[1].body.mode,'all');
+  } finally { globalThis.fetch=previous; }
+});

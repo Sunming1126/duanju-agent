@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Download, RotateCcw, RotateCw, Sparkles } from "lucide-react";
+import { Download, Sparkles } from "lucide-react";
 import { jsonBody, downloadText, type ContentType, type Reference, type Section, type Work, type World, type WorkInput } from "@/lib/studio/api";
 import { createWorkForStep } from "@/lib/studio/creation";
 import { applyInspiration, creationPayload, initialCreationDraft, type CreationDraft } from "@/lib/studio/inspiration";
@@ -102,12 +102,13 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
     event.preventDefault();
     if (lock.current || !ready || created.current) return;
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
-    const generate = submitter instanceof HTMLButtonElement && submitter.value === "generate";
+    const all = submitter instanceof HTMLButtonElement && submitter.value === "all";
+    const generate = all || submitter instanceof HTMLButtonElement && submitter.value === "generate";
     lock.current = true; setError(""); setBusy(true);
     try {
       const payload = creationPayload(draft, mode, generate, reference, initialType);
-      if (generate && step === "chapter" && number > payload.units) throw new Error("当前正文编号超出计划，请先调整计划集／章数或选择范围内的正文。");
-      const intent = { generate, step, number };
+      if (generate && !all && step === "chapter" && number > payload.units) throw new Error("当前正文编号超出计划，请先调整计划集／章数或选择范围内的正文。");
+      const intent: CreationIntent = { generate, step: all ? "premise" : step, number: all ? 1 : number, all };
       const { work, warning } = await createWorkForStep(payload, intent, saved => {
         created.current = saved;
         try { localStorage.removeItem(storageKey); if (restoredKey.current && restoredKey.current !== storageKey) localStorage.removeItem(restoredKey.current); } catch { /* A saved work must still open if browser storage is blocked. */ }
@@ -130,7 +131,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   return <>
     <ProjectTitle type={type} title={draft.title} disabled={disabled} onChange={title => update({ title })} />
     <ProjectToolbar type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => setDraft(current => ({ ...current, step: next }))} actions={<>
-      <div className={styles.history}><button type="button" title="撤销" aria-label="撤销" disabled={disabled || !history.canUndo} onClick={() => history.undo(draft,setDraft)}><RotateCcw size={20} /></button><button type="button" title="重做" aria-label="重做" disabled={disabled || !history.canRedo} onClick={() => history.redo(draft,setDraft)}><RotateCw size={20} /></button></div>
+      <button form="plotloom-create-form" type="submit" name="intent" value="all" className={styles.tool} disabled={disabled} title={`生成故事梗概、人物、大纲及全部 ${safeUnits}${type === "novel" ? "章" : "集"}正文`}><Sparkles size={17} />一键生成全部</button>
       {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
       <>
         {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />导出为Word</button>}
