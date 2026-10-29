@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ContentType, WorkInput } from "@/lib/studio/api";
@@ -19,7 +18,7 @@ export function ProjectTitle({ type, title, disabled = false, onChange, actions 
   return <header className={styles.header}>
     <span className={styles.titleMark} aria-hidden="true"><Sparkles size={20} /></span>
     <input aria-label={label} placeholder={label} value={title} maxLength={80} disabled={disabled} onChange={event => { if (!disabled) onChange(event.target.value); }} />
-    <div className={styles.headerActions}>{actions}<Link className={styles.backLink} href="/workspace" aria-label="返回 Plotloom 作品库">Plotloom <span aria-hidden="true">↗</span></Link></div>
+    {actions && <div className={styles.headerActions}>{actions}</div>}
   </header>;
 }
 

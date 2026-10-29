@@ -128,7 +128,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
 
   function generateCurrent() { if (formRef.current && generateRef.current) formRef.current.requestSubmit(generateRef.current); }
   return <>
-    <ProjectTitle type={type} title={draft.title} disabled={disabled} onChange={title => update({ title })} actions={<span className={styles.saveState}>新建草稿 · 此浏览器自动保存</span>} />
+    <ProjectTitle type={type} title={draft.title} disabled={disabled} onChange={title => update({ title })} />
     <ProjectToolbar type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => setDraft(current => ({ ...current, step: next }))} actions={<>
       <div className={styles.history}><button type="button" title="撤销" aria-label="撤销" disabled={disabled || !history.canUndo} onClick={() => history.undo(draft,setDraft)}><RotateCcw size={20} /></button><button type="button" title="重做" aria-label="重做" disabled={disabled || !history.canRedo} onClick={() => history.redo(draft,setDraft)}><RotateCw size={20} /></button></div>
       {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}

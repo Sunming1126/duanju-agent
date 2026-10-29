@@ -7,6 +7,7 @@ import {
   Globe2,
   Plus,
   Save,
+  Search,
   Upload,
 } from "lucide-react";
 import {
@@ -227,27 +228,8 @@ export function WorldWorkspace() {
       <Header workspace />
       <div className="plotloom-shell">
         <StudioNav selected="世界模型" />
-        <main className="plotloom-main">
-          <div className="workspace-title">
-            <div>
-              <span className="eyebrow">WORLD BUILDING</span>
-              <h1>
-                我的世界<span>先建立规则，再让故事发生</span>
-              </h1>
-            </div>
-            <button
-              className="pill light"
-              disabled={loading || !!error || busy}
-              onClick={() => {
-                if (ensureSaved()) {
-                  setCreating(true);
-                  setFormError("");
-                }
-              }}
-            >
-              <Plus size={16} /> 新建世界
-            </button>
-          </div>
+        <main className="plotloom-main world-library">
+          <h1 className="sr-only">世界模型</h1>
           {error && (
             <p className="storage-warning" role="alert">
               {error}
@@ -256,25 +238,10 @@ export function WorldWorkspace() {
               </button>
             </p>
           )}
-          <div className="works-toolbar"><input aria-label="搜索世界" placeholder="搜索世界名称" value={search} onChange={e => setSearch(e.target.value)} /><label><input type="checkbox" checked={archived} onChange={e => setArchived(e.target.checked)} />显示归档世界</label></div>
-          <div className="works-filters">{status?.world_sections.map(s => <button key={s.id} className={s.id === section ? "active" : ""} onClick={() => setSection(s.id)}>{s.label}</button>)}</div>
-          <div className="studio-world-toolbar">
-            <button
-              className="text-button"
-              disabled={busy || loading}
-              onClick={() => {
-                if (
-                  !dirty ||
-                  window.confirm(
-                    "重新加载会放弃未保存的世界设定。请先导出备份；确定重新加载吗？",
-                  )
-                )
-                  void load();
-              }}
-            >
-              重新加载
-            </button>
-            <label>
+          <div className="world-library-toolbar" role="group" aria-label="世界管理">
+            <div className="world-library-controls">
+            <label className="world-library-search"><Search size={16} aria-hidden="true" /><input aria-label="搜索世界" placeholder="搜索世界名称" value={search} onChange={e => setSearch(e.target.value)} /></label>
+            <label className="world-library-picker">
               当前世界
               <select
                 disabled={dirty || busy}
@@ -294,6 +261,36 @@ export function WorldWorkspace() {
                 ))}
               </select>
             </label>
+            <label className="world-library-archived"><input type="checkbox" checked={archived} onChange={e => setArchived(e.target.checked)} />显示归档世界</label>
+            </div>
+            <div className="world-library-actions">
+            <button
+              className="outline-button"
+              disabled={loading || !!error || busy}
+              onClick={() => {
+                if (ensureSaved()) {
+                  setCreating(true);
+                  setFormError("");
+                }
+              }}
+            >
+              <Plus size={14} /> 新建世界
+            </button>
+            <button
+              className="text-button"
+              disabled={busy || loading}
+              onClick={() => {
+                if (
+                  !dirty ||
+                  window.confirm(
+                    "重新加载会放弃未保存的世界设定。请先导出备份；确定重新加载吗？",
+                  )
+                )
+                  void load();
+              }}
+            >
+              重新加载
+            </button>
             <label className="outline-button studio-import-world">
               <Upload size={14} /> 导入世界包
               <input
@@ -327,7 +324,9 @@ export function WorldWorkspace() {
                 </button>
               </>
             )}
+            </div>
           </div>
+          <div className="works-filters">{status?.world_sections.map(s => <button key={s.id} className={s.id === section ? "active" : ""} onClick={() => setSection(s.id)}>{s.label}</button>)}</div>
           {notice && (
             <p className="studio-inline-notice" role="status">
               {notice}

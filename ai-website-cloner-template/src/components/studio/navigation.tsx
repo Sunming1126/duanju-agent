@@ -3,9 +3,8 @@
 import Link, { useLinkStatus } from "next/link";
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { BookOpen, FileText, Globe2, Library, Settings2, SquarePen, BookMarked, UserRound } from "lucide-react";
+import { BookOpen, FileText, Globe2, Library, SquarePen, BookMarked, UserRound } from "lucide-react";
 
-const ModelSettings = dynamic(() => import("./model-settings").then(module => module.ModelSettings));
 const SpaceInfo = dynamic(() => import("./space-info").then(module => module.SpaceInfo));
 
 function NavigationHint() {
@@ -14,7 +13,6 @@ function NavigationHint() {
 }
 
 export function StudioNav({ selected = "" }: { selected?: string }) {
-  const [model, setModel] = useState(false);
   const [space, setSpace] = useState(false);
   const [open, setOpen] = useState(false);
   const items = [
@@ -24,10 +22,8 @@ export function StudioNav({ selected = "" }: { selected?: string }) {
   return <aside className={`studio-sidebar plotloom-nav ${open ? "is-open" : ""}`}><div className="sidebar-label">PLOTLOOM · 中文创作</div>
     <button className="plotloom-nav-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "收起导航" : "展开导航"} · {selected || "创作空间"}</button>
     {items.map(([href, label, Icon]) => <Link key={href} href={href} prefetch={true} aria-current={selected === label ? "page" : undefined} className={`sidebar-link ${selected === label ? "selected" : ""}`}><Icon size={18} />{label}<NavigationHint /></Link>)}
-    <button className="sidebar-link" onClick={() => setModel(true)}><Settings2 size={18} />模型信息</button>
     <button className="sidebar-link" onClick={() => setSpace(true)}><UserRound size={18} />我的空间</button>
     <p className="studio-hint">本浏览器独立空间<br />作品与世界仅自己可见</p>
-    {model && <ModelSettings onClose={() => setModel(false)} />}
     {space && <SpaceInfo onClose={() => setSpace(false)} />}
   </aside>;
 }

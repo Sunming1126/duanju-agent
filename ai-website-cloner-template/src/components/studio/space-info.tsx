@@ -2,20 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/sites/storyplay/shared";
-import { backendRequest, ensureStudioSpace, jsonBody, type StudioSpace } from "@/lib/studio/api";
+import { backendRequest, ensureStudioSpace, jsonBody, type StudioSpace, type StudioStatus } from "@/lib/studio/api";
 
 export function SpaceInfo({ onClose }: { onClose: () => void }) {
   const [space, setSpace] = useState<StudioSpace>();
+  const [status, setStatus] = useState<StudioStatus>();
+  const [modelError, setModelError] = useState("");
   const [code, setCode] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   useEffect(() => { void ensureStudioSpace().then(setSpace).catch(error => setNotice(error.message)); }, []);
-  return <Modal title="我的创作空间" onClose={() => { if (!lock.current) onClose(); }}>
+  useEffect(() => {
+    const controller = new AbortController();
+    void backendRequest<StudioStatus>("/studio/status", { signal: controller.signal }).then(value => {
+      if (!controller.signal.aborted) setStatus(value);
+    }).catch(error => { if (!controller.signal.aborted) setModelError(error.message); });
+    return () => controller.abort();
+  }, []);
+  return <Modal title="我的空间" onClose={() => { if (!lock.current) onClose(); }}>
     <p className="modal-description">本浏览器拥有独立的作品、世界和生成任务，其他浏览器无法查看或修改。官方样例与语料参考仍可公开使用。</p>
     {space && <p className="studio-hint">空间编号：{space.space_id}</p>}
     <p className="modal-description">再次使用此浏览器即可继续创作。更换浏览器或清理网站数据前，请先下载作品备份。</p>
-    <p className="studio-hint">模型请求全站最多同时执行 3 个，多人等待时轮流调度。同一作品的章节按顺序衔接。</p>
+    <section className="space-model-info" aria-labelledby="space-model-heading">
+      <h3 id="space-model-heading">模型信息</h3>
+      {status ? <dl><div><dt>当前模型</dt><dd>{status.model || "未配置"}</dd></div><div><dt>服务状态</dt><dd>{status.llm_ready ? "服务端已配置" : "服务端尚未配置"}</dd></div></dl> : modelError ? <p className="studio-error" role="alert">模型信息读取失败：{modelError}</p> : <p className="studio-hint" role="status">正在读取模型信息…</p>}
+      <p className="studio-hint">模型由服务端统一维护。全站最多同时执行 {status?.max_concurrent_requests ?? 3} 个模型请求，多人等待时轮流调度，同一作品的章节按顺序衔接。</p>
+    </section>
     <details className="space-recovery"><summary>恢复以前的共享作品</summary><p className="studio-hint">使用维护者提供的一次性恢复码，将原共享作品和世界转入当前空间。原稿会完整保留。</p>
       <form onSubmit={async event => {
         event.preventDefault(); if (lock.current || !code.trim()) return;

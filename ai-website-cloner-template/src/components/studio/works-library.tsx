@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Archive, ArrowRight, BookOpen, Copy, FileText, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Archive, ArrowRight, BookOpen, Copy, FileText, RefreshCw, Search, Trash2, Upload } from "lucide-react";
 import { Header, Modal } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "./navigation";
 import { backendRequest as api, jsonBody, downloadText, unitLabel, type WorkSummary } from "@/lib/studio/api";
@@ -24,6 +24,7 @@ export function WorksLibrary() {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<History[]>([]);
   const [preview, setPreview] = useState("");
+  const [importing, setImporting] = useState(false);
   const [removing, setRemoving] = useState<WorkSummary>();
   const sequence = useRef(0);
   const locked = useRef(false);
@@ -85,7 +86,7 @@ export function WorksLibrary() {
   const novels = works.filter(work => work.content_type === "novel").length;
 
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="我的作品" /><main className="plotloom-main works-library">
-    <div className="workspace-title library-heading"><div><h1>我的作品</h1></div><span className="library-total">{works.length} 部作品<span>{archivedCount} 部已归档</span></span></div>
+    <div className="workspace-title library-heading"><div><h1>我的作品</h1></div><div className="library-heading-actions"><span className="library-total">{works.length} 部作品<span>{archivedCount} 部已归档</span></span><button className="outline-button" onClick={() => { setNotice(""); setError(""); setImporting(true); }}><Upload size={16} />导入</button></div></div>
     <section className="library-controls" aria-label="作品筛选">
       <div className="library-type-tabs" aria-label="作品类型">
         {[["", "全部作品", works.length], ["novel", "小说", novels], ["short_drama", "剧本", works.length - novels]].map(([value, label, count]) => <button key={value} aria-pressed={filter === value} className={filter === value ? "active" : ""} onClick={() => setFilter(String(value))}>{label}<span>{count}</span></button>)}
@@ -98,7 +99,7 @@ export function WorksLibrary() {
       </div>
     </section>
     {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
-    {error && !removing && <p className="studio-error" role="alert">{error}</p>}
+    {error && !removing && !importing && <p className="studio-error" role="alert">{error}</p>}
     <div className="library-results-label"><span>{visible.length} 部作品</span>{loading && <span role="status">正在更新作品列表…</span>}</div>
     <div className="library-grid">{visible.map(work => {
       const novel = work.content_type === "novel";
@@ -120,14 +121,16 @@ export function WorksLibrary() {
       </article>;
     })}</div>
     {loading && !works.length ? <div className="library-skeletons" aria-hidden="true">{[0, 1, 2].map(item => <div key={item} />)}</div> : !visible.length && <div className="library-empty"><BookOpen size={32} /><h2>{works.length ? "没有找到匹配的作品" : "你的故事，从这里开始"}</h2><p>{works.length ? "试试其他关键词、作品类型或归档状态。" : "从侧栏进入小说或剧本创作，保存后的作品会统一显示在这里。"}</p>{works.length > 0 && <button className="outline-button" onClick={() => { setQuery(""); setFilter(""); setState("all"); }}>清除筛选</button>}</div>}
-    <details className="library-import"><summary>导入与历史作品<span>备份导入 · 浏览器旧草稿 · 旧站中文历史</span></summary><div>
+    {importing && <Modal title="导入作品" wide onClose={() => { if (!locked.current) setImporting(false); }}><div className="library-import-dialog">
       <p className="studio-hint">导入为独立作品，保留原件；旧草稿和中文旧站任务按原始 ID 去重。</p>
+      {error && <p className="studio-error" role="alert">{error}</p>}
+      {notice && <p className="studio-inline-notice" role="status">{notice}</p>}
       <div className="studio-candidate-actions"><label className="outline-button studio-import-world">导入完整作品备份<input type="file" accept=".json" disabled={busy} onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void run(async () => { if (file.size > 12 * 1024 * 1024) throw new Error("文件超过12 MB"); await api("/studio/works/import", { method: "POST", body: await file.text() }); setNotice("已导入为新作品"); }); }} /></label>
         <button className="outline-button" disabled={busy} onClick={() => void run(async () => { const items = legacyWorks(localStorage.getItem("storyplay-local-projects-v1")); for (const value of items) await api("/studio/works", { method: "POST", body: jsonBody(value) }); setNotice(`已处理 ${items.length} 份旧草稿，原数据保留`); })}>导入浏览器旧草稿</button>
         <button className="outline-button" disabled={busy} onClick={() => void run(async () => setHistory((await api<{ items: History[] }>("/studio/history")).items), false)}>查看旧站中文历史</button></div>
       {history.map(item => <article className="studio-candidate" key={item.id}><h3>{item.title}</h3><p>{item.chapters} 个正文单元 · 只读历史</p><button className="text-button" disabled={busy} onClick={() => void run(async () => setPreview(await api<string>(`/studio/history/${item.id}/preview`)), false)}>预览</button><button className="outline-button" disabled={busy} onClick={() => void run(async () => { await api(`/studio/history/${item.id}/import`, { method: "POST", body: "{}" }); setNotice("已导入，重复操作不会覆盖作品。"); })}>导入为新作品</button></article>)}
       {preview && <details open><summary>历史原稿预览</summary><pre className="plotloom-pre">{preview}</pre><button className="outline-button" onClick={() => downloadText("历史原稿.txt", preview)}>导出预览</button></details>}
-    </div></details>
+    </div></Modal>}
     {removing && <Modal title="删除作品" onClose={() => { if (!locked.current) setRemoving(undefined); }}>
       <p className="library-delete-title">确认删除《{removing.title}》？</p><p className="modal-description">正文、作品世界副本和生成记录将一并删除，无法恢复。也可以使用归档保留作品。</p>
       {error && <p className="studio-error" role="alert">{error}</p>}

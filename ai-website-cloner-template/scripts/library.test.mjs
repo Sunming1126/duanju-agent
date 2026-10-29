@@ -60,5 +60,6 @@ test("library renders archived and active cards together, per-work delete action
   assert.match(html, /作品排序/);
   assert.doesNotMatch(html, />新建小说<|>新建剧本<|完整创作页面 · 保留原始输入/);
   assert.equal((html.match(/class="library-card /g) || []).length, 2);
-  assert.match(html, /<details class="library-import"><summary>/);
+  assert.match(html, /class="library-heading-actions"[\s\S]*?>导入<\/button>/);
+  assert.doesNotMatch(html, /导入与历史作品|class="library-import"/);
 });
