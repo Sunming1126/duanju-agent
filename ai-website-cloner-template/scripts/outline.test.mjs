@@ -139,10 +139,12 @@ test("outline and manuscript views show both writing modes and keep read navigat
   const noop = () => {};
   for (const type of ["short_drama", "novel"]) {
     const unit = type === "novel" ? "章" : "集";
-    const value = serializeOutline({ rough: "原有总纲", entries: [{ number: 10, phase: 0, text: "计划外也保留" }] });
+    const value = serializeOutline({ rough: "原有总纲", entries: [{ number: 10, phase: 0, text: "计划外也保留" }, { number: 1, phase: 1, text: "原承阶段" }, { number: 2, phase: 2, text: "原转阶段" }, { number: 3, phase: 3, text: "原合阶段" }] });
     const outline = renderToStaticMarkup(React.createElement(OutlineEditor, { value, type, units: 3, disabled: true, onChange: noop }));
     assert.ok(outline.includes(`第10${unit}`));
     assert.match(outline, /计划外也保留/);
+    for (const text of ["原承阶段", "原转阶段", "原合阶段"]) assert.ok(outline.includes(text));
+    assert.doesNotMatch(outline, /aria-label="起承转合"/);
     assert.match(outline, /切换全文编辑/);
     assert.ok([...outline.matchAll(/<button[^>]*aria-pressed="(?:true|false)"[^>]*>/g)].every(([button]) => !button.includes("disabled")));
     const empty = renderToStaticMarkup(React.createElement(ManuscriptEditor, { type, chapters: [], units: 3, number: 1, onNumber: noop, onChange: noop }));
