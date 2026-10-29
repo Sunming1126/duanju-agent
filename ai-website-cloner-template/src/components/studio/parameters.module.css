@@ -1,0 +1,29 @@
+.layout { display: grid; gap: 24px; min-width: 0; }
+.card { display: grid; gap: 24px; min-width: 0; padding: 28px; border-radius: 17px; background: #19191c; color: #e9e8ee; }
+.card h2 { margin: 0; font-size: 18px; font-weight: 500; color: #f1f0f5; }
+.card label { display: flex; flex-direction: column; gap: 10px; min-width: 0; color: #bfc1c9; font-size: 14px; }
+.card input, .card textarea, .card select { width: 100%; min-width: 0; min-height: 44px; padding: 11px 14px; background: #0d0d10; border: 1px solid #ffffff0c; border-radius: 8px; box-shadow: none; color: #eeedf2; font: inherit; line-height: 1.8; }
+.card textarea { resize: vertical; }
+.card input:focus, .card textarea:focus, .card select:focus { outline: 2px solid #b38be5; outline-offset: 2px; border-color: transparent; box-shadow: none; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.wide { grid-column: 1 / -1; }
+.writing { min-width: 0; padding-top: 24px; border-top: 1px solid #ffffff0c; }
+.writing > section { background: transparent; border: 0; padding: 0; gap: 20px; }
+.writing h3 { color: #c4c8d2; font-size: 15px; font-weight: 400; }
+.writing label { font-size: 14px; color: #bfc1c9; gap: 10px; }
+.heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px 18px; }
+.actions button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; padding: 5px 0; color: #c3aedc; font-size: 13px; cursor: pointer; }
+.actions button:hover:enabled { color: #eee3fc; }
+.worldOverview { display: grid; gap: 22px; }
+.sections { display: grid; gap: 12px; min-width: 0; }
+.section { border: 1px solid #ffffff0c; border-radius: 10px; overflow: hidden; }
+.section summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 17px 18px; color: #dbd7e2; font-size: 14px; cursor: pointer; list-style: none; }
+.section summary::-webkit-details-marker { display: none; }
+.section[open] summary svg { transform: rotate(180deg); }
+.section > div { display: grid; gap: 22px; padding: 5px 18px 20px; }
+.footer { display: flex; justify-content: flex-end; font-size: 13px; color: #aaa0b9; }
+.footer a:hover { color: #e9def8; }
+@media (min-width: 1800px) { .card { padding: 36px; gap: 30px; } .card h2 { font-size: 24px; } .card label, .writing label { font-size: 18px; } .writing h3 { font-size: 20px; } }
+@container plotloom-editor (max-width: 650px) { .card { padding: 22px 18px; } .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+@media (max-width: 520px) { .card { padding: 22px 18px; border-radius: 13px; } .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } .section summary { padding: 16px 14px; } .section > div { padding: 5px 14px 18px; } }

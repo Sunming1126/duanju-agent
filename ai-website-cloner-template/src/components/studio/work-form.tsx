@@ -8,13 +8,14 @@ import { applyInspiration, creationPayload, initialCreationDraft, type CreationD
 import { Inspiration } from "./inspiration";
 import { ProjectTitle, ProjectToolbar } from "./project-shell";
 import { ProjectSettings } from "./project-settings";
+import { ProjectParameters } from "./project-parameters";
 import { OutlineEditor } from "./outline-editor";
 import { ManuscriptEditor } from "./manuscript-editor";
 import { useEditHistory } from "./edit-history";
 import { applyProjectSettings, projectSettingsFromDraft } from "@/lib/studio/project";
 import { exportWord } from "@/lib/studio/word-export";
 import { creationDraftKeys } from "@/lib/studio/writing";
-import { writingLabels, writingSteps, type CreationIntent } from "@/lib/studio/workflow";
+import { editorLabels, editorSteps, nextEditorStep, type CreationIntent } from "@/lib/studio/workflow";
 import { revealWritingStage } from "./workflow-nav";
 import { CharacterEditor } from "./character-editor";
 import styles from "./integration.module.css";
@@ -116,17 +117,14 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
     finally { lock.current = false; setBusy(false); }
   }
 
-  const world = draft.world_snapshot;
   const type = initialType;
-  const step = writingSteps.includes(draft.step!) ? draft.step! : "premise";
-  const labels = writingLabels(type);
+  const step = editorSteps.includes(draft.step!) ? draft.step! : "premise";
+  const labels = editorLabels(type);
+  const nextStep = nextEditorStep(step);
   const safeUnits = Math.min(200, Math.max(1, Math.floor(Number(draft.units) || 1)));
   const number = draft.chapter_number && Number.isInteger(draft.chapter_number) && draft.chapter_number >= 1 && draft.chapter_number <= 200 ? draft.chapter_number : 1;
   const disabled = busy || !ready || !!created.current;
   function selectStep(next: typeof step) { update({ step: next }); revealWritingStage(); }
-  function changeWorld(patch: Partial<NonNullable<CreationDraft["world_snapshot"]>>) {
-    update({ world_id: "", world_snapshot: { name: world?.name || "作品专属世界", description: world?.description || "", sections: world?.sections || {}, ...patch } });
-  }
 
   function generateCurrent() { if (formRef.current && generateRef.current) formRef.current.requestSubmit(generateRef.current); }
   return <>
@@ -136,7 +134,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
       <>
         {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />导出为Word</button>}
-        <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />AI 生成{step === "premise" ? "故事梗概" : labels[step]}</button>
+        {step !== "settings" && <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />AI 生成{labels[step]}</button>}
       </>
     </>} />
     <div className={styles.workspace}><form ref={formRef} id="plotloom-create-form" className={styles.form} onSubmit={submit} onKeyDown={event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.defaultPrevented && event.target.getAttribute("role") !== "combobox") event.preventDefault(); }} noValidate>
@@ -148,8 +146,6 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={styles.stage}>
         {step === "premise" && <ProjectSettings type={type} value={projectSettingsFromDraft(draft)} disabled={disabled} onChange={patch => update(applyProjectSettings(draft,patch))}>
           <div className={styles.worldArea}>
-            <label>从世界库复制<select name="world_id" disabled={disabled} value={draft.world_id} onChange={e => { const item = worlds.find(w => w.id === e.target.value); update({ world_id: item?.id || "", world_snapshot: item ? { name: item.name, description: item.description, sections: { ...item.sections } } : null }); }}><option value="">{world ? "使用作品专属世界" : "暂不绑定"}</option>{worlds.map(w => <option value={w.id} key={w.id}>{w.name} · v{w.revision}</option>)}</select></label>
-            {world && <><label>世界名称<input maxLength={80} disabled={disabled} value={world.name} onChange={e => changeWorld({ name: e.target.value })} /></label>{sections.map(s => <details key={s.id}><summary>{s.label}</summary>{s.fields.map(f => <label key={f.key}>{f.label}<textarea disabled={disabled} rows={3} maxLength={20000} value={world.sections[f.key] || ""} onChange={e => changeWorld({ sections: { ...world.sections, [f.key]: e.target.value } })} /></label>)}</details>)}</>}
             {draft.source_text && ["小说改编", "剧本改写"].includes(mode) && <details><summary>回填前的原始素材（创建作品时一并保留）</summary><pre className="plotloom-pre">{draft.source_text}</pre></details>}
             <label>导入 TXT 素材（最多2 MB / 50,000字符）<input type="file" accept=".txt,text/plain" disabled={disabled} onChange={async e => {
               const file = e.target.files?.[0]; e.target.value = ""; if (!file) return;
@@ -159,13 +155,14 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
             }} /></label>
           </div>
         </ProjectSettings>}
+        {step === "settings" && <ProjectParameters type={type} value={projectSettingsFromDraft(draft)} worlds={worlds} sections={sections} worldId={draft.world_id} disabled={disabled} onChange={patch => update(applyProjectSettings(draft, patch))} onWorldChange={(world, sourceId) => update({ world_snapshot: world, world_id: sourceId || "" })} />}
         {step === "characters" && <CharacterEditor value={draft.characters} disabled={disabled} onChange={characters => update({ characters })} onGenerate={generateCurrent} />}
         {step === "outline" && <OutlineEditor value={draft.outline} type={type} units={safeUnits} disabled={disabled} onChange={outline => update({ outline })} />}
         {step === "chapter" && <ManuscriptEditor type={type} chapters={draft.chapters} units={safeUnits} number={number} disabled={disabled} onNumber={number => update({ chapter_number: number })} onChange={chapters => update({ chapters })} onGenerate={generateCurrent} />}
       </div>
       {error && <p className="studio-error" role="alert">{error}</p>}
       {created.current && <a className="text-button" href={`/studio/works/${created.current.id}`}>草稿已创建，打开作品 →</a>}
-      <div className={styles.bottom}><div>{step !== "chapter" && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(writingSteps[writingSteps.indexOf(step)+1])}>继续：{labels[writingSteps[writingSteps.indexOf(step)+1]]} →</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{busy ? "正在保存…" : "保存全部内容，创建作品"}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button></div></div>
+      <div className={styles.bottom}><div>{nextStep && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(nextStep)}>继续：{labels[nextStep]} →</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{busy ? "正在保存…" : "保存全部内容，创建作品"}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button></div></div>
     </form></div>
     {inspiration && <Inspiration key={type} type={type} initialPrompt={draft.premise} onApply={apply} onClose={() => setInspiration(false)} />}
   </>;

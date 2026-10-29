@@ -133,6 +133,23 @@ test("deep links restore only a valid step and number and never encode automatic
   assert.deepEqual(workflow.writingDestination("?step=world&number=201&generate=1"), { step: "premise", number: 1 });
   const url = workflow.workEditorUrl("id/1", { step: "chapter", number: 2 });
   assert.equal(url, "/studio/works/id%2F1?step=chapter&number=2");
+  assert.deepEqual(workflow.writingDestination("?step=settings&number=2&generate=1"), { step: "settings", number: 2 });
+  assert.deepEqual(workflow.editorSteps,['premise','settings','characters','outline','chapter']);
+  assert.deepEqual(workflow.writingSteps,['premise','characters','outline','chapter']);
+  assert.equal(workflow.nextEditorStep('premise'),'settings');
+  assert.equal(workflow.nextEditorStep('settings'),'characters');
+  assert.equal(workflow.nextEditorStep('chapter'),undefined);
+});
+
+test('settings creates a saved draft at its own view but can never enqueue a settings action',async()=>{
+  const previous=globalThis.fetch;let calls=0;
+  try{
+    globalThis.fetch=async url=>{if(url.endsWith('/session'))return Response.json({space_id:'settings',isolated:true});calls++;return Response.json({id:'settings-work',revision:1});};
+    const result=await creation.createWorkForStep({}, {generate:false,step:'settings',number:1},()=>{});
+    assert.equal(calls,1);assert.equal(workflow.workEditorUrl(result.work.id,{step:'settings',number:1}),'/studio/works/settings-work?step=settings&number=1');
+    await assert.rejects(creation.createWorkForStep({}, {generate:true,step:'settings',number:1},()=>assert.fail('must not create')),/先保存/);
+    assert.equal(calls,1);
+  }finally{globalThis.fetch=previous;}
 });
 
 test("first AI request saves every stage first and uses saved id, revision and selected chapter exactly once", async () => {

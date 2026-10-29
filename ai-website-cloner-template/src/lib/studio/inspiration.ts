@@ -1,4 +1,5 @@
-import type { Action, Chapter, ContentType, Reference, WorkInput, WorldInput, NovelSettings, DramaSettings } from "./api";
+import type { Chapter, ContentType, Reference, WorkInput, WorldInput, NovelSettings, DramaSettings } from "./api";
+import type { EditorStep } from "./workflow";
 import { creationMode, defaultNovelSettings, defaultDramaSettings } from "./writing";
 
 export type InspirationPlan = { id: string; title: string; summary: string; story: string };
@@ -41,7 +42,7 @@ export type CreationDraft = {
   characters: string;
   outline: string;
   chapters: Chapter[];
-  step?: Action;
+  step?: EditorStep;
   chapter_number?: number;
   source_text: string;
   world_id: string;

@@ -1,7 +1,17 @@
 import type { Action, ContentType, WorkInput } from "./api";
 
 export const writingSteps: Action[] = ["premise", "characters", "outline", "chapter"];
-export type CreationIntent = { step: Action; number: number; generate: boolean };
+export type EditorStep = Action | "settings";
+export const editorSteps: EditorStep[] = ["premise", "settings", "characters", "outline", "chapter"];
+export type CreationIntent = { step: EditorStep; number: number; generate: boolean };
+
+export function editorLabels(type: ContentType): Record<EditorStep, string> {
+  return { ...writingLabels(type), premise: "故事梗概", settings: "参数与世界", chapter: type === "novel" ? "小说正文" : "剧本正文" };
+}
+
+export function nextEditorStep(step: EditorStep): EditorStep | undefined {
+  return editorSteps[editorSteps.indexOf(step) + 1];
+}
 
 export function writingLabels(type: ContentType): Record<Action, string> {
   return type === "novel"
@@ -18,11 +28,11 @@ export function writingProgress(value: Pick<WorkInput, "premise" | "characters" 
 }
 
 /** Query values select a view only; they never start a model request. */
-export function writingDestination(search: string): { step: Action; number: number } {
+export function writingDestination(search: string): { step: EditorStep; number: number } {
   const params = new URLSearchParams(search);
-  const step = params.get("step") as Action;
+  const step = params.get("step") as EditorStep;
   const number = Number(params.get("number"));
-  return { step: writingSteps.includes(step) ? step : "premise", number: Number.isInteger(number) && number >= 1 && number <= 200 ? number : 1 };
+  return { step: editorSteps.includes(step) ? step : "premise", number: Number.isInteger(number) && number >= 1 && number <= 200 ? number : 1 };
 }
 
 export function workEditorUrl(id: string, intent: Pick<CreationIntent, "step" | "number">) {

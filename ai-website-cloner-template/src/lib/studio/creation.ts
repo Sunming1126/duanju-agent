@@ -3,6 +3,7 @@ import type { CreationIntent } from "./workflow";
 
 /** Save every stage before requesting generation. A job failure never repeats creation. */
 export async function createWorkForStep(payload: WorkInput, intent: CreationIntent, onSaved: (work: Work) => void) {
+  if (intent.generate && intent.step === "settings") throw new Error("请先保存作品，再完善作品世界。");
   const work = await backendRequest<Work>("/studio/works", { method: "POST", body: jsonBody(payload) });
   onSaved(work);
   let warning = "";

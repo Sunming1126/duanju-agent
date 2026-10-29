@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, RotateCcw, RotateCw, Settings, Sparkles } from "lucide-react";
@@ -11,6 +10,7 @@ import { Header } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "./navigation";
 import { ProjectShell, ProjectTitle, ProjectToolbar } from "./project-shell";
 import { ProjectSettings } from "./project-settings";
+import { ProjectParameters } from "./project-parameters";
 import { OutlineEditor } from "./outline-editor";
 import { ManuscriptEditor } from "./manuscript-editor";
 import { Inspiration } from "./inspiration";
@@ -21,7 +21,7 @@ import { worldDraftChecksum } from "@/lib/studio/world-codec";
 import { creationMode } from "@/lib/studio/writing";
 import { revealWritingStage } from "./workflow-nav";
 import { CharacterEditor } from "./character-editor";
-import { writingDestination, writingLabels, workEditorUrl } from "@/lib/studio/workflow";
+import { writingDestination, writingLabels, editorLabels, nextEditorStep, workEditorUrl, type EditorStep } from "@/lib/studio/workflow";
 import { activeGeneration, canFillGeneration, generationSignature, latestGeneration, pendingResults, previewGeneration, type GenerationResult } from "@/lib/studio/inline-generation";
 import styles from "./integration.module.css";
 
@@ -51,7 +51,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   const [dirty, setDirty] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<Action>("premise");
+  const [tab, setTab] = useState<EditorStep>("premise");
   const [number, setNumber] = useState(1);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job>();
@@ -66,6 +66,8 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   const creation = creationMode(kind, mode);
   const isNovel = (work?.content_type || kind) === "novel";
   const labels = { ...baseLabels, ...writingLabels(work?.content_type || kind) };
+  const viewLabels = editorLabels(work?.content_type || kind);
+  const nextStep = nextEditorStep(tab);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -255,21 +257,16 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   const previewResult = preview && ready.find(result => result.action === preview.action && result.number === preview.number && result.text === preview.text);
   const shownWork = work && previewResult ? previewGeneration(work, previewResult) : work;
   const editingDisabled = busy || !!previewResult;
-  const world = shownWork?.world_snapshot;
 
   function showGenerated() {
-    const result = ready.find(item => item.action === tab && (tab !== "chapter" || item.number === number)) || ready[0];
+    const result = ready.find(item => item.action === (tab === "settings" ? "world" : tab) && (tab !== "chapter" || item.number === number)) || ready[0];
     if (!result || !work) return;
-    const step = result.action === "world" ? "premise" : result.action;
+    const step = result.action === "world" ? "settings" : result.action;
     const targetNumber = result.action === "chapter" ? result.number : number;
     setPreview(result); setTab(step); setNumber(targetNumber);
     window.history.replaceState(null, "", workEditorUrl(work.id, { step, number: targetNumber }));
     revealWritingStage();
   }
-  function changeWorld(patch: Partial<WorldInput>) {
-    update({ world_snapshot: { name: world?.name || "作品专属世界", description: world?.description || "", sections: world?.sections || {}, ...patch } });
-  }
-
   function changeSettings(patch: Partial<ProjectSettingsValue>) {
     if (!work || busy) return;
     const { units, words_per_chapter, ...other } = patch;
@@ -289,15 +286,6 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
       setNumericInput({}); setNumber(current => Math.min(current,analysis.units)); update(patch); setInspiration(false); setNotice("灵感方案已回填，人物、大纲和正文保留。请检查设定后继续创作。");
     } catch (cause) { setNotice(cause instanceof Error ? cause.message : "回填失败"); }
   }
-  const worldControls = work && <div className={`create-form ${styles.worldArea}`}>
-            <label>从世界库复制<select disabled={editingDisabled} value={work.world_id || ""} onChange={e => { const w = worlds.find(x => x.id === e.target.value); if (w) update({ world_id: w.id, world_snapshot: { name: w.name, description: w.description, sections: { ...w.sections } } }); }}><option value="">选择世界库原件</option>{worlds.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label>
-            {!world && <button className="pill light" disabled={editingDisabled} onClick={() => changeWorld({})}>新建作品专属世界</button>}
-            {world && <><label>副本名称<input value={world.name} maxLength={80} disabled={editingDisabled} onChange={e => changeWorld({ name: e.target.value })} /></label><label>概述<textarea rows={3} value={world.description} maxLength={5000} disabled={editingDisabled} onChange={e => changeWorld({ description: e.target.value })} /></label>
-              {status?.world_sections.map(s => <details key={s.id}><summary>{s.label}</summary>{s.fields.map(f => <label key={f.key}>{f.label}<textarea disabled={editingDisabled} rows={4} maxLength={20000} value={world.sections[f.key] || ""} onChange={e => changeWorld({ sections: { ...world.sections, [f.key]: e.target.value } })} /></label>)}</details>)}
-              <button className="outline-button" disabled={editingDisabled} onClick={() => void saveWorldLibrary()}>另存世界库新条目</button><button className="outline-button" onClick={() => void exportWorld()}>导出副本</button></>}
-            <button className="pill light" disabled={editingDisabled || pending} onClick={() => void generate("world")}>AI 完善世界</button><Link href="/worlds">管理世界库原件 →</Link>
-
-  </div>;
   return <div className="workspace-page" onClickCapture={event => {
     if ((dirty || busy) && event.target instanceof Element && event.target.closest("a")) { event.preventDefault(); event.stopPropagation(); setNotice("请先保存或导出当前编辑后离开。"); }
   }}>
@@ -325,7 +313,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
             </div>
             {tab === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={editingDisabled || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
             {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title, shownWork.chapters)}><Download size={17} />导出为Word</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />正文字数</button></>}
-            <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab)}><Sparkles size={17} />AI 生成{tab === "premise" ? "故事梗概" : labels[tab]}</button>
+            <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab === "settings" ? "world" : tab)}><Sparkles size={17} />{tab === "settings" ? "AI 完善世界" : `AI 生成${tab === "premise" ? "故事梗概" : labels[tab]}`}</button>
           </>} />
           <main className={styles.workspace}>
             {notice && notice !== "已保存" && <p className={styles.inlineMessage} role="status">{notice}</p>}
@@ -336,12 +324,13 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
             {settingsBackup && tab === "premise" && <button type="button" className="text-button" disabled={editingDisabled} onClick={() => { setNumericInput({}); update(settingsBackup); setSettingsBackup(undefined); setNotice("已恢复灵感回填前的设定。"); }}>恢复回填前的设定</button>}
             {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={`每${unit}目标字数`} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={editingDisabled} onChange={value => { setNumericInput(current => ({ ...current, words_per_chapter: String(value) })); update({ words_per_chapter: value }); }} /></div>}
             <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`} className={styles.stage}>
-              {tab === "premise" && <ProjectSettings type={work.content_type} value={previewResult ? shownWork : { ...work, ...numericInput }} disabled={editingDisabled} onChange={changeSettings}>{worldControls}{work.creative?.source_text && <details><summary>改编／改写原始素材</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
+              {tab === "premise" && <ProjectSettings type={work.content_type} value={shownWork} disabled={editingDisabled} onChange={changeSettings}>{work.creative?.source_text && <details><summary>改编／改写原始素材</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
+              {tab === "settings" && <ProjectParameters type={work.content_type} value={previewResult ? shownWork : { ...work, ...numericInput }} worlds={worlds} sections={status?.world_sections} worldId={previewResult ? null : work.world_id} disabled={editingDisabled} onChange={changeSettings} onWorldChange={(world, sourceId) => update({ world_snapshot: world, world_id: sourceId || null })} onSaveWorld={previewResult ? undefined : () => void saveWorldLibrary()} onExportWorld={previewResult ? undefined : () => void exportWorld()} />}
               {tab === "characters" && <CharacterEditor key={`${filled.characters}:${!!previewResult}`} value={shownWork.characters} disabled={busy} readOnly={!!previewResult} onChange={characters => update({ characters })} onGenerate={() => void generate("characters")} generating={pending} />}
               {tab === "outline" && <OutlineEditor key={`${filled.outline}:${!!previewResult}`} value={shownWork.outline} type={work.content_type} units={work.units} disabled={editingDisabled} onChange={outline => update({ outline })} />}
               {tab === "chapter" && <ManuscriptEditor type={work.content_type} chapters={shownWork.chapters} units={work.units} number={number} disabled={editingDisabled} generating={pending} onNumber={next => { setPreview(undefined); setNumber(next); window.history.replaceState(null, "", workEditorUrl(work.id, { step: "chapter", number: next })); }} onChange={chapters => update({ chapters })} onGenerate={() => void generate("chapter")} onContinue={() => void generate("chapter", false, true)} />}
             </div>
-            {tab !== "chapter" && <div className={styles.bottom}><button type="button" className={styles.tool} disabled={editingDisabled} onClick={async () => { if (await persist()) { const next = tab === "premise" ? "characters" : tab === "characters" ? "outline" : "chapter"; setTab(next); window.history.replaceState(null, "", workEditorUrl(work.id, { step: next, number })); revealWritingStage(); } }}>保存并进入{tab === "premise" ? "人物" : tab === "characters" ? "大纲" : "正文"} →</button></div>}
+            {nextStep && <div className={styles.bottom}><button type="button" className={styles.tool} disabled={editingDisabled} onClick={async () => { if (await persist()) { setTab(nextStep); window.history.replaceState(null, "", workEditorUrl(work.id, { step: nextStep, number })); revealWritingStage(); } }}>保存并进入{viewLabels[nextStep]} →</button></div>}
           </main>
           {inspiration && <Inspiration type={work.content_type} initialPrompt={work.premise} onApply={applySettings} onClose={() => setInspiration(false)} />}
         </>}

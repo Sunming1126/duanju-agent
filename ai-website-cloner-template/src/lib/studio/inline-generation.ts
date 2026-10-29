@@ -1,4 +1,5 @@
 import type { Action, Work, WorldInput } from "./api";
+import type { EditorStep } from "./workflow";
 
 export type GenerationResult = {
   action: Action | "world"; number: number; text: string; adopted: boolean; world?: WorldInput;
@@ -10,9 +11,9 @@ export type GenerationJob = {
 export const activeGeneration = ["queued", "running", "stopping"];
 
 /** Newest-first API order: a failed latest request must not reveal an older success. */
-export function latestGeneration<T extends GenerationJob>(jobs: T[], step: Action, number: number): T | undefined {
+export function latestGeneration<T extends GenerationJob>(jobs: T[], step: EditorStep, number: number): T | undefined {
   return jobs.find(job => activeGeneration.includes(job.status)) || jobs.find(job =>
-    job.mode === "all" || step === "premise" && job.current.action === "world" || job.current.action === step && (step !== "chapter" || job.current.number === number));
+    job.mode === "all" || step === "settings" && job.current.action === "world" || job.current.action === step && (step !== "chapter" || job.current.number === number));
 }
 
 export function pendingResults(job?: GenerationJob): GenerationResult[] {

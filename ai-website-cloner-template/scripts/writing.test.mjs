@@ -32,10 +32,15 @@ const writing = load("lib/studio/writing.ts");
 const helpers = load("lib/studio/inspiration.ts");
 const api = load("lib/studio/api.ts");
 const { WorkForm } = load("components/studio/work-form.tsx");
+const { ProjectParameters } = load("components/studio/project-parameters.tsx");
+const { projectSettingsFromDraft } = load("lib/studio/project.ts");
 
 for (const kind of ["novel", "short_drama"]) {
   test(`${kind}: route form has no content-type selector and shows only its own writing settings`, () => {
-    const html = renderToStaticMarkup(React.createElement(WorkForm, { kind, mode: kind === "novel" ? "新建剧本" : "剧本创作", worlds: [], onCreated: () => {}, onClose: () => {} }));
+    const form = renderToStaticMarkup(React.createElement(WorkForm, { kind, mode: kind === "novel" ? "新建剧本" : "剧本创作", worlds: [], onCreated: () => {}, onClose: () => {} }));
+    assert.doesNotMatch(form, /name="content_type"|创作类型|name="words"/);
+    assert.match(form,/参数与世界/);
+    const html = renderToStaticMarkup(React.createElement(ProjectParameters, { type: kind, value: projectSettingsFromDraft(helpers.initialCreationDraft(kind)), worlds: [], onChange() {}, onWorldChange() {} }));
     const wordInput = html.match(/<input(?=[^>]*name="words")[^>]*>/)?.[0] || "";
     assert.doesNotMatch(html, /name="content_type"|创作类型/);
     if (kind === "novel") {

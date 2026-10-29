@@ -71,14 +71,17 @@ test('toolbar mouse and keyboard selection reveal the active editor; disabled co
     globalThis.document={getElementById:id=>({scrollIntoView:options=>scrolled.push({id,...options}),focus:()=>focused.push(id)})};
     const props={type:'novel',current:'premise',value:{premise:'设定',characters:'',outline:'',chapters:[],units:2},onSelect:step=>selected.push(step)};
     const buttons=ProjectToolbar(props).props.children[0].props.children;
-    buttons[2].props.onClick();
+    buttons[3].props.onClick();
     buttons[0].props.onKeyDown({key:'ArrowRight',preventDefault(){}});
-    assert.deepEqual(selected,['outline','characters']);
+    assert.deepEqual(selected,['outline','settings']);
     assert.equal(scrolled.length,2);assert.ok(scrolled.every(item=>item.id==='writing-stage-panel'&&item.block==='start'));
-    assert.deepEqual(focused,['writing-tab-characters']);
+    assert.deepEqual(focused,['writing-tab-settings']);
+    buttons[0].props.onKeyDown({key:'End',preventDefault(){}});
+    buttons[4].props.onKeyDown({key:'ArrowRight',preventDefault(){}});
+    assert.deepEqual(selected,['outline','settings','chapter','premise']);
     const disabled=ProjectToolbar({...props,disabled:true}).props.children[0].props.children;
     disabled[1].props.onClick();disabled[0].props.onKeyDown({key:'End',preventDefault(){assert.fail('disabled');}});
-    assert.equal(selected.length,2);
+    assert.equal(selected.length,4);
   } finally {globalThis.requestAnimationFrame=oldFrame;globalThis.document=oldDocument;}
 });
 test('multiline and punctuated inspiration tags survive editing another setting and creation',()=>{
@@ -117,6 +120,28 @@ test('Word export escapes manuscript markup and retains titles and line breaks',
 test('both real forms contain real controls and independent settings without preview placeholders',()=>{
   for(const kind of ['short_drama','novel']){
     const html=renderToStaticMarkup(React.createElement(WorkForm,{kind,mode:kind==='novel'?'小说创作':'剧本创作',worlds:[],onCreated(){},onClose(){}}));
-    assert.equal((html.match(/role="tab"/g)||[]).length,4);assert.match(html,/id="plotloom-create-form"/);assert.match(html,/保存全部内容，创建作品/);assert.match(html,/灵感创作/);assert.match(html,/创作参数与作品世界/);assert.doesNotMatch(html,/未接入|本地预览/);
+    assert.equal((html.match(/role="tab"/g)||[]).length,5);assert.match(html,/id="plotloom-create-form"/);assert.match(html,/保存全部内容，创建作品/);assert.match(html,/灵感创作/);assert.match(html,/参数与世界/);assert.doesNotMatch(html,/创作参数与作品世界|name="units"|世界观|未接入|本地预览/);
   }
+});
+
+test('parameter page contains one world overview, type-specific controls and guarded world editing',()=>{
+  const {ProjectParameters}=load('components/studio/project-parameters.tsx');
+  const sections=[{id:'rules',label:'世界规则',fields:[{key:'rules',label:'运行规则'}]}];
+  for(const type of ['novel','short_drama']){
+    const draft=inspiration.initialCreationDraft(type);
+    draft.world_snapshot={name:'专属世界',description:'唯一世界观',sections:{rules:'手写规则'}};
+    const value=model.projectSettingsFromDraft(draft);
+    const html=renderToStaticMarkup(React.createElement(ProjectParameters,{type,value,worlds:[],sections,disabled:true,onChange(){assert.fail('readonly');},onWorldChange(){assert.fail('readonly');}}));
+    assert.equal((html.match(/唯一世界观/g)||[]).length,1);
+    assert.match(html,/手写规则/);assert.match(html,/name="units"/);
+    assert.ok(html.includes(type==='novel'?'叙事视角':'单集目标时长'));
+    assert.ok(!html.includes(type==='novel'?'单集目标时长':'叙事视角'));
+    assert.match(html,/<textarea[^>]*disabled=""/);
+  }
+});
+
+test('settings selects world jobs rather than story jobs without changing model actions',()=>{
+  const world={id:'world',status:'completed',mode:'single',base_revision:1,current:{action:'world',number:1}};
+  assert.equal(generation.latestGeneration([world],'settings',1),world);
+  assert.equal(generation.latestGeneration([world],'premise',1),undefined);
 });
