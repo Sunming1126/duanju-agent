@@ -41,11 +41,11 @@ export function ProjectParameters({ type, value, worlds, sections = [], worldId,
       }}><option value="">{world ? "使用作品专属世界" : "选择世界库原件"}</option>{worlds.map(item => <option value={item.id} key={item.id}>{item.name} · v{item.revision}</option>)}</select></label>
       <div className={styles.worldOverview}>
         <label>世界名称<input maxLength={80} disabled={disabled} value={world?.name || ""} placeholder="为故事的世界起个名字" onChange={event => editWorld({ name: event.target.value })} /></label>
-        <label>世界观<textarea rows={4} maxLength={5000} disabled={disabled} value={world?.description || ""} placeholder="故事发生在怎样的世界？写下它的背景、规则与独特之处。" onChange={event => editWorld({ description: event.target.value })} /></label>
+        <label>世界观<textarea aria-label="世界观" rows={4} maxLength={5000} disabled={disabled} value={world?.description || ""} placeholder="故事发生在怎样的世界？写下它的背景、规则与独特之处。" onChange={event => editWorld({ description: event.target.value })} /></label>
       </div>
       {world && <div className={styles.sections}>{sections.map(section => <details key={section.id} className={styles.section}>
         <summary><span>{section.label}</span><ChevronDown size={18} /></summary>
-        <div>{section.fields.map(field => <label key={field.key}>{field.label}<textarea rows={4} maxLength={20000} disabled={disabled} value={world.sections[field.key] || ""} onChange={event => editWorld({ sections: { ...world.sections, [field.key]: event.target.value } })} /></label>)}</div>
+        <div>{section.fields.map(field => <label key={field.key}>{field.label}<textarea aria-label={field.label} rows={4} maxLength={20000} disabled={disabled} value={world.sections[field.key] || ""} onChange={event => editWorld({ sections: { ...world.sections, [field.key]: event.target.value } })} /></label>)}</div>
       </details>)}</div>}
       <div className={styles.footer}><Link href="/worlds">管理世界库 →</Link></div>
     </section>

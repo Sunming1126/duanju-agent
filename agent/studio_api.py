@@ -342,6 +342,9 @@ async def run_generation(candidate_id):
         elif len(result) > 100000:
             store.complete_candidate(candidate_id, error="模型输出超过可保存容量，请缩短生成范围后重试。", references=references)
         else:
+            if candidate["action"] == "outline":
+                from .studio_outline import combined_outline
+                result = combined_outline(result, candidate["work_snapshot"]["content_type"], candidate["work_snapshot"]["units"])
             if candidate["action"] == "chapter":
                 validate_chapter_format(candidate["work_snapshot"]["content_type"], result)
             store.complete_candidate(candidate_id, text=result.strip(), references=references)

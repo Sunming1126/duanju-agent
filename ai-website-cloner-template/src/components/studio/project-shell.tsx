@@ -30,12 +30,18 @@ export function ProjectToolbar({ type, current, value, disabled = false, onSelec
   const progress = writingProgress(value);
   const labels = editorLabels(type);
   function revealTab(container: HTMLDivElement | null) {
-    const active = container?.querySelector<HTMLElement>('[aria-selected="true"]');
-    if (container && active) {
+    if (!container) return;
+    const reveal = () => {
+      const active = container.querySelector<HTMLElement>('[aria-selected="true"]');
+      if (!active) return;
       const bounds = container.getBoundingClientRect(), item = active.getBoundingClientRect();
       if (item.left < bounds.left) container.scrollLeft -= bounds.left - item.left;
       else if (item.right > bounds.right) container.scrollLeft += item.right - bounds.right;
-    }
+    };
+    reveal();
+    const observer = new ResizeObserver(reveal);
+    observer.observe(container);
+    return () => observer.disconnect();
   }
   function select(step: EditorStep) { if (!disabled) { onSelect(step); revealWritingStage(); } }
   return <div className={styles.toolbar}>

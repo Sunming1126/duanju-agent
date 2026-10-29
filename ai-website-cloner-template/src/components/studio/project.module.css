@@ -23,7 +23,7 @@
 .workspace { margin: 0 5.8% 0 6.4%; max-width: 2000px; min-width: 0; }
 .toolbar { position: sticky; top: var(--project-header-offset, 0px); z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 22px; min-height: 42px; margin: 25px 5.8% 34px 6.4%; padding: 8px 0; background: #000e; }
 .tabs { display: grid; grid-template-columns: repeat(5, minmax(max-content, 1fr)); flex: 0 1 470px; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: thin; padding: 4px; background: var(--surface); border-radius: 8px; gap: 3px; }
-.tabs button { display: flex; align-items: center; justify-content: center; white-space: nowrap; padding: 6px 9px; min-height: 33px; border-radius: 5px; font-size: 14px; font-weight: 500; color: #eee; background: transparent; border: 0; }
+.tabs button { position: relative; display: flex; align-items: center; justify-content: center; white-space: nowrap; padding: 6px 9px; min-height: 33px; border-radius: 5px; font-size: 14px; font-weight: 500; color: #eee; background: transparent; border: 0; }
 .tabs button:hover:enabled { background: #ffffff08; }
 .tabs .activeTab, .tabs .activeTab:hover:enabled { color: #111; background: #fff; font-weight: 600; }
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 17px; min-height: 42px; flex-wrap: wrap; }

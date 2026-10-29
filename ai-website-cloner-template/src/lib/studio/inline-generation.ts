@@ -7,6 +7,7 @@ export type GenerationResult = {
 export type GenerationJob = {
   id: string; mode: "single" | "all"; status: string; base_revision: number; adoption_revision?: number;
   current: { action: string; number: number }; results?: GenerationResult[];
+  partial_outline?: string;
 };
 export const activeGeneration = ["queued", "running", "stopping"];
 
@@ -30,6 +31,12 @@ export function generationSignature(job?: GenerationJob): string {
 
 export function canFillGeneration(job: GenerationJob | undefined, work: Pick<Work, "revision">, dirty: boolean): boolean {
   return !dirty && !!job && (job.adoption_revision ?? job.base_revision) === work.revision && pendingResults(job).length > 0;
+}
+
+/** Temporary model output is a preview only; it never becomes a saved manuscript. */
+export function outlineStreamPreview(job: GenerationJob | undefined, work: Pick<Work, "revision">, dirty: boolean): string | undefined {
+  return job?.current.action === "outline" && activeGeneration.includes(job.status) && !dirty &&
+    (job.adoption_revision ?? job.base_revision) === work.revision && job.partial_outline ? job.partial_outline : undefined;
 }
 
 /** Read-only conflict preview. Saving always uses the server's atomic revision check. */

@@ -145,3 +145,14 @@ test('settings selects world jobs rather than story jobs without changing model 
   assert.equal(generation.latestGeneration([world],'settings',1),world);
   assert.equal(generation.latestGeneration([world],'premise',1),undefined);
 });
+
+test('streamed rough outline is temporary and cannot cover manual or newer-version edits',()=>{
+  const job={status:'running',base_revision:3,current:{action:'outline',number:1},partial_outline:'流式粗纲'};
+  assert.equal(generation.outlineStreamPreview(job,{revision:3},false),'流式粗纲');
+  assert.equal(generation.outlineStreamPreview(job,{revision:3},true),undefined);
+  assert.equal(generation.outlineStreamPreview(job,{revision:4},false),undefined);
+  assert.equal(generation.outlineStreamPreview({...job,status:'failed'},{revision:3},false),undefined);
+  const {OutlineEditor}=load('components/studio/outline-editor.tsx');
+  const html=renderToStaticMarkup(React.createElement(OutlineEditor,{value:'原有大纲',type:'novel',units:2,roughPreview:'流式粗纲',onChange(){assert.fail('preview must not write');}}));
+  assert.match(html,/生成中/);assert.match(html,/<textarea[^>]*disabled=""[^>]*>流式粗纲<\/textarea>/);
+});

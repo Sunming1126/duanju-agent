@@ -22,12 +22,12 @@ import { creationMode } from "@/lib/studio/writing";
 import { revealWritingStage } from "./workflow-nav";
 import { CharacterEditor } from "./character-editor";
 import { writingDestination, writingLabels, editorLabels, nextEditorStep, workEditorUrl, type EditorStep } from "@/lib/studio/workflow";
-import { activeGeneration, canFillGeneration, generationSignature, latestGeneration, pendingResults, previewGeneration, type GenerationResult } from "@/lib/studio/inline-generation";
+import { activeGeneration, canFillGeneration, generationSignature, latestGeneration, pendingResults, previewGeneration, outlineStreamPreview, type GenerationResult } from "@/lib/studio/inline-generation";
 import styles from "./integration.module.css";
 
 type Result = { action: Action | "world"; number: number; text: string; adopted: boolean; references: Reference[]; world?: WorldInput };
 type Job = { id: string; status: string; completed: number; total: number; error: string;
-  current: { action: string; number: number }; results?: Result[]; base_revision: number; adoption_revision?: number; mode: "single" | "all" };
+  current: { action: string; number: number }; results?: Result[]; partial_outline?: string; base_revision: number; adoption_revision?: number; mode: "single" | "all" };
 const baseLabels = { premise: "故事设定", characters: "人物小传", outline: "大纲", chapter: "正文", world: "作品世界" };
 const active = activeGeneration;
 
@@ -327,7 +327,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
               {tab === "premise" && <ProjectSettings type={work.content_type} value={shownWork} disabled={editingDisabled} onChange={changeSettings}>{work.creative?.source_text && <details><summary>改编／改写原始素材</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
               {tab === "settings" && <ProjectParameters type={work.content_type} value={previewResult ? shownWork : { ...work, ...numericInput }} worlds={worlds} sections={status?.world_sections} worldId={previewResult ? null : work.world_id} disabled={editingDisabled} onChange={changeSettings} onWorldChange={(world, sourceId) => update({ world_snapshot: world, world_id: sourceId || null })} onSaveWorld={previewResult ? undefined : () => void saveWorldLibrary()} onExportWorld={previewResult ? undefined : () => void exportWorld()} />}
               {tab === "characters" && <CharacterEditor key={`${filled.characters}:${!!previewResult}`} value={shownWork.characters} disabled={busy} readOnly={!!previewResult} onChange={characters => update({ characters })} onGenerate={() => void generate("characters")} generating={pending} />}
-              {tab === "outline" && <OutlineEditor key={`${filled.outline}:${!!previewResult}`} value={shownWork.outline} type={work.content_type} units={work.units} disabled={editingDisabled} onChange={outline => update({ outline })} />}
+              {tab === "outline" && <OutlineEditor key={`${filled.outline}:${!!previewResult}`} value={shownWork.outline} type={work.content_type} units={work.units} roughPreview={previewResult ? undefined : outlineStreamPreview(selectedJob, work, dirty)} disabled={editingDisabled} onChange={outline => update({ outline })} />}
               {tab === "chapter" && <ManuscriptEditor type={work.content_type} chapters={shownWork.chapters} units={work.units} number={number} disabled={editingDisabled} generating={pending} onNumber={next => { setPreview(undefined); setNumber(next); window.history.replaceState(null, "", workEditorUrl(work.id, { step: "chapter", number: next })); }} onChange={chapters => update({ chapters })} onGenerate={() => void generate("chapter")} onContinue={() => void generate("chapter", false, true)} />}
             </div>
             {nextStep && <div className={styles.bottom}><button type="button" className={styles.tool} disabled={editingDisabled} onClick={async () => { if (await persist()) { setTab(nextStep); window.history.replaceState(null, "", workEditorUrl(work.id, { step: nextStep, number })); revealWritingStage(); } }}>保存并进入{viewLabels[nextStep]} →</button></div>}

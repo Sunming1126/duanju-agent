@@ -44,8 +44,9 @@ async def fake(messages, **kwargs):
         number = int(re.search(r'写第(\d+)', task)[1])
         return json.dumps({'text': f'第{number}章，她推开门，街角传来钟声。' * 12, 'summary': f'第{number}章：收到新的线索，保留旧信。'}, ensure_ascii=False)
     if '为全部' in task:
-        count = int(re.search(r'为全部(\d+)', task)[1])
-        return '\n'.join(f'第{n}章：寻找线索，遇到冲突，发现转折。' for n in range(1, count + 1))
+        count, unit = re.search(r'为全部(\d+)([集章])', task).groups()
+        marker = '【章节大纲】' if unit == '章' else '【分集大纲】'
+        return '【粗纲】\n她循旧信寻找真相，发现亲人隐瞒的旧事，在承担代价后重建信任，最终送达那封信。\n' + marker + '\n' + '\n'.join(f'第{n}{unit}：寻找线索，遇到冲突，发现转折。' for n in range(1, int(count) + 1))
     if '完善作品世界' in task:
         return json.dumps({'name': '雾城', 'description': '新的候选世界', 'sections': {'world_rules': '时间不可逆转'}}, ensure_ascii=False)
     return '她想找回遗失的信件，但必须先面对自己曾经隐瞒的事实。' * 3
@@ -228,6 +229,87 @@ def test_missing_outline_numbers_stop_all_generation(setup):
         return await fake(messages)
     result = run(jobs, incomplete)
     assert result['status'] == 'failed' and len(result['results']) == 2
+
+
+@pytest.mark.parametrize('kind,unit,marker', [('novel','章','【章节大纲】'),('short_drama','集','【分集大纲】')])
+def test_combined_outline_requires_rough_and_every_unit_and_preserves_both(setup, kind, unit, marker):
+    from agent.studio_outline import combined_outline
+    store, jobs = setup
+    w = work(store, content_type=kind, units=2, outline='原大纲')
+    job = create(jobs, w, action='outline')
+    result = run(jobs)
+    assert result['status'] == 'completed'
+    text = result['results'][0]['text']
+    assert text.startswith('【Plotloom 大纲 v1】\n粗纲：\n')
+    assert '最终送达那封信' in text and f'第2{unit}：' in text
+    assert store.get('works',w['id'])['outline']=='原大纲'
+    assert jobs.adopt(job['id'])['outline']==text
+    rough='她查出旧信背后的误会，在承认自己的过错后寻回亲人，最终让失散的人重逢。'
+    for invalid in [f'第1{unit}：只有分纲\n第2{unit}：没有粗纲',f'【粗纲】\n{rough}\n{marker}\n第1{unit}：遗漏第二单元',f'【粗纲】\n{rough}\n{marker}\n第1{unit}：甲\n第1{unit}：重复\n第2{unit}：乙']:
+        with pytest.raises(ValueError):combined_outline(invalid,kind,2)
+
+
+def test_outline_stream_is_private_preview_until_complete_and_old_jobs_remain_compatible(setup, monkeypatch):
+    from agent import studio_stream
+    store,jobs=setup
+    w=work(store,units=2,outline='手写原大纲')
+    job=create(jobs,w,action='outline')
+    calls=[]
+    rough='她查出旧信背后的误会，在承认自己的过错后寻回亲人，最终让失散的人重逢。'
+    async def stream(messages,*,on_text,**kwargs):
+        calls.append(messages)
+        await on_text('【粗纲】\n'+rough)
+        response=store.test_client.get(f"/api/studio/jobs/{job['id']}")
+        assert response.status_code==200 and response.json()['partial_outline']==rough
+        assert store.get('works',w['id'])['outline']=='手写原大纲'
+        return f'【粗纲】\n{rough}\n【章节大纲】\n第1章：寻找旧信\n第2章：送达旧信'
+    monkeypatch.setattr(studio_stream,'chat_outline',stream)
+    completed=asyncio.run(execute(jobs,jobs.claim()))
+    assert len(calls)==1 and completed['status']=='completed'
+    assert 'partial_outline' not in completed
+    assert store.get('works',w['id'])['outline']=='手写原大纲'
+    # Existing queued jobs predate the new format contract; do not strand them.
+    old=create(jobs,work(store,units=1),action='outline')
+    with jobs.transaction() as db:
+        record=jobs.read(db,old['id']);record.pop('outline_format');jobs.write(db,record)
+    async def legacy(*args,**kwargs):return '第1章：旧任务继续寻找来信，在风雨中发现真相。'
+    assert run(jobs,legacy)['status']=='completed'
+
+
+@pytest.mark.parametrize('finish,status', [('stop','completed'),('length','failed')])
+def test_outline_sse_receives_real_content_only_and_never_retries(setup, monkeypatch, finish, status):
+    import httpx
+    from agent import studio_stream
+    rough='她查出旧信背后的误会，在承认自己的过错后寻回亲人，最终让失散的人重逢。'
+    text=f'【粗纲】\n{rough}\n【章节大纲】\n第1章：寻找来信\n第2章：信送到收件人手中。'
+    packets=[{'choices':[{'delta':{'reasoning_content':'不可显示的推理'},'finish_reason':None}]}]
+    packets += [{'choices':[{'delta':{'content':part},'finish_reason':None}]} for part in (text[:30],text[30:])]
+    packets += [{'choices':[{'delta':{},'finish_reason':finish}]}]
+    payload='\n\n'.join('data: '+json.dumps(packet,ensure_ascii=False) for packet in packets)+'\n\ndata: [DONE]\n\n'
+    calls=[];client=httpx.AsyncClient
+    def respond(request):
+        calls.append(request)
+        assert json.loads(request.content)['stream'] is True
+        return httpx.Response(200,headers={'Content-Type':'text/event-stream'},content=payload.encode())
+    monkeypatch.setattr(studio_stream.httpx,'AsyncClient',lambda **kwargs:client(transport=httpx.MockTransport(respond),**kwargs))
+    store,jobs=setup;w=work(store,units=2,outline='原文');create(jobs,w,action='outline')
+    result=asyncio.run(execute(jobs,jobs.claim()))
+    assert len(calls)==1 and result['status']==status
+    assert '不可显示的推理' not in json.dumps(result,ensure_ascii=False)
+    assert store.get('works',w['id'])['outline']=='原文'
+    if finish=='length':assert not result['results'] and result.get('partial_outline')
+
+
+def test_outline_stream_rate_limit_has_one_attempt_and_preserves_manuscript(setup,monkeypatch):
+    import httpx
+    from agent import studio_stream
+    calls=[];client=httpx.AsyncClient
+    def limited(request):calls.append(request);return httpx.Response(429)
+    monkeypatch.setattr(studio_stream.httpx,'AsyncClient',lambda **kwargs:client(transport=httpx.MockTransport(limited),**kwargs))
+    store,jobs=setup;w=work(store,units=2,outline='原文');create(jobs,w,action='outline')
+    result=asyncio.run(execute(jobs,jobs.claim()))
+    assert len(calls)==1 and result['status']=='failed' and not result['results']
+    assert store.get('works',w['id'])['outline']=='原文'
 
 
 def test_public_api_backup_import_archive_and_guards(setup):

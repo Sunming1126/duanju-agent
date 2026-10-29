@@ -18,6 +18,7 @@ from .studio_store import now, export_work_text
 from .studio_writing import normalized_work, writing_context, system_prompt, step_instruction, validate_chapter_format
 from .studio_queue import records as queue_records, MAX_CONCURRENT, MAX_QUEUED, paused, pause_after_rate_limit
 from .studio_identity import require_identity, authorize, visible, owner, request_key as scoped_key, StudioJSONResponse
+from .studio_outline import combined_outline, rough_preview
 
 ACTIVE = {"queued", "running", "stopping"}
 LABELS = {"premise": "故事设定", "characters": "人物小传", "outline": "大纲", "chapter": "正文", "world": "作品世界"}
@@ -93,7 +94,7 @@ class JobStore:
                      [{"action": "chapter", "number": n} for n in range(1, work["units"] + 1)]) if body.mode == "all" else [{"action": body.action, "number": body.number}]
             job = {"id": str(uuid.uuid4()), "owner_id": owner(work), "request_key": body.request_key, "work_id": work_id, "input": body.model_dump(),
                    "base_revision": work["revision"], "adoption_revision": work["revision"],
-                   "snapshot": work, "draft": copy.deepcopy(work), "steps": steps, "results": [], "continuity": [],
+                   "snapshot": work, "draft": copy.deepcopy(work), "steps": steps, "results": [], "continuity": [], "outline_format": "combined-v1",
                    "status": "queued", "error": "", "created_at": now(), "updated_at": now()}
             self.write(db, job)
             return job
@@ -114,7 +115,7 @@ class JobStore:
                     raise HTTPException(409, "作品已有另一任务，不能同时继续")
                 if sum(j["status"] == "queued" for j in queue_records(db)) >= MAX_QUEUED:
                     raise HTTPException(429, "排队数量已满，请稍后继续")
-                job.update(status="queued" if len(job["results"]) < len(job["steps"]) else "completed", error="")
+                job.update(status="queued" if len(job["results"]) < len(job["steps"]) else "completed", error="", partial_outline="")
             self.write(db, job)
             return job
 
@@ -155,6 +156,7 @@ class JobStore:
         with self.transaction() as db:
             job = self.read(db, ident)
             if result:
+                job.pop("partial_outline", None)
                 index = len(job["results"])
                 if result["action"] != job["steps"][index]["action"] or result["number"] != job["steps"][index]["number"]:
                     raise ValueError("任务步骤不匹配")
@@ -171,6 +173,14 @@ class JobStore:
                 job["status"] = "completed"
             self.write(db, job)
             return job
+
+    def partial_outline(self, ident, index, text):
+        with self.transaction() as db:
+            job = self.read(db, ident)
+            if job["status"] not in {"running", "stopping"} or len(job["results"]) != index or job["steps"][index]["action"] != "outline":
+                return
+            job["partial_outline"] = text
+            self.write(db, job)
 
     def adopt(self, ident, index=None, *, ready_only=False):
         with self.transaction() as db:
@@ -242,6 +252,7 @@ def messages_for(job, step, references):
 
 async def execute(jobs, job, generate=None, *, max_steps=None):
     from . import studio_api as api
+    streaming = generate is None
     generate = generate or api.llm.chat
     completed_steps = 0
     while job["status"] in {"running", "stopping"} and len(job["results"]) < len(job["steps"]):
@@ -252,7 +263,19 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
             refs = api.reference_context(job["snapshot"])
             messages = messages_for(job, step, refs)
             err = {}
-            raw = await generate(messages, temperature=0.8, max_tokens=12000, timeout=240, retries=1, err_box=err, reject_truncated=True)
+            if streaming and step["action"] == "outline" and job.get("outline_format") == "combined-v1":
+                import time
+                from .studio_stream import chat_outline
+                last_update, last_text = 0.0, ""
+                async def on_text(text):
+                    nonlocal last_update, last_text
+                    rough = rough_preview(text)
+                    if rough and rough != last_text and time.monotonic() - last_update >= 0.5:
+                        jobs.partial_outline(job["id"], len(job["results"]), rough)
+                        last_update, last_text = time.monotonic(), rough
+                raw = await chat_outline(messages, on_text=on_text, err_box=err)
+            else:
+                raw = await generate(messages, temperature=0.8, max_tokens=12000, timeout=240, retries=1, err_box=err, reject_truncated=True)
             if not raw or not raw.strip():
                 if err.get("kind") == "rate_limit":
                     pause_after_rate_limit(jobs.store)
@@ -279,10 +302,13 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
             elif len(raw.strip()) < 20:
                 raise ValueError("模型输出过短，未保存为有效候选")
             if step["action"] == "outline":
-                import re
-                numbers = {int(n) for n in re.findall(r"第\s*(\d+)\s*[集章]", raw)}
-                if not set(range(1, job["draft"]["units"] + 1)).issubset(numbers):
-                    raise ValueError("大纲遗漏部分计划集／章，已停止；请继续重新生成完整大纲")
+                if job.get("outline_format") == "combined-v1" or raw.lstrip().startswith("【粗纲】"):
+                    result["text"] = combined_outline(raw, job["draft"]["content_type"], job["draft"]["units"])
+                else:
+                    import re
+                    numbers = {int(n) for n in re.findall(r"第\s*(\d+)\s*[集章]", raw)}
+                    if not set(range(1, job["draft"]["units"] + 1)).issubset(numbers):
+                        raise ValueError("大纲遗漏部分计划集／章，已停止；请继续重新生成完整大纲")
             job = jobs.finish_step(job["id"], result)
             completed_steps += 1
             if max_steps is not None and completed_steps >= max_steps and job["status"] in {"running", "stopping"}:
@@ -319,7 +345,7 @@ def create_router():
     @router.get("/jobs/{ident}")
     def get(ident: str):
         job = jobs().get(ident)
-        return summary(job) | {"results": job["results"]}
+        return summary(job) | {"results": job["results"], "partial_outline": job.get("partial_outline", "")}
 
     @router.post("/jobs/{ident}/stop")
     def stop(ident: str):
