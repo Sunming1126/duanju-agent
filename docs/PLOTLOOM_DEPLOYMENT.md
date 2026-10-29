@@ -1,5 +1,15 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-29 大纲阶段导航移除与新建世界入口合并发布
+
+- **运行源码：`58dbd41f00a5cd315108345c12ea44e0b2486196`**，已推送GitHub。大纲右侧起、承、转、合四块及专用响应式样式移除，粗纲和全部集／章纲使用完整宽度；旧阶段字段和原稿保留。包含已合并的新建“AI完善世界”及一键全部生成意图，沿用先保存、版本校验与失败不重试；保留5a0b84fa小说正文JSON约束。本次相对上版仅前端及文档变化，后端、依赖、数据库结构、模型配置和预算均未改变。
+- **release：`/opt/plotloom-cn/releases/20261029T155425Z-inspiration-58dbd41f`**；previous：`/opt/plotloom-cn/releases/20261029T125728Z-inspiration-5a0b84fa`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261029T155425Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261029T155425Z-inspiration.txt`。
+- 主工作区原有另一任务未提交的交接草稿保持；在Git忽略目录中创建58dbd41干净worktree，运行原发布入口PrepareOnly并从已提交Git树打包。源码包`plotloom-20261029T154842Z-58dbd41f00a5.zip` SHA-256 `1d3625351b956f29bb3d42685c284b41ca99a34c41f6183a287ef7c9ed018e42`；原runner SHA-256 `310f568de16a92d1d183e541d9e5b7d0b065e5f30d4aa5e4e2f11dcc9b553af8`。SCP退出成功后才做服务器双哈希校验，启动前再次核对原线上5a0b84fa，不含本机作品或凭据。
+- 发布前156项后端／市场检查、80项前端、lint／类型通过；服务器隔离接口、lint、43项样例／工作流／大纲／项目检查及webpack生产构建通过。队列空闲后备份SQLite、原子切换，正常runner输出DEPLOYMENT_OK，无回滚。原始日志：`/tmp/plotloom-outline-phases-58dbd41-publish.log`。
+- 发布器源码哈希、主要页面、十份样例阅读／下载／回填、匿名及管理边界、日文站检查通过。额外只读报告`data/deployment-bundles/outline-phase-58dbd41-live-report.json`为ok：公网两类新建页及14份JS／CSS逐份匹配本release，编辑器样式已加载且无phaseRail／selectedPhase；current／RELEASE_COMMIT匹配，模型配置指纹及0600权限保持。
+- SQLite quick_check通过，六表原记录逐条data与本次备份一致：作品18、世界15、持久任务44、候选0、灵感会话15、灵感任务28，无用户内容修改。中文三服务active，旧站PID1948834不变。未改Nginx、systemd、恢复码或其他服务；全轮零模型调用，没有启动浏览器或本机应用，不将HTTP／组件检查当作人工视觉验收。
+- 需要回滚时先核对current仍为本release，仅切回上述兼容私人空间的5a0b84fa并重启中文版三服务，保留shared/data，不恢复旧SQLite覆盖作品；回滚会恢复大纲阶段块并撤销新建世界AI入口合并。
+
 ## 2026-10-29 小说正文JSON交付修复及一键生成入口发布
 
 - **运行源码：`5a0b84fac2c6d28acdfc2d6bc8dffb96f487a25b`**，已推送GitHub，包含e3791aa一键生成入口。持久小说正文调用开启JSON格式约束，系统提示明确text／summary及转义；格式、非对象、正文／摘要缺失、空响应与截断分别提示。模型、默认思考、12000 Token预算及一次请求保持，无数据库迁移，不自动重跑旧失败任务。新建／已有两类作品的五页工具栏左侧统一“一键生成全部”，替换撤销／重做图标。
