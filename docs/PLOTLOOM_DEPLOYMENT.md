@@ -1,5 +1,15 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-29 小说独立写作策略与分段改进发布
+
+- **运行源码：`84a22fb563997b65daf68ac25f0a06b74f8ba68f`**，已同步GitHub。包含28a1c39小说独立策略／连续性、84a22fb自然分段／视角／判断依据／数量与物件状态规则，以及e04f199已完成的导入弹窗、世界工具栏、标题精简及模型信息并入我的空间。旧稿、空间隔离、短剧行为及原五页／流式大纲保留；无数据库结构、依赖、模型配置或预算变更，不默认关闭思考、不增加付费审稿。
+- **release：`/opt/plotloom-cn/releases/20261029T122700Z-inspiration-84a22fb5`**；previous：`/opt/plotloom-cn/releases/20261029T094122Z-inspiration-6e921db9`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261029T122700Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261029T122700Z-inspiration.txt`。
+- 源码包`plotloom-20261029T122621Z-84a22fb56399.zip`，SHA-256 `1baac5a94a72e38bbe81d46e80efea73f211d55e7103a5d27fb373bb52d920a5`；runner SHA-256 `310f568de16a92d1d183e541d9e5b7d0b065e5f30d4aa5e4e2f11dcc9b553af8`。仅含已提交跟踪文件，上传后双核验，不传本机数据或凭据。
+- start同步成功；发布前150项后端／市场回归、77项前端及lint／类型通过。服务器隔离接口、lint、40项流程／项目／大纲／样例及webpack生产构建通过，队列空闲后备份并原子切换，输出DEPLOYMENT_OK，无回滚。发布日志`/tmp/plotloom-novel-84a22fb5-publish.log`；单独监控连接曾中断，原发布连接成功退出，没有重新发布。
+- 源码哈希、主要页面、十份样例／下载／回填及匿名／管理权限检查通过。上线补验两条小说路径均加载新版分段、判断依据及生活常识规则；策略哈希与实测候选一致，正式Next代理8766，current／RELEASE_COMMIT匹配。SQLite quick_check通过；作品15、世界15、持久任务38、候选0、灵感会话13、灵感任务25条与本次备份逐条data一致。补验使用release内独立临时数据库，未写生产作品。
+- 中文api／worker／web均active；旧duanju-agent PID1948834不变、日文站200，模型配置SHA-256及0600权限保持。未改Nginx、systemd、恢复码或用户原稿。发布及补验零模型调用、未启动浏览器／本机应用；此前24次真实研究样本另见小说质量研究，不冒充上线后文学或长篇验收。本机忽略目录报告：`data/deployment-bundles/novel-84a22fb-live-report.json`。
+- 后续生成使用新规则，已有正文不自动重排或重写。本次前端变化仅有静态／构建／HTTP检查，人工视觉与点击待用户验收。回滚前先核对current仍为本次release，仅切回上述支持私人空间的6e921db9并重启中文三服务，保留shared/data，禁止用旧SQLite覆盖新增作品；回滚后小说策略恢复为旧版。
+
 ## 2026-10-29 参数与世界独立页签、粗纲流式预览
 
 - **运行源码：`6e921db939ec58ab7a3fd192456fe15055eb7fa5`**，包含2002aaec五页编辑器及6e921db大纲完整生成／流式预览。顺序为故事梗概、参数与世界、人物、大纲、正文；世界观概述统一放第二页，专属参数与世界采用两张深色卡片，保留复制、六类设定、另存、导出及已有作品AI完善。原四类写作动作不增加参数阶段；旧链接、草稿、下一步、键盘及手机导航兼容，原页头与侧栏保持。
