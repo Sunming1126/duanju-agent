@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, RotateCcw, RotateCw, Settings, Sparkles } from "lucide-react";
+import { Download, Settings, Sparkles } from "lucide-react";
 import { backendRequest as api, jsonBody, workPayload, downloadText, localExport, unitLabel,
   type Work, type WorkInput, type World, type StudioStatus, type Action, type Reference, type WorldInput } from "@/lib/studio/api";
 import { WorkForm } from "./work-form";
@@ -304,13 +304,9 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
             <button type="button" onClick={() => downloadText(`${work.title}.txt`, localExport(work))}>导出 TXT</button>
             <button type="button" onClick={() => downloadText(`${work.title}.json`, jsonBody({ schema: "plotloom.work", version: 1, work: workPayload(work) }), "application/json")}>完整备份</button>
             <button type="button" disabled={editingDisabled} onClick={() => void persist()}>保存</button>
-            <button type="button" disabled={editingDisabled || pending} onClick={() => void generate("premise", true)}>一键生成全部 {work.units}{unit}</button>
           </div>} />
           <ProjectToolbar type={work.content_type} current={tab} value={work} disabled={busy} onSelect={step => { setPreview(undefined); setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); }} actions={<>
-            <div className={styles.history}>
-              <button type="button" title="撤销" aria-label="撤销" disabled={editingDisabled || !history.canUndo} onClick={() => { setNumericInput({}); history.undo(workPayload(work), value => update(value, false)); }}><RotateCcw size={20} /></button>
-              <button type="button" title="重做" aria-label="重做" disabled={editingDisabled || !history.canRedo} onClick={() => { setNumericInput({}); history.redo(workPayload(work), value => update(value, false)); }}><RotateCw size={20} /></button>
-            </div>
+            <button type="button" className={styles.tool} disabled={editingDisabled || pending} onClick={() => void generate("premise", true)} title={`生成故事梗概、人物、大纲及全部 ${work.units}${unit}正文`}><Sparkles size={17} />一键生成全部</button>
             {tab === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={editingDisabled || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
             {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title, shownWork.chapters)}><Download size={17} />导出为Word</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />正文字数</button></>}
             <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab === "settings" ? "world" : tab)}><Sparkles size={17} />{tab === "settings" ? "AI 完善世界" : `AI 生成${tab === "premise" ? "故事梗概" : labels[tab]}`}</button>

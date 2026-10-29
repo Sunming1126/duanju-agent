@@ -120,7 +120,11 @@ test('Word export escapes manuscript markup and retains titles and line breaks',
 test('both real forms contain real controls and independent settings without preview placeholders',()=>{
   for(const kind of ['short_drama','novel']){
     const html=renderToStaticMarkup(React.createElement(WorkForm,{kind,mode:kind==='novel'?'小说创作':'剧本创作',worlds:[],onCreated(){},onClose(){}}));
-    assert.equal((html.match(/role="tab"/g)||[]).length,5);assert.match(html,/id="plotloom-create-form"/);assert.match(html,/保存全部内容，创建作品/);assert.match(html,/灵感创作/);assert.match(html,/参数与世界/);assert.doesNotMatch(html,/创作参数与作品世界|name="units"|世界观|未接入|本地预览/);
+    assert.equal((html.match(/role="tab"/g)||[]).length,5);assert.match(html,/id="plotloom-create-form"/);assert.match(html,/保存全部内容，创建作品/);assert.match(html,/灵感创作/);assert.match(html,/参数与世界/);
+    assert.equal((html.match(/>一键生成全部<\/button>/g)||[]).length,1);
+    assert.match(html,/<button[^>]*form="plotloom-create-form"[^>]*value="all"/);
+    assert.ok(html.indexOf("一键生成全部") < html.indexOf("灵感创作"));
+    assert.doesNotMatch(html,/aria-label="撤销"|aria-label="重做"/);assert.doesNotMatch(html,/创作参数与作品世界|name="units"|世界观|未接入|本地预览/);
   }
 });
 
