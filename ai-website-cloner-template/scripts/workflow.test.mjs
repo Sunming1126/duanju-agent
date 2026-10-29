@@ -141,14 +141,27 @@ test("deep links restore only a valid step and number and never encode automatic
   assert.equal(workflow.nextEditorStep('chapter'),undefined);
 });
 
-test('settings creates a saved draft at its own view but can never enqueue a settings action',async()=>{
-  const previous=globalThis.fetch;let calls=0;
+test('settings saves every field first, generates world once and returns to the settings view',async()=>{
+  const previous=globalThis.fetch;const calls=[];
   try{
-    globalThis.fetch=async url=>{if(url.endsWith('/session'))return Response.json({space_id:'settings',isolated:true});calls++;return Response.json({id:'settings-work',revision:1});};
+    globalThis.fetch=async (url,options)=>{if(url.endsWith('/session'))return Response.json({space_id:'settings',isolated:true});calls.push({url,body:JSON.parse(options.body)});return Response.json({id:'settings-work',revision:7});};
     const result=await creation.createWorkForStep({}, {generate:false,step:'settings',number:1},()=>{});
-    assert.equal(calls,1);assert.equal(workflow.workEditorUrl(result.work.id,{step:'settings',number:1}),'/studio/works/settings-work?step=settings&number=1');
-    await assert.rejects(creation.createWorkForStep({}, {generate:true,step:'settings',number:1},()=>assert.fail('must not create')),/先保存/);
-    assert.equal(calls,1);
+    assert.equal(calls.length,1);assert.equal(workflow.workEditorUrl(result.work.id,{step:'settings',number:1}),'/studio/works/settings-work?step=settings&number=1');
+    calls.length=0;
+    const draft={...inspiration.initialCreationDraft('novel'),title:'世界生成验收',premise:'原梗概',characters:'原人物',outline:'原大纲',chapters:[{number:2,title:'自定义章名',content:'原正文'}],world_snapshot:{name:'原世界',description:'原规则',sections:{}}};
+    const payload=inspiration.creationPayload(draft,'小说创作',true);
+    const generated=await creation.createWorkForStep(payload,{generate:true,step:'settings',number:12},saved=>{assert.equal(calls.length,1);assert.equal(saved.revision,7);});
+    assert.equal(calls.length,2);assert.deepEqual(calls[0].body,payload);
+    assert.equal(calls[1].body.action,'world');assert.equal(calls[1].body.number,1);assert.equal(calls[1].body.revision,7);assert.equal(calls[1].body.request_key,'create-settings-work-world-1');assert.equal(generated.warning,'');
+  }finally{globalThis.fetch=previous;}
+});
+
+test('failed new-world enqueue keeps the saved work and never retries creation or generation',async()=>{
+  const previous=globalThis.fetch;let calls=0,saved;
+  try{
+    globalThis.fetch=async url=>{if(url.endsWith('/session'))return Response.json({space_id:'world-failure',isolated:true});calls++;return url.endsWith('/jobs')?Response.json({detail:'请求未确认'},{status:503}):Response.json({id:'saved-world',revision:1});};
+    const result=await creation.createWorkForStep({}, {generate:true,step:'settings',number:1},work=>{saved=work;});
+    assert.equal(calls,2);assert.equal(saved.id,'saved-world');assert.equal(result.work.id,'saved-world');assert.match(result.warning,/已保存/);
   }finally{globalThis.fetch=previous;}
 });
 

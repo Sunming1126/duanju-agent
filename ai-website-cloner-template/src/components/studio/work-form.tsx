@@ -134,7 +134,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
       <>
         {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />导出为Word</button>}
-        {step !== "settings" && <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />AI 生成{labels[step]}</button>}
+        <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />{step === "settings" ? "AI 完善世界" : `AI 生成${labels[step]}`}</button>
       </>
     </>} />
     <div className={styles.workspace}><form ref={formRef} id="plotloom-create-form" className={styles.form} onSubmit={submit} onKeyDown={event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.defaultPrevented && event.target.getAttribute("role") !== "combobox") event.preventDefault(); }} noValidate>
