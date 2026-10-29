@@ -41,3 +41,5 @@
 运行：`python -m pytest -q tests test_market_features.py test_trilang_samples.py test_japan_adaptation.py -p no:cacheprovider`。使用临时数据库和模拟模型；无需启动应用或浏览器。
 
 真实短样本比较、完整回归与Git同步的实际结果另记于`AGENT.md`。短样本不能代表长篇全文的文学质量或长期连续性；本次开发不含线上部署。
+
+2026-10-29 后续依据用户真实片段，补充自然分段、场景内视角稳定、判断依据与状态核对，并开展多篇真实对照。原站小说、开源实现、已确认线上版本、测试方法及逐篇观察见 [小说质量交叉研究](PLOTLOOM_NOVEL_QUALITY_RESEARCH.md)。复测入口为 `tools/plotloom_novel_quality.py`，须显式启用真实模型；格式测试通过不代表文学质量通过。
