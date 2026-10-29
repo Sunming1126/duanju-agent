@@ -135,7 +135,7 @@ async def test_config():
     return out
 
 
-async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retries=3, err_box=None, reject_truncated=False):
+async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retries=3, err_box=None, reject_truncated=False, json_mode=False):
     """调用 LLM，返回文本；失败返回 None（由上层走模板兜底或挂起）。
     瞬时失败（超时/限流/5xx）自动重试，指数退避（429 限流窗口按分钟计，用 10/25/45s 长退避+随机抖动）。
     err_box 传 dict 时回传末次失败类型：{kind: rate_limit|http_error|error, status, attempts}；
@@ -148,6 +148,8 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
     # 豆包 seed 系列：关闭思维链提速（创作类任务无需 CoT，长文易超时）
     if MODEL.startswith("doubao"):
         payload["thinking"] = {"type": "disabled"}
@@ -163,11 +165,17 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
                 data = resp.json()
                 if reject_truncated and data["choices"][0].get("finish_reason") != "stop":
                     if err_box is not None:
-                        err_box.update(kind="incomplete", status=200, attempts=attempt + 1)
+                        err_box.update(kind="incomplete", status=200, attempts=attempt + 1,
+                                       finish_reason=data["choices"][0].get("finish_reason"))
                     return None
                 if err_box is not None:
                     err_box.clear()
-                return data["choices"][0]["message"]["content"]
+                content = data["choices"][0]["message"].get("content")
+                if not isinstance(content, str) or not content.strip():
+                    if err_box is not None:
+                        err_box.update(kind="empty_content", status=200, attempts=attempt + 1)
+                    return None
+                return content
         except httpx.HTTPStatusError as e:
             last_err = e
             status = e.response.status_code if e.response is not None else 0
