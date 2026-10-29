@@ -1,5 +1,7 @@
 # 小说与短剧：入口、参数和生成格式
 
+2026-10-29后端进一步拆分为独立的`studio_novel.py`和`studio_drama.py`，兼容入口仍使用`studio_writing.py`路由。当前小说章节上下文、跨任务摘要及表达规则详见[PLOTLOOM_NOVEL_BACKEND.md](PLOTLOOM_NOVEL_BACKEND.md)；下文保留此前类型修复的历史依据。
+
 ## 参考资料与设计依据
 
 - [Final Draft：Screenplay Formatting and Elements](https://www.finaldraft.com/learn/screenplay-formatting-elements/) 将剧本组织为场景标题、动作、人物和对白等元素。Plotloom因此为剧本保留可拍摄的分场输出，并提供画幅、单集时长、场景密度和集尾钩子设置。

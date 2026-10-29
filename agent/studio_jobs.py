@@ -94,10 +94,17 @@ class JobStore:
                      [{"action": "chapter", "number": n} for n in range(1, work["units"] + 1)]) if body.mode == "all" else [{"action": body.action, "number": body.number}]
             job = {"id": str(uuid.uuid4()), "owner_id": owner(work), "request_key": body.request_key, "work_id": work_id, "input": body.model_dump(),
                    "base_revision": work["revision"], "adoption_revision": work["revision"],
-                   "snapshot": work, "draft": copy.deepcopy(work), "steps": steps, "results": [], "continuity": [], "outline_format": "combined-v1",
+                   "snapshot": work, "draft": copy.deepcopy(work), "steps": steps, "results": [], "continuity": self.novel_continuity(work, jobs), "outline_format": "combined-v1",
                    "status": "queued", "error": "", "created_at": now(), "updated_at": now()}
             self.write(db, job)
             return job
+
+    @staticmethod
+    def novel_continuity(work, jobs):
+        if work["content_type"] != "novel":
+            return []
+        from .studio_novel import matching_continuity
+        return matching_continuity(work, jobs)
 
     def control(self, ident, operation):
         with self.transaction() as db:
@@ -227,6 +234,11 @@ def summary(job):
 def messages_for(job, step, references):
     work = normalized_work(job["draft"])
     action = step["action"]
+    if work["content_type"] == "novel":
+        from .studio_novel import messages_for as novel_messages
+        return novel_messages(work, action, step["number"], references,
+                              world=job["snapshot"].get("world_snapshot"), continuity=job["continuity"],
+                              continuation=job["input"].get("continuation", False))
     previous = [c for c in work["chapters"] if c["number"] < step["number"]]
     # Retain all canon. Earlier prose remains on disk; include explicit summaries
     # plus a bounded excerpt per imported chapter that has no generated summary.

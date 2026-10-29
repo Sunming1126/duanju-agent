@@ -313,6 +313,10 @@ def reference_context(work):
 def build_messages(candidate, references):
     work = normalized_work(candidate["work_snapshot"])
     world = candidate.get("world_snapshot")
+    if work["content_type"] == "novel":
+        from .studio_novel import messages_for as novel_messages
+        return novel_messages(work, candidate["action"], candidate["number"], references,
+                              world=world, json_chapter=False, max_context=65000)
     world_text = json.dumps({"name": world["name"], "description": world["description"], "sections": world["sections"]}, ensure_ascii=False) if world else "未绑定独立世界，以作品设定为准。"
     # Reject over-budget inputs instead of silently discarding canon or chapters.
     previous = [chapter for chapter in work["chapters"] if chapter["number"] < candidate["number"]]
