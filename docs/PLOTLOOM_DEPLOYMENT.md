@@ -1,5 +1,18 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-29 参数与世界独立页签、粗纲流式预览
+
+- **运行源码：`6e921db939ec58ab7a3fd192456fe15055eb7fa5`**，包含2002aaec五页编辑器及6e921db大纲完整生成／流式预览。顺序为故事梗概、参数与世界、人物、大纲、正文；世界观概述统一放第二页，专属参数与世界采用两张深色卡片，保留复制、六类设定、另存、导出及已有作品AI完善。原四类写作动作不增加参数阶段；旧链接、草稿、下一步、键盘及手机导航兼容，原页头与侧栏保持。
+- **release：`/opt/plotloom-cn/releases/20261029T094122Z-inspiration-6e921db9`**；previous：`/opt/plotloom-cn/releases/20261028T163132Z-inspiration-b1321bb3`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261029T094122Z-inspiration.sqlite3`（0600）；回滚指针：`/opt/plotloom-cn/backups/previous-20261029T094122Z-inspiration.txt`。
+- 源码包`plotloom-20261029T051533Z-6e921db939ec.zip`，SHA-256 `f35895ef93e93781890cee741eb12e62b579954678e4424810f3b1bebf344c96`；runner SHA-256 `310f568de16a92d1d183e541d9e5b7d0b065e5f30d4aa5e4e2f11dcc9b553af8`，上传后双核验。包从独立干净checkout生成，只含该提交跟踪文件，不上传本机数据／配置。
+- 本轮遇到并行工作区修改，完整保留其他任务，只暂存本次文件；共用project-shell仅暂存自己的ResizeObserver区块，未纳入并行标题修改。源码6e921db推送两次遇Git HTTPS连接故障；官方API只读确认远端e04f199b直接以6e921db为父提交，说明本次源码已随并行快进同步。未强推、覆盖远端或丢弃工作区。后续界面精简及小说后台等提交保留Git，但**不包含在本次实际发布包**，不能把当前Git HEAD冒充线上版本。
+- 对本次明确源码，独立checkout的77项前端、123项后端、lint／类型通过；最终review与正式Linux40项及webpack构建通过。最初2002aaec候选为39项，浏览器发现手机辅助文字溢出并修复；首轮脚本严格标签匹配及一次转发过期导致检查中断，修正匹配／重开转发后复验，不重试付费生成，不将这些环境问题视为数据丢失。
+- AI大纲改为一次调用同时输出粗纲和全部集／章纲，校验后转为既有可逆大纲文本。仅中文大纲新增非重试SSE接收；模型正文content可预览，推理不显示。粗纲由`partial_outline`在原粗纲框临时显示，仍通过任务详情轮询同步；未完成部分不写作品、不算成功结果。新任务JSON标记`outline_format=combined-v1`，旧任务兼容，无SQL迁移。原稿版本、手写、停止／恢复和限流预算保持，截断或断流失败不自动重发付费请求。
+- 最终review`20261029T092329Z-inspiration-6e921db9`使用独立SQLite、API／工作者锁及回环Web。正式浏览器真实短剧大纲仅调用一次，生成457字符粗纲、两集分纲，完整可逆文本1316字符；观察到后端临时粗纲及UI生成期间预览，完成后两区回填，原梗概／人物／两集自定义标题和正文保留，刷新保持。`combined-outline-real-report.json`为ok、modelsCalled=1、uiStreamSeen=true；仅此QA作品，结束删除。小说格式及错误路径以离线测试覆盖，未额外付费调用。
+- 候选和公网四份明确标注的浏览器报告均ok、errors为空：`parameters-report.json`两类新建／已有参数、草稿恢复、独立世界复制、撤销重做、导出、世界回填及冲突只读；`inspiration-split-report.json`两类灵感跨页回填／恢复及缩窗选中页签可见；`all-steps-fixture-report.json`原四类一键逐步回填、停止继续、丢响应重读、手写保护、刷新；`navigation-report.json`1920／1440／1024／768／390两类五页及主要功能切换、十份样例，无横向溢出。任务fixture、灵感fixture不冒充真实模型，公网新增模型调用为零。报告／截图保存在Git忽略的data/editor-handoff-qa。
+- 正常runner输出DEPLOYMENT_OK，备份、队列空闲、原子切换、源码哈希、数据库完整性／旧记录保留、页面／样例／下载及匿名／管理边界通过，无回滚。current／RELEASE_COMMIT匹配，正式构建代理8766，最终review8767。中文三服务及旧站active、旧PID1948834不变、日文200，模型配置指纹保持；未改Nginx、systemd、其他服务或用户原稿。候选API／Web／工作者及SSH转发已关闭，3002／8767无监听。只清理本轮QA作品，QA世界库原件归档，未清空空间或用户数据。
+- 日志`/tmp/plotloom-parameters-6e921db9-publish.log`。没有已知阻断问题；未验收200单元真实长篇模型负载与文学质量。需要回滚时先重核current，仅切回上述兼容私人空间的b1321bb3并重启中文三服务，保留shared/data，不能恢复旧SQLite覆盖新增作品；回滚后五页和粗纲流式功能不再可用。
+
 ## 2026-10-29 四步生成直接回填新版编辑器
 
 - **运行源码：`b1321bb341c3b8a1f3fa2bed8e450944bda9a89e`**，已推送GitHub。包含23e7520四步统一回填、后台增量采纳和b1321bb多段大纲解析。梗概、人物、大纲、正文及作品世界在版本校验后直接进入对应新版编辑区；一键全部生成逐步显示已完成部分。移除旧“生成任务与候选稿”面板、绿色进度条及常规提交蓝条。生成期间手写／外部修改保留原稿，可在同一编辑器只读预览生成稿及导出。正文保留自定义标题、其他单元和撤销／重做／刷新恢复。
