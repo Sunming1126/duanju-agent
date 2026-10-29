@@ -3,15 +3,16 @@ import type { CreationIntent } from "./workflow";
 
 /** Save every stage before requesting generation. A job failure never repeats creation. */
 export async function createWorkForStep(payload: WorkInput, intent: CreationIntent, onSaved: (work: Work) => void) {
-  if (intent.generate && intent.step === "settings") throw new Error("请先保存作品，再完善作品世界。");
   const work = await backendRequest<Work>("/studio/works", { method: "POST", body: jsonBody(payload) });
   onSaved(work);
   let warning = "";
   if (intent.generate) {
+    const action = intent.step === "settings" ? "world" : intent.step;
+    const number = action === "chapter" ? intent.number : 1;
     try {
       await backendRequest(`/studio/works/${work.id}/jobs`, { method: "POST", body: jsonBody({
-        revision: work.revision, action: intent.step, number: intent.step === "chapter" ? intent.number : 1,
-        request_key: `create-${work.id}-${intent.step}-${intent.number}`,
+        revision: work.revision, action, number,
+        request_key: `create-${work.id}-${action}-${number}`,
       }) });
     } catch {
       warning = "草稿及全部输入已保存，生成请求暂未确认。可在当前步骤查看进度或重新打开作品核对。";
