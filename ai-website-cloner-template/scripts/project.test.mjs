@@ -63,25 +63,32 @@ test('conflicting generation can be read as cards without enabling edits or bloc
   const buttons=list.match(/<button[^>]*>/g);
   assert.equal(buttons.length,3);assert.ok(!buttons[0].includes('disabled'));assert.ok(!buttons[1].includes('disabled'));assert.ok(buttons[2].includes('disabled'));
 });
-test('toolbar mouse and keyboard selection reveal the active editor; disabled controls cannot switch',()=>{
+test('toolbar switches content without scrolling the title away; keyboard focus prevents scrolling and disabled controls cannot switch',()=>{
   const oldFrame=globalThis.requestAnimationFrame,oldDocument=globalThis.document;
   const selected=[],scrolled=[],focused=[];
   try {
     globalThis.requestAnimationFrame=callback=>{callback();return 1;};
-    globalThis.document={getElementById:id=>({scrollIntoView:options=>scrolled.push({id,...options}),focus:()=>focused.push(id)})};
+    globalThis.document={getElementById:id=>({scrollIntoView:options=>scrolled.push({id,...options}),focus:options=>focused.push({id,...options})})};
     const props={type:'novel',current:'premise',value:{premise:'设定',characters:'',outline:'',chapters:[],units:2},onSelect:step=>selected.push(step)};
     const buttons=ProjectToolbar(props).props.children[0].props.children;
     buttons[3].props.onClick();
     buttons[0].props.onKeyDown({key:'ArrowRight',preventDefault(){}});
     assert.deepEqual(selected,['outline','settings']);
-    assert.equal(scrolled.length,2);assert.ok(scrolled.every(item=>item.id==='writing-stage-panel'&&item.block==='start'));
-    assert.deepEqual(focused,['writing-tab-settings']);
+    assert.equal(scrolled.length,0);
+    assert.deepEqual(focused,[{id:'writing-tab-settings',preventScroll:true}]);
     buttons[0].props.onKeyDown({key:'End',preventDefault(){}});
     buttons[4].props.onKeyDown({key:'ArrowRight',preventDefault(){}});
     assert.deepEqual(selected,['outline','settings','chapter','premise']);
     const disabled=ProjectToolbar({...props,disabled:true}).props.children[0].props.children;
     disabled[1].props.onClick();disabled[0].props.onKeyDown({key:'End',preventDefault(){assert.fail('disabled');}});
     assert.equal(selected.length,4);
+    assert.equal(scrolled.length,0);
+    assert.ok(focused.every(item=>item.preventScroll===true));
+    for (const type of ['novel','short_drama']) {
+      const tabs=ProjectToolbar({...props,type}).props.children[0].props.children;
+      for (const button of tabs) button.props.onClick();
+    }
+    assert.equal(scrolled.length,0);
   } finally {globalThis.requestAnimationFrame=oldFrame;globalThis.document=oldDocument;}
 });
 test('multiline and punctuated inspiration tags survive editing another setting and creation',()=>{

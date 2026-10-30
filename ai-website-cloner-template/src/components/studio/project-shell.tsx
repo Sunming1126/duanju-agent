@@ -4,7 +4,6 @@ import { Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ContentType, WorkInput } from "@/lib/studio/api";
 import { editorLabels, editorSteps, writingProgress, type EditorStep } from "@/lib/studio/workflow";
-import { revealWritingStage } from "./workflow-nav";
 import styles from "./project.module.css";
 
 export function ProjectShell({ children }: { children: ReactNode }) {
@@ -42,7 +41,7 @@ export function ProjectToolbar({ type, current, value, disabled = false, onSelec
     observer.observe(container);
     return () => observer.disconnect();
   }
-  function select(step: EditorStep) { if (!disabled) { onSelect(step); revealWritingStage(); } }
+  function select(step: EditorStep) { if (!disabled) onSelect(step); }
   return <div className={styles.toolbar}>
     <div ref={revealTab} className={styles.tabs} role="tablist" aria-label={type === "novel" ? "小说创作流程" : "剧本创作流程"}>
       {editorSteps.map((step, index) => <button type="button" role="tab" key={step} id={`writing-tab-${step}`} aria-controls="writing-stage-panel" aria-selected={current === step} tabIndex={current === step ? 0 : -1} disabled={disabled} className={current === step ? styles.activeTab : undefined} onClick={() => select(step)} onKeyDown={event => {
@@ -52,7 +51,7 @@ export function ProjectToolbar({ type, current, value, disabled = false, onSelec
         if (next < 0) return;
         event.preventDefault();
         select(editorSteps[next]);
-        document.getElementById(`writing-tab-${editorSteps[next]}`)?.focus();
+        document.getElementById(`writing-tab-${editorSteps[next]}`)?.focus({ preventScroll: true });
       }}><span>{labels[step]}</span><span className={styles.screenReaderOnly}>{current === step ? "当前步骤" : step === "settings" ? "创作参数和世界设定" : step === "chapter" ? `${progress.completed}/${value.units}${type === "novel" ? "章" : "集"}` : progress[step] ? "已填写" : "未填写"}</span></button>)}
     </div>
     {actions && <div className={styles.actions}>{actions}</div>}
