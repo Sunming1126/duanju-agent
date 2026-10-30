@@ -553,3 +553,10 @@
 - 本机176项完整后端/市场回归及Bash语法/差异检查通过；前端业务源码沿用上轮82项检查及构建通过版本，正式发布将由runner重建复验。本轮配置与发布不发送真实验证码、不发模型请求、不启动本机服务或浏览器；实际发布、数据保留与远端同步在完成后另记，不提前声称已上线。
 
 - 首次发布5be5ac6在停服前的隔离测试阶段停止：21项账号/空间断言全部通过，但pytest退出时试图返回继承的`/home/ubuntu`，plotloom-cn用户无访问权而报PermissionError。线上current及三服务未切换。修正runner先进入本release目录再以服务用户执行检查，不跳过检查；重新提交/打包后正常发布，失败目录和日志保留供核查。
+
+### 2026-10-30：邮箱账号登录正式部署与公网补验完成
+
+- 源码35d89432ccb5596c086c0bfbeea9cd52120799d0正常同步GitHub后，以双哈希验证的源码包正式发布至`/opt/plotloom-cn/releases/20261030T061743Z-inspiration-35d89432`，previous为58dbd41f；数据库备份`studio-20261030T061743Z-inspiration.sqlite3`权限0600。修正后的服务器21项账号/空间、43项前端、lint/类型及webpack构建通过，队列空闲、SQLite备份、原子切换、源码/页面/样例/管理边界均通过，runner输出DEPLOYMENT_OK，无回滚。发布日志`/tmp/plotloom-login-35d89432-publish.log`。
+- 邮箱验证码登录公网email_enabled=true，SMTP账号与ChatChat来源在内存比对一致，TLS/账号认证通过但零真实邮件。Google Web Client未配，按钮明确暂未配置；不把配置布尔值或mock当作真实邮件送达/Google授权验收。
+- 公网独立QA空间使用明确标注的测试验证码fixture，完成新账号领取原空间、旧访客凭证失效、安全Cookie/一次性码、双浏览器同账号、外部空间404、跨站403、旧标签409及退出只撤销本设备；精确清理本轮QA作品/账号/会话/验证码/空空间，报告login-live-check-35d89432.json为ok/qa_cleaned=true。没有发邮件、模型请求或操作用户作品。
+- 最终报告login-final-audit-35d89432.json为ok：六表旧data逐条保持（18作品/15世界/44任务/0候选/15灵感会话/28灵感任务），SQLite正常，QA清理后账号数0，模型配置指纹和恢复码保持。中文api/web/worker active（PID1681329/1681331/1681330），旧PID1948834、全部PM2 PID/状态及日文站200保持。未改Nginx/systemd或启动本机应用/浏览器/设备。更新正式发布及登录说明，明确产生账号后不可回滚至无账号程序，只保留shared/data做兼容程序回滚；最终文档提交与实际运行源码分别报告。

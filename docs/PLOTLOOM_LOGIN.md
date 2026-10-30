@@ -39,7 +39,7 @@ PLOTLOOM_GOOGLE_CLIENT_ID=your-web-client.apps.googleusercontent.com
 
 ## 发布与回滚
 
-用户已授权配置后自动部署。SMTP 已复用并完成不发信的 TLS/认证验证；Google Web Client 独立待配。实际发布版本、备份和服务检查以 `PLOTLOOM_DEPLOYMENT.md` 最新记录为准，不以配置完成代替发布成功。
+用户已授权配置后自动部署。SMTP 已复用并完成不发信的 TLS/认证验证；Google Web Client 独立待配。已以 `35d89432ccb5596c086c0bfbeea9cd52120799d0` 正式上线，公网邮箱登录配置及使用QA验证码的登录/退出/跨浏览器隔离检查通过；没有发送真实邮件。备份和服务检查见 `PLOTLOOM_DEPLOYMENT.md` 最新记录。Google真实网页授权及实际邮件送达仍待后续验收。
 
 沿用中文版独立发布、SQLite 备份和 shared/data 保留流程，新增登录检查已加入本地发布清单。存在账号后只回滚到支持本账号结构与 Cookie 的兼容版本，不用旧 SQLite 覆盖新数据。发布器自动回滚若发现旧程序无 `studio_auth.py` 且已存在账号，会拒绝切回并保留数据，需维护者修复/发布兼容版。不要沿用旧文档中仅按浏览器隔离判断兼容性的回滚步骤。
 

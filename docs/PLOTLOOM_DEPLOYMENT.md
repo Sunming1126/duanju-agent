@@ -1,5 +1,16 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 首页账号登录与 ChatChat SMTP 复用上线
+
+- **运行源码：`35d89432ccb5596c086c0bfbeea9cd52120799d0`**，已推送GitHub，包含c1e9ec7首页登录、5be5ac6私有配置加载及35d8943发布检查目录修正。首页右上角提供邮箱验证码/Google入口、账号信息与退出；邮箱验证码实际启用，首次验证自动建号并领取当前访客空间，同账号跨浏览器访问原作品。访客功能继续保留。**Google Web Client 尚未配置，入口明确显示暂未配置，未宣称 Google 真实授权已通过。**
+- **release：`/opt/plotloom-cn/releases/20261030T061743Z-inspiration-35d89432`**；previous：`/opt/plotloom-cn/releases/20261029T155425Z-inspiration-58dbd41f`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261030T061743Z-inspiration.sqlite3`（0600）；回滚指针：`backups/previous-20261030T061743Z-inspiration.txt`。用户明确授权配置后自动部署，未再次询问部署许可。
+- 源码包`plotloom-login-20261030T061705Z-35d89432ccb5.zip`，SHA-256 `8fa0b18274813706a1d32de34d9d2dab786b7356833849ebfb2d487981100d7c`；runner SHA-256 `ea7db92ec2ad32652c14bd5935c638b9e32fb21abe58c6ee03aa64a7ac268486`。只含已提交跟踪文件；SCP完成后双哈希核对，私有配置和本机作品不入包。首次Git同步/上传短暂断连后正常重试，使用本任务临时SSH连接复用，不修改全局SSH配置。
+- 用户明确要求SMTP复用原ChatChat。仅在内存读取现有chatchat-api邮件配置，验证SMTP TLS和账号认证成功，**没有发送邮件**。本地忽略`.env`及服务器`/opt/plotloom-cn/shared/login.env`均0600，发件显示名Plotloom；新release的`.env`指向该私有文件。没有改变ChatChat配置、SMTP账号或其他PM2进程。专属Python环境安装Google校验及测试依赖，安装前清单留在backups；未改全局或其他服务环境。
+- 本机176项后端/市场、82项前端、lint/类型及Bash检查通过。服务器隔离21项账号/空间、43项相关前端、lint/类型和webpack生产构建通过。首次5be5ac6在停服前因pytest退出返回`/home/ubuntu`权限不足停止，21项断言虽通过但不计作完整发布成功；修正先进入release目录后，以新源码正常重跑。首轮current/服务未变，第二轮队列空闲、数据库备份、原子切换及全部常规检查成功，输出DEPLOYMENT_OK，无回滚。
+- 公网登录会话补验使用**明确注入的本轮QA验证码 fixture**，零真实邮件：创建QA访客作品、首次领取空间/旧访客凭证失效、安全Cookie/无缓存/一次性验证码、第二浏览器同账号访问、外部空间404、跨站403、旧标签409、退出仅撤销本设备会话通过；精确删除本轮QA作品、账号、会话/验证码和空空间。该补验不是SMTP发信/收件箱送达或Google真实授权验收。报告`/opt/plotloom-cn/backups/login-live-check-35d89432.json`，ok=true/qa_cleaned=true，报告无凭据。
+- 最终只读核验`login-final-audit-35d89432.json`为ok：current/RELEASE_COMMIT一致，SQLite quick_check正常，六表原data逐条完全一致（作品18、世界15、任务44、候选0、灵感会话15、灵感任务28）；QA账号清理后账号数0。模型配置指纹保持，中文三服务active，旧duanju-agent PID1948834未变，所有PM2进程PID/状态与发布前一致，中日HTTPS200。SMTP配置与来源在内存比较一致，私有文件0600，公网email_enabled=true、google_configured=false。未改Nginx/systemd/恢复码/用户原稿，零模型调用，未启动本机服务、浏览器、模拟器或设备。
+- **账号回滚边界已变化**：出现账号后只能切换支持本账号表/Cookie的兼容程序，不能直接回滚到上述58dbd41f或更早无账号版本；runner会拒绝不兼容自动回滚并保留数据供修复。始终保留shared/data，不能用旧SQLite覆盖新账号/作品。此前各节只按浏览器隔离判断的回滚指引不适用于已产生账号的数据库。当前本轮QA已清理，但后续真实账号可能随时建立，操作前须重查。
+
 ## 2026-10-29 大纲阶段导航移除与新建世界入口合并发布
 
 - **运行源码：`58dbd41f00a5cd315108345c12ea44e0b2486196`**，已推送GitHub。大纲右侧起、承、转、合四块及专用响应式样式移除，粗纲和全部集／章纲使用完整宽度；旧阶段字段和原稿保留。包含已合并的新建“AI完善世界”及一键全部生成意图，沿用先保存、版本校验与失败不重试；保留5a0b84fa小说正文JSON约束。本次相对上版仅前端及文档变化，后端、依赖、数据库结构、模型配置和预算均未改变。
