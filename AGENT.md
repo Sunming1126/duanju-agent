@@ -566,3 +566,10 @@
 - 用户提供Web Client ID接续原登录及自动部署授权。成功start同步0cdd4c9，工作区干净；只读核实当前运行35d89432、私有.env链接、中文三服务/旧站active且队列空闲。仅更新本机忽略.env与服务器shared/login.env的PLOTLOOM_GOOGLE_CLIENT_ID，保留0600及全部SMTP/其他配置，不改业务源码或重建前端。
 - 变更前备份私有配置login-env-google-20261030T063655Z及SQLite studio-google-config-20261030T063655Z.sqlite3。只重启中文版API（PID1681329→1693314），回环及公网auth/config返回所给Client ID且email_enabled=true、no-store，首页200。worker/web/旧站及所有PM2 PID/状态未变、模型指纹保持；SQLite正常，六表原data逐条不变（18/15/44/0/15/28）。报告google-login-config-20261030T063655Z.json为ok。
 - 配置已生效，Google实际账号弹窗/来源白名单/授权流程未人工验收；没有发送邮件、模型调用或启动浏览器/本机服务。更新登录/发布说明并按finish提交同步，运行源码仍35d89432，文档提交与线上程序分开报告。回滚仅恢复私有配置并重启API，不回退无账号程序或覆盖数据库。
+
+### 2026-10-30：当前原Key模型API分档并发测试
+
+- 用户明确要求实测当前LLM API最大并发；完整核对规则并成功start同步3e416f8，线上deepseek-v4.1-flash/火山官方域名/原Key已配置且生产队列空闲。按已说明的3→5→10→20→30→50上限测试，并在独立窗口重复50路；每档完成后间隔61秒，首个错误或明显延迟即停，零自动重试。调用仅用原创极短材料要求OK，temperature0/max_tokens32/关闭思考仅用于探测，不修改生产参数。
+- 共168次真实调用，全部HTTP200/finish=stop/OK，0限流/超时/重试，usage合计4032Token；两轮50路P50=1.306/1.442秒、P95=2.399/2.339秒、最大2.625/2.554秒，启动跨度39.01/34.85毫秒，逐条请求时间验证全体存在重叠区间。北京时间14:47:01至14:53:24。结论仅为当前Key本轮至少支持50路短请求，尚未触达绝对上限，不等于长文本/默认思考/12000预算或50用户整部生成承载。
+- 新增有界显式授权脚本tools/plotloom_llm_concurrency_probe.py及6项离线安全测试，默认dry-run不读取模型配置/不发请求，真实模式拒绝重复报告目录、并发超过50或间隔不足61秒；报告不记录Key、头、用户数据或正文。新脚本仅传服务器/tmp且SHA核验，未修改正式release；中途SSH读取断连后只重连同一报告，没有重发模型请求。详情及官方RPM/TPM/预扣规则依据见docs/PLOTLOOM_LLM_CONCURRENCY_PROBE.md。
+- 生产模型配置指纹保持，应用仍3执行/10排队，结束时队列空闲，API/web/worker/旧站PID1693314/1681331/1681330/1948834保持active；没有部署、重启、改作品、调用邮件或新增Key。服务器报告/tmp/plotloom-llm-concurrency-20261030-1793342820，本机校验副本data/llm-concurrency-20261030/verified-report.json保持Git忽略。6项脚本安全回归、语法及差异检查通过，本次无应用业务代码改动，不重复前端构建或模型质量测试。结束显式提交本次脚本/安全测试/说明/记录并同步GitHub。
