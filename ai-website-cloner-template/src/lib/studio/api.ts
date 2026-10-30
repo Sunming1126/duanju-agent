@@ -10,6 +10,9 @@ export type StudioStatus = {
   model: string;
   world_sections: Section[];
   max_concurrent_requests?: number;
+  max_queued_requests?: number;
+  max_queued_per_space?: number;
+  dispatch_retry_after_seconds?: number;
   isolated?: boolean;
 };
 export type WorldInput = {

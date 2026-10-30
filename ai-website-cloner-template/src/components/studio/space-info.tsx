@@ -28,6 +28,8 @@ export function SpaceInfo({ onClose }: { onClose: () => void }) {
       <h3 id="space-model-heading">模型信息</h3>
       {status ? <dl><div><dt>当前模型</dt><dd>{status.model || "未配置"}</dd></div><div><dt>服务状态</dt><dd>{status.llm_ready ? "服务端已配置" : "服务端尚未配置"}</dd></div></dl> : modelError ? <p className="studio-error" role="alert">模型信息读取失败：{modelError}</p> : <p className="studio-hint" role="status">正在读取模型信息…</p>}
       <p className="studio-hint">模型由服务端统一维护。全站最多同时执行 {status?.max_concurrent_requests ?? 3} 个模型请求，多人等待时轮流调度，同一作品的章节按顺序衔接。</p>
+      {status?.max_queued_requests !== undefined && <p className="studio-hint">全站最多 {status.max_queued_requests} 个任务等待启动，每个空间最多 {status.max_queued_per_space ?? status.max_queued_requests} 个排队任务。</p>}
+      {!!status?.dispatch_retry_after_seconds && <p className="studio-hint" role="status">生成请求暂缓启动，排队内容已保留，等待限制解除后继续调度。</p>}
     </section>
     <details className="space-recovery"><summary>恢复以前的共享作品</summary><p className="studio-hint">使用维护者提供的一次性恢复码，将原共享作品和世界转入当前空间。原稿会完整保留。</p>
       <form onSubmit={async event => {

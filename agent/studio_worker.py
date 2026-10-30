@@ -5,7 +5,8 @@ import os
 from .studio_api import store
 from .studio_jobs import JobStore, execute
 from .studio_inspiration import InspirationStore, execute as execute_inspiration
-from .studio_queue import MAX_CONCURRENT, next_job, records
+from .studio_queue import next_job, records, policy
+from .llm_transport import worker_connections
 
 
 def lock_worker(path):
@@ -67,7 +68,7 @@ async def serve(jobs, inspirations):
     tasks = set()
     try:
         while True:
-            while len(tasks) < MAX_CONCURRENT:
+            while len(tasks) < policy().concurrent:
                 claimed = claim_next(jobs, inspirations)
                 if not claimed:
                     break
@@ -88,7 +89,8 @@ async def run():
     jobs, inspirations = JobStore(store), InspirationStore(store)
     jobs.recover()
     inspirations.recover()
-    await serve(jobs, inspirations)
+    async with worker_connections(policy().concurrent):
+        await serve(jobs, inspirations)
 
 
 if __name__ == '__main__':

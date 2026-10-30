@@ -4,6 +4,7 @@ import json
 
 import httpx
 from . import llm
+from .llm_transport import request_client
 
 
 async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, timeout=240, err_box=None):
@@ -16,8 +17,10 @@ async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, 
 
     async def request():
         text, reason = "", None
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            async with client.stream("POST", f"{llm.API_BASE}/chat/completions", json=payload, headers={"Authorization": f"Bearer {llm.API_KEY}", "Content-Type": "application/json"}) as response:
+        async with request_client(timeout) as client:
+            async with client.stream("POST", f"{llm.API_BASE}/chat/completions", json=payload, timeout=timeout, headers={"Authorization": f"Bearer {llm.API_KEY}", "Content-Type": "application/json"}) as response:
+                if response.status_code >= 400:
+                    await response.aread()
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if not line.startswith("data:"):
@@ -50,7 +53,8 @@ async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, 
     except httpx.HTTPStatusError as error:
         status = error.response.status_code
         if err_box is not None:
-            err_box.update(kind="rate_limit" if status == 429 else "http_error", status=status, attempts=1)
+            from .studio_rate_limits import throttle_info
+            err_box.update(throttle_info(error.response), attempts=1)
     except (httpx.HTTPError, ValueError, asyncio.TimeoutError):
         if err_box is not None:
             err_box.update(kind="error", status=0, attempts=1)

@@ -180,8 +180,11 @@ def claim_legacy(body: LegacyClaim):
 @router.get("/status")
 def status():
     llm._refresh_config()
+    from .studio_queue import queue_status
+    with store.transaction() as db:
+        scheduling = queue_status(db)
     return {"ok": True, "market": "china", "output_locale": "zh-CN", "llm_ready": bool(llm.API_KEY),
-            "model": llm.MODEL, "world_sections": WORLD_SECTIONS, "storage": "local-backend", "max_concurrent_requests": 3, "isolated": True}
+            "model": llm.MODEL, "world_sections": WORLD_SECTIONS, "storage": "local-backend", **scheduling, "isolated": True}
 
 
 @router.get("/worlds")

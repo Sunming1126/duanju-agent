@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 from .studio_store import now, export_work_text
 from .studio_writing import normalized_work, writing_context, system_prompt, step_instruction, validate_chapter_format
-from .studio_queue import records as queue_records, MAX_CONCURRENT, MAX_QUEUED, paused, pause_after_rate_limit
+from .studio_queue import records as queue_records, paused, pause_after_rate_limit, policy, capacity, reserve_dispatch
 from .studio_identity import require_identity, authorize, visible, owner, request_key as scoped_key, StudioJSONResponse
 from .studio_outline import combined_outline, rough_preview
 
@@ -88,8 +88,7 @@ class JobStore:
             jobs = [json.loads(row[0]) for row in db.execute("SELECT data FROM studio_jobs").fetchall()]
             if any(j["work_id"] == work_id and j["status"] in ACTIVE for j in jobs):
                 raise HTTPException(409, "此作品已有进行中任务，请查看任务进度")
-            if sum(j["status"] == "queued" for j in queue_records(db)) >= MAX_QUEUED:
-                raise HTTPException(429, "全站队列已满（最多10个排队任务），请稍后提交")
+            capacity(db, owner(work))
             steps = ([{"action": a, "number": 1} for a in ("premise", "characters", "outline")] +
                      [{"action": "chapter", "number": n} for n in range(1, work["units"] + 1)]) if body.mode == "all" else [{"action": body.action, "number": body.number}]
             job = {"id": str(uuid.uuid4()), "owner_id": owner(work), "request_key": body.request_key, "work_id": work_id, "input": body.model_dump(),
@@ -120,8 +119,7 @@ class JobStore:
                 others = [json.loads(row[0]) for row in db.execute("SELECT data FROM studio_jobs WHERE id<>?", (ident,)).fetchall()]
                 if any(j["work_id"] == job["work_id"] and j["status"] in ACTIVE for j in others):
                     raise HTTPException(409, "作品已有另一任务，不能同时继续")
-                if sum(j["status"] == "queued" for j in queue_records(db)) >= MAX_QUEUED:
-                    raise HTTPException(429, "排队数量已满，请稍后继续")
+                capacity(db, owner(job))
                 job.update(status="queued" if len(job["results"]) < len(job["steps"]) else "completed", error="", partial_outline="")
             self.write(db, job)
             return job
@@ -138,12 +136,14 @@ class JobStore:
     def claim(self, ident=None):
         with self.transaction() as db:
             jobs = [json.loads(row[0]) for row in db.execute("SELECT data FROM studio_jobs").fetchall()]
-            if paused(db) or sum(j["status"] in {"running", "stopping"} for j in queue_records(db)) >= MAX_CONCURRENT:
+            if paused(db) or sum(j["status"] in {"running", "stopping"} for j in queue_records(db)) >= policy().concurrent:
                 return None
             queued = sorted((j for j in jobs if j["status"] == "queued" and (ident is None or j["id"] == ident)), key=lambda j: j["created_at"])
             if not queued:
                 return None
             job = queued[0]
+            if not reserve_dispatch(db):
+                return None
             job["status"] = "running"
             job["dispatched_at"] = now()
             self.write(db, job)
@@ -291,7 +291,7 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
                 raw = await generate(messages, temperature=0.8, max_tokens=12000, timeout=240, retries=1, err_box=err, reject_truncated=True, **options)
             if not raw or not raw.strip():
                 if err.get("kind") == "rate_limit":
-                    pause_after_rate_limit(jobs.store)
+                    pause_after_rate_limit(jobs.store, err)
                 reasons = {"rate_limit": "模型限流", "incomplete": "模型输出被截断或未正常结束", "http_error": "模型服务拒绝请求", "error": "模型连接失败", "empty_content": "模型正常结束但未返回正文"}
                 raise ValueError(reasons.get(err.get("kind"), "模型没有返回有效内容") + "。已完成结果保留，请检查服务后主动继续。")
             if len(raw) > 100000:

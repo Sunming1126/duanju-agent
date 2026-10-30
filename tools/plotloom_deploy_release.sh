@@ -132,13 +132,14 @@ import asyncio, json, httpx
 from studio_main import app
 from agent.studio_api import WorkInput
 from agent.studio_writing import validate_chapter_format
+from agent.studio_queue import policy
 novel = WorkInput(title='deployment mode check', content_type='novel', mode='新建剧本')
 assert novel.mode == '小说创作' and novel.novel_settings and not novel.drama_settings
 async def check():
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://localhost') as client:
         response = await client.get('/api/studio/status')
         assert response.status_code == 200 and response.json()['llm_ready']
-        assert response.json()['max_concurrent_requests'] == 3
+        assert response.json()['max_concurrent_requests'] == policy().concurrent
         assert (await client.get('/api/studio/works')).status_code == 401
         assert (await client.get('/api/studio/session')).json()['isolated']
         assert (await client.get('/api/studio/worlds')).json()['items'] == []
@@ -150,7 +151,7 @@ print('Isolated backend import and inspiration route checks passed; no model cal
 PY
 
 if [[ -f "$release/tests/test_studio_auth.py" ]]; then
-    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
 fi
 
 cd "$release/ai-website-cloner-template"

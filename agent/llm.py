@@ -13,6 +13,7 @@ from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
+from .llm_transport import request_client
 
 # 优先级：真实环境变量 > 项目根 .env（不覆盖已有环境变量）
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -159,8 +160,8 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
         err_box.clear()
     for attempt in range(retries):
         try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.post(url, json=payload, headers=headers)
+            async with request_client(timeout) as client:
+                resp = await client.post(url, json=payload, headers=headers, timeout=timeout)
                 resp.raise_for_status()
                 data = resp.json()
                 if reject_truncated and data["choices"][0].get("finish_reason") != "stop":
@@ -182,8 +183,8 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
             limited = status == 429
             if err_box is not None:
                 err_box.clear()
-                err_box.update({"kind": "rate_limit" if limited else "http_error",
-                                "status": status, "attempts": attempt + 1})
+                from .studio_rate_limits import throttle_info
+                err_box.update(throttle_info(e.response), attempts=attempt + 1)
             print(f"[llm] 第{attempt + 1}次调用失败: HTTPStatusError: {e}"
                   + ("（限流，延长退避）" if limited else ""))
             if attempt < retries - 1:

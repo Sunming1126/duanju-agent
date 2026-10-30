@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .studio_jobs import queue_records
-from .studio_queue import MAX_CONCURRENT, MAX_QUEUED, paused, pause_after_rate_limit
+from .studio_queue import paused, pause_after_rate_limit, policy, capacity as queue_capacity, reserve_dispatch
 from .studio_store import WORLD_FIELDS, now
 from .studio_identity import authorize, visible, current_owner, owner, request_key as scoped_key
 
@@ -106,8 +106,7 @@ class InspirationStore:
 
     @staticmethod
     def capacity(db):
-        if sum(j["status"] == "queued" for j in queue_records(db)) >= MAX_QUEUED:
-            raise HTTPException(429, "全站队列已满（最多10个排队任务），请稍后提交")
+        queue_capacity(db)
 
     def enqueue(self, db, session, payload, action):
         self.capacity(db)
@@ -189,12 +188,14 @@ class InspirationStore:
     def claim(self, ident=None):
         with self.transaction() as db:
             all_jobs = queue_records(db)
-            if paused(db) or sum(j["status"] in {"running", "stopping"} for j in all_jobs) >= MAX_CONCURRENT:
+            if paused(db) or sum(j["status"] in {"running", "stopping"} for j in all_jobs) >= policy().concurrent:
                 return None
             jobs = sorted((j for j in all_jobs if j["status"] == "queued" and "session_id" in j and (ident is None or j["id"] == ident)), key=lambda j: j["created_at"])
             if not jobs:
                 return None
             job = jobs[0]
+            if not reserve_dispatch(db):
+                return None
             job["status"] = "running"
             job["dispatched_at"] = now()
             self.write_job(db, job)
@@ -325,7 +326,7 @@ async def execute(inspirations, job, generate=None):
                                            timeout=240, retries=1, reject_truncated=True, err_box=err)
         if not raw or not raw.strip() or len(raw) > 60000:
             if err.get("kind") == "rate_limit":
-                pause_after_rate_limit(inspirations.store)
+                pause_after_rate_limit(inspirations.store, err)
             raise ValueError("模型未返回完整有效的灵感结果，请检查服务后手动重试")
         result = parse_result(job, raw)
         inspirations.finish(job["id"], result=result)

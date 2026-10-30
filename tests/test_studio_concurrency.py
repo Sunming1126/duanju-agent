@@ -175,3 +175,107 @@ def test_rate_limit_pauses_new_dispatch_without_retrying_paid_request(queue, mon
     assert jobs.claim(second["id"]) is None
     monkeypatch.setattr(studio_queue, "now", lambda: 9999999999999)
     assert jobs.claim(second["id"])
+
+
+def test_configured_parallelism_applies_atomically_to_both_queues(queue,monkeypatch):
+    from agent.studio_queue import policy
+    monkeypatch.setenv('PLOTLOOM_MAX_CONCURRENT','5')
+    _,jobs,service=queue
+    work_ids=[create(queue)['id'] for _ in range(4)]
+    inspiration_ids=[inspiration(queue)['id'] for _ in range(3)]
+    operations=[lambda ident=ident:jobs.claim(ident) for ident in work_ids]+[lambda ident=ident:service.claim(ident) for ident in inspiration_ids]
+    with ThreadPoolExecutor(max_workers=7) as pool:
+        claimed=list(pool.map(lambda operation:operation(),operations))
+    assert sum(item is not None for item in claimed)==policy().concurrent==5
+    assert jobs.claim() is None and service.claim() is None
+
+
+def test_owner_queue_cap_counts_both_task_types_and_leaves_room_for_others(queue,monkeypatch):
+    from fastapi import HTTPException
+    from agent.studio_queue import policy
+    monkeypatch.setenv('PLOTLOOM_MAX_QUEUED','12')
+    monkeypatch.setenv('PLOTLOOM_MAX_QUEUED_PER_OWNER','2')
+    create(queue,owner='a');inspiration(queue,owner='a')
+    with pytest.raises(HTTPException) as error:create(queue,owner='a')
+    assert error.value.status_code==429 and '当前空间' in error.value.detail
+    assert create(queue,owner='b')
+    assert policy().queued==12
+
+
+def test_dispatch_rpm_is_shared_atomic_and_survives_a_new_store(queue,monkeypatch):
+    from agent import studio_queue
+    _,jobs,service=queue
+    monkeypatch.setenv('PLOTLOOM_MAX_CONCURRENT','8')
+    monkeypatch.setenv('PLOTLOOM_REQUESTS_PER_MINUTE','2')
+    moment=[100000]
+    monkeypatch.setattr(studio_queue,'now',lambda:moment[0])
+    first=create(queue);second=inspiration(queue);third=create(queue)
+    with ThreadPoolExecutor(max_workers=3) as threads:
+        results=list(threads.map(lambda fn:fn(),[lambda:jobs.claim(first['id']),lambda:service.claim(second['id']),lambda:jobs.claim(third['id'])]))
+    assert sum(item is not None for item in results)==2
+    with queue[0].transaction() as db:
+        assert studio_queue.queue_status(db)['dispatch_retry_after_seconds']==60
+    assert JobStore(queue[0]).claim() is None
+    # Time expiry permits the remaining queued task, without replaying either claim.
+    moment[0]+=60001
+    remaining=jobs.claim() or service.claim()
+    assert remaining is not None
+    assert len({item['id'] for item in results if item}|{remaining['id']})==3
+
+
+def test_throttle_cooldown_preserves_upstream_delay_and_grows_without_retry(queue,monkeypatch):
+    from agent import studio_queue as q
+    moment=[100000];monkeypatch.setattr(q,'now',lambda:moment[0])
+    q.pause_after_rate_limit(queue[0],{'retry_after_seconds':90})
+    with queue[0].transaction() as db:assert q.queue_status(db)['dispatch_retry_after_seconds']==90
+    q.pause_after_rate_limit(queue[0])
+    with queue[0].transaction() as db:assert q.queue_status(db)['dispatch_retry_after_seconds']==90
+    q.pause_after_rate_limit(queue[0])
+    with queue[0].transaction() as db:assert q.queue_status(db)['dispatch_retry_after_seconds']==120
+    q.pause_after_rate_limit(queue[0],{'limit_type':'quota'})
+    with queue[0].transaction() as db:assert q.queue_status(db)['dispatch_retry_after_seconds']==3600
+    assert queue[1].claim() is None
+
+
+@pytest.mark.parametrize('name,value',[('PLOTLOOM_MAX_CONCURRENT','51'),('PLOTLOOM_MAX_CONCURRENT','bad'),('PLOTLOOM_MAX_QUEUED','0'),('PLOTLOOM_REQUESTS_PER_MINUTE','-1')])
+def test_invalid_policy_fails_before_any_provider_request(monkeypatch,name,value):
+    from agent.studio_queue import policy
+    monkeypatch.setenv(name,value)
+    with pytest.raises(ValueError):policy()
+
+
+def test_status_reflects_same_policy_as_worker_and_claim_guard(queue,monkeypatch):
+    from fastapi.testclient import TestClient
+    import studio_main
+    monkeypatch.setenv('PLOTLOOM_MAX_CONCURRENT','5')
+    monkeypatch.setenv('PLOTLOOM_MAX_QUEUED','20')
+    monkeypatch.setenv('PLOTLOOM_MAX_QUEUED_PER_OWNER','4')
+    response=TestClient(studio_main.app).get('/api/studio/status')
+    assert response.status_code==200
+    value=response.json()
+    assert value['max_concurrent_requests']==5 and value['max_queued_requests']==20 and value['max_queued_per_space']==4
+    assert value['dispatch_retry_after_seconds']==0
+
+
+def test_worker_uses_configured_five_slots_and_keeps_sixth_waiting(queue,monkeypatch):
+    monkeypatch.setenv('PLOTLOOM_MAX_CONCURRENT','5')
+    for _ in range(6):create(queue)
+    async def check():
+        active=0;peak=0;reached=asyncio.Event();release=asyncio.Event()
+        async def generate(*args,**kwargs):
+            nonlocal active,peak
+            active+=1;peak=max(peak,active)
+            if active==5:reached.set()
+            try:await release.wait()
+            finally:active-=1
+            return '她在旧钟表中发现了那封信，但信上的日期让她重新审视父亲留下的话。'*3
+        monkeypatch.setattr(api.llm,'chat',generate)
+        worker=asyncio.create_task(serve(queue[1],queue[2]))
+        try:
+            await asyncio.wait_for(reached.wait(),3)
+            assert active==peak==5
+            assert sum(j['status']=='queued' for j in queue[1].list())==1
+        finally:
+            worker.cancel()
+            with pytest.raises(asyncio.CancelledError):await worker
+    asyncio.run(check())
