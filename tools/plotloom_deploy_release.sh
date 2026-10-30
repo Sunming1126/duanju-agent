@@ -117,6 +117,10 @@ test -f "$release/agent/studio_writing.py"
 test -f "$release/ai-website-cloner-template/src/components/studio/inspiration.tsx"
 mv "$release/data" "$release/seed-data"
 ln -s "$base/shared/data" "$release/data"
+if [[ -f "$base/shared/login.env" ]]; then
+    # Private auth configuration is shared by releases and never enters archives.
+    ln -s "$base/shared/login.env" "$release/.env"
+fi
 printf '%s\n' "$source_commit" > "$release/RELEASE_COMMIT"
 mkdir "$release/.deploy-checks"
 chown -hR plotloom-cn:plotloom-cn "$release"
@@ -143,6 +147,10 @@ async def check():
 asyncio.run(check())
 print('Isolated backend import and inspiration route checks passed; no model calls.')
 PY
+
+if [[ -f "$release/tests/test_studio_auth.py" ]]; then
+    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+fi
 
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund

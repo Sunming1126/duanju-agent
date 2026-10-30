@@ -4,7 +4,7 @@
 
 ## 与 ChatChat 的复用边界
 
-参考 `/Users/zhaoqing/myprojects/chatchat/server/index.js` 的邮箱规范化、六位验证码、10 分钟有效、60 秒重发间隔、错误次数与日限额，以及 `server/chatchat_api.js` 的服务端验证身份后建立会话和已验证邮箱关联原则。针对本项目 Python/Next.js 重新实现，不改 ChatChat，也不共享其用户库、登录会话、SMTP 密码或 Firebase 私钥。
+参考 `/Users/zhaoqing/myprojects/chatchat/server/index.js` 的邮箱规范化、六位验证码、10 分钟有效、60 秒重发间隔、错误次数与日限额，以及 `server/chatchat_api.js` 的服务端验证身份后建立会话和已验证邮箱关联原则。针对本项目 Python/Next.js 重新实现，不改 ChatChat，也不共享其用户库、登录会话或 Firebase 私钥。用户于 2026-10-30 明确授权复用 ChatChat 的现有 SMTP，本次已仅复制邮件配置到 Plotloom 私有配置文件，发件显示名使用 Plotloom。
 
 Google 网页使用 Google Identity Services 和官方 Python `google-auth` 校验 ID Token，不直接搬用 Flutter 的 iOS/Firebase SDK。校验签名、issuer、audience、有效期、已验证邮箱、稳定 sub 及浏览器空间绑定的一次性 nonce；不能通过提交 email/googleId 冒充登录。参考 [Google 服务端校验说明](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token) 与 [GIS JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference)。非 Gmail/Workspace 的已有邮箱账号须先完成邮箱验证码登录，再通过 Google 登录关联，不能仅凭 Google 声明的第三方邮箱接管已有账号。
 
@@ -22,9 +22,9 @@ PLOTLOOM_SMTP_FROM=Plotloom <login@example.com>
 PLOTLOOM_GOOGLE_CLIENT_ID=your-web-client.apps.googleusercontent.com
 ```
 
-- SMTP 使用独立发件配置。465 端口使用 TLS，其余端口必须 STARTTLS；验证码不返回前端、不输出日志、不启用调试验证码。实际邮件仍须配置后人工验收。
+- SMTP 按用户授权复用 ChatChat 当前邮件服务器、账号和凭据，在 Plotloom 私有配置中保存副本。465 端口使用 TLS，其余端口必须 STARTTLS；验证码不返回前端、不输出日志、不启用调试验证码。已通过服务器端 TLS 和账号认证检查，没有发送测试邮件；实际邮件送达仍需用户获取验证码验收。
 - Google Cloud 创建/选择 **Web application** OAuth Client，配置获准 JavaScript 来源为实际网站 Origin，本机调试时添加自己使用的 `http://localhost:端口`。使用弹窗凭证回调，不需要网站跳转回调 URL 或 Client Secret。可使用自己已有 Google Cloud 项目的 Web Client，但不能把 iOS Client ID 直接当作 Web Client。测试状态下需加入测试用户。
-- 没有在本次读取或复制 ChatChat 的私有配置。配置缺失时按钮会明确提示未配置，不伪造登录成功。
+- SMTP 凭据仅在私有文件和进程内存流转，不进入 Git、命令行参数或报告；本机 `.env` 与服务器 `/opt/plotloom-cn/shared/login.env` 权限均为0600。每个新 release 的 `.env` 链接后者，由现有 dotenv 加载，不修改 systemd 或 ChatChat 环境。Google Web Client 尚未配置，按钮明确标注暂未配置，不将 iOS Client ID 冒充 Web Client。
 - Python 安装当前 `requirements.txt`，新增 `google-auth[requests]>=2.29,<3`。发布器会在停服前检查此依赖；需先由运维在 Plotloom 专属环境安装，不修改全局或其他 App 环境。
 - 配置由 API 读取，Google Client ID 通过无缓存配置接口返回浏览器；无需将 SMTP 配置或密钥写入 Next 构建环境。
 
@@ -39,10 +39,10 @@ PLOTLOOM_GOOGLE_CLIENT_ID=your-web-client.apps.googleusercontent.com
 
 ## 发布与回滚
 
-本次只完成本地实现，没有部署、启动服务或发送真实验证邮件。上线前仍需配置 SMTP 和 Web Client、安装专属 Python 依赖，并由用户授权发布及实际登录验收。
+用户已授权配置后自动部署。SMTP 已复用并完成不发信的 TLS/认证验证；Google Web Client 独立待配。实际发布版本、备份和服务检查以 `PLOTLOOM_DEPLOYMENT.md` 最新记录为准，不以配置完成代替发布成功。
 
 沿用中文版独立发布、SQLite 备份和 shared/data 保留流程，新增登录检查已加入本地发布清单。存在账号后只回滚到支持本账号结构与 Cookie 的兼容版本，不用旧 SQLite 覆盖新数据。发布器自动回滚若发现旧程序无 `studio_auth.py` 且已存在账号，会拒绝切回并保留数据，需维护者修复/发布兼容版。不要沿用旧文档中仅按浏览器隔离判断兼容性的回滚步骤。
 
 ## 验证范围
 
-离线后端使用临时 SQLite、模拟邮件和 Google 凭证，覆盖登录、会话失效/撤销、原空间领取、跨浏览器同账号、跨空间拒绝、验证码限流/错误/过期/一次使用、Google nonce/第三方邮箱关联和跨站请求。前端检查覆盖空间请求标记及草稿隔离，另执行 lint、类型和生产构建。未运行开发服务器、浏览器、模拟器、设备或真实部署；实际视觉、邮件送达和 Google 授权弹窗仍由用户配置后启动验收。
+离线后端使用临时 SQLite、模拟邮件和 Google 凭证，覆盖登录、会话失效/撤销、原空间领取、跨浏览器同账号、跨空间拒绝、验证码限流/错误/过期/一次使用、Google nonce/第三方邮箱关联和跨站请求。前端检查覆盖空间请求标记及草稿隔离，另执行 lint、类型和生产构建。没有启动本机开发服务器、浏览器、模拟器或设备；正式部署与 HTTP 验证按用户授权执行并单独记录。实际视觉、邮件送达和 Google 授权弹窗仍待用户验收。
