@@ -635,3 +635,8 @@
 - 用户明确“部署”。成功start同步0857f88，重核线上2c054109及中文三服务／旧站正常。仅在Plotloom专用Python环境安装Pillow12.3.0并保留安装前依赖清单backups/python-before-account-avatar.txt；安装时严格umask导致包不可被服务用户读取，首轮64项隔离检查中7项图片检查失败，在停服前停止，线上未切换。仅修正新装Pillow三个目录标准读取权限，服务用户WebP检查通过后正常重跑，无跳过检查。
 - 已推送运行源码0857f883dee9a480410fc632072f4a2e79b4d08c经源码包与runner双哈希、64项后端／56项前端、lint／类型及webpack构建通过，队列空闲后备份及原子切换，DEPLOYMENT_OK无回滚。release为20261030T131801Z-inspiration-0857f883，previous2c054109；数据库备份studio-20261030T131801Z-inspiration.sqlite3权限0600，正常日志/tmp/plotloom-account-publish-retry.log。
 - 上线只读报告/opt/plotloom-cn/backups/account-page-live-report.json为ok：公网与回环/account及JS逐份匹配release、匿名头像与作品401、SQLite正常、六表原记录及账号与备份全行一致18/15/44/0/15/28/2，正式并发5/10保持。中文三服务active，旧站PID1948834不变且日文200。未发模型／邮件、改用户资料／作品、Nginx或systemd，未启动本机应用或浏览器；真实登录、头像选择及响应式视觉仍待用户验收。结束仅提交发布说明并同步GitHub，保留shared/data和账号兼容回滚。
+
+### 2026-10-30：精简作品、语料与我的空间页顶部标题
+
+- 用户按截图要求移除三页内容区顶部重复加粗标题及附近小字。成功start同步9d2ad77；删除我的空间标题／说明／面包屑、语料参考英文／大标题／说明、我的作品标题与重复总数／归档小字。保留侧栏和main可访问名称，作品导入移入原筛选工具栏，类型计数、搜索／筛选和资料功能保持。清理不再使用的标题样式与对应留白。
+- 10项现有作品库／账号检查、ESLint、TypeScript及diff检查通过；只更新现有导入按钮位置断言，没有为纯展示删除增加新测试。未改后端或数据，未启动应用／开发服务器／浏览器或部署；视觉由用户自行启动验收。本次只提交相关前端与记录并同步GitHub。

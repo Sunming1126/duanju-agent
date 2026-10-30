@@ -59,16 +59,8 @@ export function CorpusWorkspace() {
       <Header workspace />
       <div className="plotloom-shell">
         <StudioNav selected="语料参考" />
-        <main className="plotloom-main">
+        <main className="plotloom-main" aria-label="语料参考">
           <div className="works-filters"><button className={type === "short_drama" ? "active" : ""} onClick={() => setType("short_drama")}>中文剧本</button><button className={type === "novel" ? "active" : ""} onClick={() => setType("novel")}>中文小说</button></div>
-          <div className="workspace-title">
-            <div>
-              <span className="eyebrow">CORPUS LIBRARY</span>
-              <h1>
-                语料参考<span>读取现有剧本平台的中国市场语料</span>
-              </h1>
-            </div>
-          </div>
           <form className="studio-corpus-search" onSubmit={submit}>
             <label className="search-field">
               <Search size={16} />

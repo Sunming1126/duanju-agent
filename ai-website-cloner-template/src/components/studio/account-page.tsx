@@ -24,8 +24,7 @@ export function AccountPage() {
     return () => { active = false; };
   }, [retry]);
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="我的空间" />
-    <main className={`plotloom-main ${styles.main}`}>
-      <div className={styles.heading}><div><h1>我的空间</h1><p>管理个人资料与创作空间。</p></div><span className={styles.headingMark}>创作空间 / 账号设置</span></div>
+    <main className={`plotloom-main ${styles.main}`} aria-label="我的空间">
       {space ? <AccountSettings key={space.space_id} space={space} onUserChanged={async user => { setSpace(await updateStudioUser(user)); }} /> : error ? <div className={styles.panel}><Notice error>{error}</Notice><button className={styles.secondary} onClick={() => { setError(""); setRetry(value => value + 1); }}><RefreshCw size={14} />重新读取</button></div> : <div className={styles.skeleton} role="status" aria-label="正在读取个人空间"><div /><div /><div /><span>正在读取个人空间…</span></div>}
     </main>
   </div></div>;

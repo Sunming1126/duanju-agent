@@ -82,11 +82,9 @@ export function WorksLibrary() {
     if (success) setRemoving(undefined);
   }
   const visible = visibleWorks(works, query, filter, state, sort);
-  const archivedCount = works.filter(work => work.archived).length;
   const novels = works.filter(work => work.content_type === "novel").length;
 
-  return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="我的作品" /><main className="plotloom-main works-library">
-    <div className="workspace-title library-heading"><div><h1>我的作品</h1></div><div className="library-heading-actions"><span className="library-total">{works.length} 部作品<span>{archivedCount} 部已归档</span></span><button className="outline-button" onClick={() => { setNotice(""); setError(""); setImporting(true); }}><Upload size={16} />导入</button></div></div>
+  return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="我的作品" /><main className="plotloom-main works-library" aria-label="我的作品">
     <section className="library-controls" aria-label="作品筛选">
       <div className="library-type-tabs" aria-label="作品类型">
         {[["", "全部作品", works.length], ["novel", "小说", novels], ["short_drama", "剧本", works.length - novels]].map(([value, label, count]) => <button key={value} aria-pressed={filter === value} className={filter === value ? "active" : ""} onClick={() => setFilter(String(value))}>{label}<span>{count}</span></button>)}
@@ -95,6 +93,7 @@ export function WorksLibrary() {
         <label className="library-search"><Search size={17} aria-hidden="true" /><input aria-label="搜索作品" placeholder="搜索作品名称" value={query} onChange={event => setQuery(event.target.value)} /></label>
         <select aria-label="作品状态筛选" value={state} onChange={event => setState(event.target.value as LibraryState)}><option value="all">全部状态</option><option value="active">创作中</option><option value="archived">已归档</option></select>
         <select aria-label="作品排序" value={sort} onChange={event => setSort(event.target.value as LibrarySort)}><option value="updated">最近更新</option><option value="created">最近创建</option><option value="title">作品名称</option></select>
+        <button className="outline-button" onClick={() => { setNotice(""); setError(""); setImporting(true); }}><Upload size={16} />导入</button>
         <button className="outline-button" disabled={busy} onClick={() => void run(() => load(), false)}><RefreshCw size={14} />刷新</button>
       </div>
     </section>
