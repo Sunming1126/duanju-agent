@@ -124,6 +124,7 @@ fi
 printf '%s\n' "$source_commit" > "$release/RELEASE_COMMIT"
 mkdir "$release/.deploy-checks"
 chown -hR plotloom-cn:plotloom-cn "$release"
+cd "$release"
 
 # Import the new API in an isolated database and exercise routes without paid calls.
 runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/studio.sqlite3" PYTHONPATH="$release" "$python" - <<'PY'

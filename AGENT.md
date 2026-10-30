@@ -551,3 +551,5 @@
 - 只在内存读取 ChatChat 当前 chatchat-api 的 SMTP 设置，并完成 TLS/SMTP账号认证，零邮件发送。写入本机Git忽略的`.env`与服务器`/opt/plotloom-cn/shared/login.env`，均0600；发件显示名为Plotloom，不输出凭据，不修改原项目/PM2配置或重启ChatChat。原模型配置保持，进程与模型校验基线保存在服务器私有备份目录。
 - 发布runner在新release建立私有`.env`链接以沿用现有dotenv加载，不修改systemd；新增服务器隔离账号/空间回归，保留SQLite备份、空闲队列、源码双哈希、原子切换和账号兼容回滚门槛。仅在Plotloom专用Python环境安装Google校验/测试依赖并保留安装前清单，不修改系统或其他应用环境。Google Web Client在原SMTP配置中不存在，仍独立待配，不拿iOS Client ID替代。
 - 本机176项完整后端/市场回归及Bash语法/差异检查通过；前端业务源码沿用上轮82项检查及构建通过版本，正式发布将由runner重建复验。本轮配置与发布不发送真实验证码、不发模型请求、不启动本机服务或浏览器；实际发布、数据保留与远端同步在完成后另记，不提前声称已上线。
+
+- 首次发布5be5ac6在停服前的隔离测试阶段停止：21项账号/空间断言全部通过，但pytest退出时试图返回继承的`/home/ubuntu`，plotloom-cn用户无访问权而报PermissionError。线上current及三服务未切换。修正runner先进入本release目录再以服务用户执行检查，不跳过检查；重新提交/打包后正常发布，失败目录和日志保留供核查。
