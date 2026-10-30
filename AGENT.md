@@ -560,3 +560,9 @@
 - 邮箱验证码登录公网email_enabled=true，SMTP账号与ChatChat来源在内存比对一致，TLS/账号认证通过但零真实邮件。Google Web Client未配，按钮明确暂未配置；不把配置布尔值或mock当作真实邮件送达/Google授权验收。
 - 公网独立QA空间使用明确标注的测试验证码fixture，完成新账号领取原空间、旧访客凭证失效、安全Cookie/一次性码、双浏览器同账号、外部空间404、跨站403、旧标签409及退出只撤销本设备；精确清理本轮QA作品/账号/会话/验证码/空空间，报告login-live-check-35d89432.json为ok/qa_cleaned=true。没有发邮件、模型请求或操作用户作品。
 - 最终报告login-final-audit-35d89432.json为ok：六表旧data逐条保持（18作品/15世界/44任务/0候选/15灵感会话/28灵感任务），SQLite正常，QA清理后账号数0，模型配置指纹和恢复码保持。中文api/web/worker active（PID1681329/1681331/1681330），旧PID1948834、全部PM2 PID/状态及日文站200保持。未改Nginx/systemd或启动本机应用/浏览器/设备。更新正式发布及登录说明，明确产生账号后不可回滚至无账号程序，只保留shared/data做兼容程序回滚；最终文档提交与实际运行源码分别报告。
+
+### 2026-10-30：启用用户提供的 Google Web Client
+
+- 用户提供Web Client ID接续原登录及自动部署授权。成功start同步0cdd4c9，工作区干净；只读核实当前运行35d89432、私有.env链接、中文三服务/旧站active且队列空闲。仅更新本机忽略.env与服务器shared/login.env的PLOTLOOM_GOOGLE_CLIENT_ID，保留0600及全部SMTP/其他配置，不改业务源码或重建前端。
+- 变更前备份私有配置login-env-google-20261030T063655Z及SQLite studio-google-config-20261030T063655Z.sqlite3。只重启中文版API（PID1681329→1693314），回环及公网auth/config返回所给Client ID且email_enabled=true、no-store，首页200。worker/web/旧站及所有PM2 PID/状态未变、模型指纹保持；SQLite正常，六表原data逐条不变（18/15/44/0/15/28）。报告google-login-config-20261030T063655Z.json为ok。
+- 配置已生效，Google实际账号弹窗/来源白名单/授权流程未人工验收；没有发送邮件、模型调用或启动浏览器/本机服务。更新登录/发布说明并按finish提交同步，运行源码仍35d89432，文档提交与线上程序分开报告。回滚仅恢复私有配置并重启API，不回退无账号程序或覆盖数据库。

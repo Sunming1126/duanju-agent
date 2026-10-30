@@ -24,7 +24,7 @@ PLOTLOOM_GOOGLE_CLIENT_ID=your-web-client.apps.googleusercontent.com
 
 - SMTP 按用户授权复用 ChatChat 当前邮件服务器、账号和凭据，在 Plotloom 私有配置中保存副本。465 端口使用 TLS，其余端口必须 STARTTLS；验证码不返回前端、不输出日志、不启用调试验证码。已通过服务器端 TLS 和账号认证检查，没有发送测试邮件；实际邮件送达仍需用户获取验证码验收。
 - Google Cloud 创建/选择 **Web application** OAuth Client，配置获准 JavaScript 来源为实际网站 Origin，本机调试时添加自己使用的 `http://localhost:端口`。使用弹窗凭证回调，不需要网站跳转回调 URL 或 Client Secret。可使用自己已有 Google Cloud 项目的 Web Client，但不能把 iOS Client ID 直接当作 Web Client。测试状态下需加入测试用户。
-- SMTP 凭据仅在私有文件和进程内存流转，不进入 Git、命令行参数或报告；本机 `.env` 与服务器 `/opt/plotloom-cn/shared/login.env` 权限均为0600。每个新 release 的 `.env` 链接后者，由现有 dotenv 加载，不修改 systemd 或 ChatChat 环境。Google Web Client 尚未配置，按钮明确标注暂未配置，不将 iOS Client ID 冒充 Web Client。
+- SMTP 凭据仅在私有文件和进程内存流转，不进入 Git、命令行参数或报告；本机 `.env` 与服务器 `/opt/plotloom-cn/shared/login.env` 权限均为0600。每个新 release 的 `.env` 链接后者，由现有 dotenv 加载，不修改 systemd 或 ChatChat 环境。用户于 2026-10-30 提供的 Google Web Client 已写入本机和线上私有配置，公网配置接口已返回该 Client ID，Google 登录入口启用；没有改用 iOS Client ID。实际 Google 账号弹窗、来源白名单和授权同意流程仍需用户操作验收。
 - Python 安装当前 `requirements.txt`，新增 `google-auth[requests]>=2.29,<3`。发布器会在停服前检查此依赖；需先由运维在 Plotloom 专属环境安装，不修改全局或其他 App 环境。
 - 配置由 API 读取，Google Client ID 通过无缓存配置接口返回浏览器；无需将 SMTP 配置或密钥写入 Next 构建环境。
 
@@ -39,7 +39,7 @@ PLOTLOOM_GOOGLE_CLIENT_ID=your-web-client.apps.googleusercontent.com
 
 ## 发布与回滚
 
-用户已授权配置后自动部署。SMTP 已复用并完成不发信的 TLS/认证验证；Google Web Client 独立待配。已以 `35d89432ccb5596c086c0bfbeea9cd52120799d0` 正式上线，公网邮箱登录配置及使用QA验证码的登录/退出/跨浏览器隔离检查通过；没有发送真实邮件。备份和服务检查见 `PLOTLOOM_DEPLOYMENT.md` 最新记录。Google真实网页授权及实际邮件送达仍待后续验收。
+用户已授权配置后自动部署。SMTP 已复用并完成不发信的 TLS/认证验证；Google Web Client 已按用户提供值配置并在线上生效。已以 `35d89432ccb5596c086c0bfbeea9cd52120799d0` 正式上线，公网邮箱登录配置及使用QA验证码的登录/退出/跨浏览器隔离检查通过；没有发送真实邮件。备份和服务检查见 `PLOTLOOM_DEPLOYMENT.md` 最新记录。Google配置于2026-10-30补齐，仅重启中文版API后公网配置检查通过，未重建前端或重启其他服务；Google真实网页授权及实际邮件送达仍待后续验收。
 
 沿用中文版独立发布、SQLite 备份和 shared/data 保留流程，新增登录检查已加入本地发布清单。存在账号后只回滚到支持本账号结构与 Cookie 的兼容版本，不用旧 SQLite 覆盖新数据。发布器自动回滚若发现旧程序无 `studio_auth.py` 且已存在账号，会拒绝切回并保留数据，需维护者修复/发布兼容版。不要沿用旧文档中仅按浏览器隔离判断兼容性的回滚步骤。
 

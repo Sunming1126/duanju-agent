@@ -1,5 +1,12 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 补齐 Google Web Client 配置
+
+- 用户按配置步骤提供 Google Web Client ID，沿用“完成后自动部署”的授权，只更新私有`PLOTLOOM_GOOGLE_CLIENT_ID`。本机`.env`和线上`shared/login.env`均0600，SMTP及其他字段逐项保持。不改业务源码，不重新构建前端，不切换release，运行源码仍为`35d89432ccb5596c086c0bfbeea9cd52120799d0`。
+- 变更前队列空闲，备份私有配置`/opt/plotloom-cn/backups/login-env-google-20261030T063655Z`及SQLite`/opt/plotloom-cn/backups/studio-google-config-20261030T063655Z.sqlite3`，均0600；仅重启`plotloom-cn-api`（PID1681329→1693314），worker1681330/web1681331/旧站1948834与全部PM2进程PID及状态保持。模型指纹保持，六表原data逐条一致（18作品/15世界/44任务/0候选/15灵感会话/28灵感任务），SQLite quick_check正常。
+- 回环及公网配置接口返回用户给定的Client ID，email_enabled仍true，首页200，配置接口no-store。报告`/opt/plotloom-cn/backups/google-login-config-20261030T063655Z.json`为ok。Google登录按钮现可加载真实网页Client，**未操作实际Google账号授权弹窗，未验证控制台来源白名单或宣称完整登录已人工验收**；用户需刷新网页点击Google登录确认。没有发邮件/模型请求或启动本机服务/浏览器。
+- 配置回滚只恢复上述私有配置备份并重启中文版API；保持现有账号兼容程序和shared/data，不回退无账号release或覆盖SQLite。
+
 ## 2026-10-30 首页账号登录与 ChatChat SMTP 复用上线
 
 - **运行源码：`35d89432ccb5596c086c0bfbeea9cd52120799d0`**，已推送GitHub，包含c1e9ec7首页登录、5be5ac6私有配置加载及35d8943发布检查目录修正。首页右上角提供邮箱验证码/Google入口、账号信息与退出；邮箱验证码实际启用，首次验证自动建号并领取当前访客空间，同账号跨浏览器访问原作品。访客功能继续保留。**Google Web Client 尚未配置，入口明确显示暂未配置，未宣称 Google 真实授权已通过。**
