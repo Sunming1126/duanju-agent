@@ -1,5 +1,13 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 我的空间完整账号设置页上线
+
+- 运行源码`0857f883dee9a480410fc632072f4a2e79b4d08c`已同步GitHub；完整/account页面、昵称／头像保存、登录后隐藏页头账号按钮及会员积分未开放预留已上线。
+- release：`/opt/plotloom-cn/releases/20261030T131801Z-inspiration-0857f883`；previous：`20261030T122020Z-inspiration-2c054109`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261030T131801Z-inspiration.sqlite3`（0600）。包SHA256 `6fe242f14cc9bbad894c53681b1a737c27cb9ced78489b3e77acb564cf831da4`；runner SHA256 `c0433e2b8a0fdf18fd5cbc34d16d618a84e35d8c36cad072ece5c43180ed1f52`，上传后双核验。
+- 专用Python安装Pillow12.3.0；首轮因包文件权限导致服务用户无法读取，在停服前退出，线上未改。修正仅新增依赖目录的标准读取权限并验证WebP后重跑，64项后端、56项前端、lint／类型及webpack构建通过，空闲队列、SQLite备份、原子切换和常规发布检查通过，DEPLOYMENT_OK无回滚。日志`/tmp/plotloom-account-publish-retry.log`；安装前清单`backups/python-before-account-avatar.txt`。
+- 只读补验`backups/account-page-live-report.json`为ok：/account与脚本资源匹配当前release，匿名头像与作品401，数据库正常，六表及账号全行保持18/15/44/0/15/28/2，正式并发5/10不变。中文三服务active、旧站PID1948834不变，日文200。隔离发布测试显式并发3，未写正式配置。
+- 零模型／邮件请求，未修改用户资料／作品、Nginx或systemd，未启动本机应用／浏览器；HTTP资源核验不等于实际视觉与账号交互验收。回滚只切回上述账号兼容2c054109并保留shared/data，不能恢复旧库覆盖用户新数据；回滚会隐藏头像和新个人中心但保留新增头像表。
+
 ## 2026-10-30 切换创作页签保持页面位置修复发布
 
 - 用户明确要求修复并部署；运行源码`2c054109897c94807429b40647a0a32d4acfb5ef`已同步GitHub。正式ProjectToolbar切换五页签不再调用revealWritingStage，键盘focus使用preventScroll，避免将顶部小说/剧本名称滚到页头后面。两类新建/已有作品共用；底部继续/保存下一步的定位功能保持。
