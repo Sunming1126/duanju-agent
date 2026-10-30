@@ -1,5 +1,14 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 创作导航顶部间隙修复发布
+
+- 用户明确授权部署，start成功同步，运行源码`04b953cfcfcce69448c00b0e6fe188d54bcc0fb3`；相对线上5336738仅导航两份局部CSS及文档变更。移除导航顶部留白，页签及操作顶部对齐，桌面吸顶贴合80px页头，手机仍68px。
+- release：`/opt/plotloom-cn/releases/20261030T115911Z-inspiration-04b953cf`；previous：`20261030T071357Z-inspiration-5336738e`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261030T115911Z-inspiration.sqlite3`（0600）。源码包SHA-256 `68b01852ea9ca227d853b58601a4d66a53452505bd149b0b74af296ac8617c50`；原runner SHA-256 `74c1646bc49f3ba7eec4629b57f94431acd0105077128d774c086ab03af09dc9`，上传后双核验。
+- 本机82项前端、lint及类型检查通过；服务器49项账号/隔离/调度/传输、43项前端、lint/类型及webpack构建通过。首轮因生成队列忙在停服前停止；任务自然完成后重跑，另一任务同期把私有并发配置调整到5、10，固定3路的旧测试失败，线上仍未切换。最终仅给发布隔离进程显式PLOTLOOM_MAX_CONCURRENT=3完成原测试，正式systemd服务读取原私有配置，不覆盖配置、不重发生成任务。
+- 最终队列空闲、SQLite备份、原子切换及源码/数据/页面/样例/下载/管理边界检查通过，输出DEPLOYMENT_OK，无回滚。日志`/tmp/plotloom-nav-publish-final.log`；首轮与中间失败日志分别为`/tmp/plotloom-nav-publish.log`、`/tmp/plotloom-nav-publish-retry.log`。
+- 额外只读报告服务器`/tmp/plotloom-nav-live-report.json`为ok：两类公网新建页加载80px偏移、零顶部外边距/内边距及顶部对齐样式；SQLite正常，六表原data及账号全行与备份完全一致（作品18/世界15/任务44/候选0/灵感会话15/灵感任务28/账号2）。模型及恢复码指纹保持；登录私有文件被同期并发任务调整，本轮未写入，不声称其指纹未变。
+- 中文api/web/worker active（1924778/1924780/1924779），旧站PID1948834不变，日文站200；零模型调用、未改Nginx/systemd或用户原稿，未启动本机服务/浏览器。HTTP资源核验不代表人工视觉验收。回滚仅切回上述账号兼容5336738e并保留shared/data及现有私有配置，不恢复旧数据库。
+
 ## 2026-10-30 可配置调度、限流冷却与HTTP连接池发布
 
 - **运行源码：`5336738e027af774ee6bbaffcf69fcaef3a13c52`**，已推送GitHub。并发/队列/空间排队份额可配置，工作/灵感共用事务内分钟预算，429识别与上游Retry-After/周期额度冷却，普通/SSE共用工作者连接池。保留公平逐步调度、章节顺序、失败主动继续，模型参数与供应商入口保持。**生产仍3执行/10排队/每空间10排队，分钟预算未额外启用；未按短请求50路测试扩量。**
