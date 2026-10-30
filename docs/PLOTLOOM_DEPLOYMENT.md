@@ -1,5 +1,12 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 正文并发提高至5路并完成真实测试
+
+- 用户明确授权调高并测试，仅改私有并发配置3→5→10→5，当前公网5执行/10排队。5路两轮10/10通过，10路9/10完成、一条输出未正常结束，无失败重试；共20次真实2000字目标正文生成，19次完成。详情见 `PLOTLOOM_LONG_CONCURRENCY.md`。
+- 空闲后只重启中文API/worker；本任务不切换release。同期导航修复由独立发布完成，最终运行源码04b953cfcfcce69448c00b0e6fe188d54bcc0fb3，已在该版本完成5路复测。最终中文API/worker/web PID1926198/1926197/1924780 active，旧站1948834保持，中日站200。
+- 私有配置备份login-env-long-concurrency-20261030T115636Z、SQLite备份studio-long-concurrency-20261030T115636Z.sqlite3位于 `/opt/plotloom-cn/backups`，均0600。最终long-concurrency-final-report.json为ok：原六表data逐条一致（18/15/44/0/15/28）、SQLite正常、QA作品/任务清理、其他登录配置及模型保持。回退仅降低当前并发项，不恢复旧库或覆盖其他设置。
+
+
 ## 2026-10-30 创作导航顶部间隙修复发布
 
 - 用户明确授权部署，start成功同步，运行源码`04b953cfcfcce69448c00b0e6fe188d54bcc0fb3`；相对线上5336738仅导航两份局部CSS及文档变更。移除导航顶部留白，页签及操作顶部对齐，桌面吸顶贴合80px页头，手机仍68px。
