@@ -18,6 +18,7 @@ case "$old" in "$base"/releases/*) ;; *) echo 'Unexpected current target; inspec
 test -d "$old" && test -d "$base/shared/data"
 python="$base/venv/bin/python"
 test -x "$python" && test -x "$base/runtime/bin/node"
+"$python" -c 'from google.oauth2 import id_token; from google.auth.transport.requests import Request' || { echo 'Install the reviewed requirements in the dedicated Plotloom environment before publishing account login.' >&2; exit 1; }
 export PATH="$base/runtime/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 build_backend=http://127.0.0.1:8766
 if [[ "${PLOTLOOM_REVIEW_ONLY:-0}" == 1 && -n "${PLOTLOOM_REVIEW_BACKEND_URL:-}" ]]; then
@@ -60,6 +61,15 @@ sys.exit(1)
 PY
 }
 
+account_data_exists() {
+    "$python" - "$db" <<'PY'
+import sqlite3, sys
+with sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True) as db:
+    exists = db.execute("SELECT 1 FROM sqlite_master WHERE name='studio_accounts'").fetchone()
+    sys.exit(0 if exists and db.execute('SELECT 1 FROM studio_accounts LIMIT 1').fetchone() else 1)
+PY
+}
+
 rollback() {
     status=$?
     trap - ERR
@@ -68,6 +78,10 @@ rollback() {
     if [[ "$downtime" == 1 ]]; then
         if [[ "$switched" == 1 ]]; then
             systemctl stop "${services[@]}"
+            if [[ ! -f "$old/agent/studio_auth.py" ]] && account_data_exists; then
+                echo 'Account data exists. Refusing rollback to a program without account login; shared data and the new release are retained for operator repair.' >&2
+                exit "$status"
+            fi
             if [[ ! -f "$old/agent/studio_identity.py" ]] && private_data_exists; then
                 echo 'Private records exist. Refusing to restore a pre-isolation program; services remain stopped for an operator fix. Shared data and new release are retained.' >&2
                 exit "$status"

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, LoaderCircle, PencilLine, Sparkles } from "lucide-react";
 import { Modal } from "@/components/sites/storyplay/shared";
-import { backendRequest as api, jsonBody, type ContentType, type WorkInput } from "@/lib/studio/api";
+import { backendRequest as api, jsonBody, scopedDraftKey, readScopedDraft, type ContentType, type WorkInput } from "@/lib/studio/api";
 import { showInspirationAnalysis, showPreviousInspirationAnalysis, type InspirationPlan, type InspirationSession } from "@/lib/studio/inspiration";
 
 const pending = (session?: InspirationSession) => !!session && ["queued", "running"].includes(session.job.status);
@@ -29,7 +29,8 @@ export function Inspiration({ type, initialPrompt, onApply, onClose }: {
   const lock = useRef(false);
   const flowRef = useRef<HTMLDivElement>(null);
   const analysisRef = useRef<HTMLElement>(null);
-  const storageKey = `plotloom-inspiration-${type}`;
+  const baseStorageKey = `plotloom-inspiration-${type}`;
+  const storageKey = scopedDraftKey(baseStorageKey);
   const inputKey = `${storageKey}-input`;
   const label = type === "novel" ? "小说" : "剧本";
 
@@ -43,7 +44,7 @@ export function Inspiration({ type, initialPrompt, onApply, onClose }: {
     const controller = new AbortController();
     void (async () => {
       try {
-        const raw = localStorage.getItem(inputKey);
+        const raw = localStorage.getItem(inputKey) ?? readScopedDraft(`${baseStorageKey}-input`);
         if (raw) {
           const saved = JSON.parse(raw);
           if (typeof saved.prompt === "string") setPrompt(saved.prompt);
@@ -53,7 +54,7 @@ export function Inspiration({ type, initialPrompt, onApply, onClose }: {
           if (typeof saved.styles === "string") setStyles(saved.styles);
           if (saved.request?.key && typeof saved.request.signature === "string") request.current = saved.request;
         }
-        const ident = localStorage.getItem(storageKey);
+        const ident = localStorage.getItem(storageKey) ?? readScopedDraft(baseStorageKey);
         if (ident) {
           const value = await api<InspirationSession>(`/studio/inspirations/${encodeURIComponent(ident)}`, { signal: controller.signal });
           if (!disposed && value.input.content_type === type) remember(value);
@@ -63,7 +64,7 @@ export function Inspiration({ type, initialPrompt, onApply, onClose }: {
       } finally { if (!disposed) setRestoring(false); }
     })();
     return () => { disposed = true; controller.abort(); };
-  }, [storageKey, inputKey, type, remember]);
+  }, [storageKey, baseStorageKey, inputKey, type, remember]);
 
   useEffect(() => {
     if (restoring) return;

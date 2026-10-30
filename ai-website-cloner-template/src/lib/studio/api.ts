@@ -102,10 +102,30 @@ export type WorldPackage = {
   checksum: string;
 };
 
-export type StudioSpace = { space_id: string; isolated: boolean; legacy_access: boolean };
+export type StudioUser = { id: string; email: string; name: string };
+export type StudioSpace = { space_id: string; isolated: boolean; legacy_access: boolean; user?: StudioUser | null };
 let spaceRequest: Promise<StudioSpace> | undefined;
 let spaceId: string | undefined;
+let signedIn = false;
 export function currentSpaceId() { return spaceId; }
+export function scopedDraftKey(key: string) { return `${key}:space:${spaceId || "pending"}`; }
+export function readScopedDraft(key: string) {
+  const scopedKey = scopedDraftKey(key);
+  const scoped = localStorage.getItem(scopedKey);
+  if (scoped !== null || !spaceId || signedIn) return scoped;
+  if (localStorage.getItem(`${scopedKey}:legacy-migrated`)) return null;
+  // Attribute old anonymous drafts to one browser space, never every new guest.
+  const marker = "plotloom-legacy-drafts-space";
+  let legacyOwner = localStorage.getItem(marker);
+  if (!legacyOwner) { legacyOwner = spaceId; localStorage.setItem(marker, legacyOwner); }
+  if (legacyOwner !== spaceId) return null;
+  const old = localStorage.getItem(key);
+  if (old !== null) {
+    localStorage.setItem(scopedKey, old);
+    localStorage.setItem(`${scopedKey}:legacy-migrated`, "1");
+  }
+  return old;
+}
 export function ensureStudioSpace(): Promise<StudioSpace> {
   if (!spaceRequest) {
     const establish = () => fetch("/api/backend/studio/session", {
@@ -115,6 +135,7 @@ export function ensureStudioSpace(): Promise<StudioSpace> {
       const value = await response.json() as StudioSpace;
       if (!value.space_id || !value.isolated) throw new Error("创作空间验证失败，请刷新页面重试。");
       spaceId = value.space_id;
+      signedIn = !!value.user;
       return value;
     });
     // Coordinate first visits in multiple tabs before either tab sends writes.
@@ -142,6 +163,7 @@ export async function backendRequest<T>(
       headers: {
         "Content-Type": "application/json",
         "X-Duanju-Site": "china",
+        ...(spaceId ? { "X-Plotloom-Space": spaceId } : {}),
         ...init.headers,
       },
     });

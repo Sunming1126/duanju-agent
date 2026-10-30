@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, type ReactNode } from "react";
 import { ArrowLeft, X } from "lucide-react";
+
+const AccountMenu = dynamic(() => import("@/components/studio/account-menu").then(module => module.AccountMenu), { ssr: false });
 
 export function Logo() {
   return <Link href="/" className="brand" aria-label="Plotloom 首页"><span className="brand-wordmark">Plotloom</span></Link>;
@@ -17,6 +20,7 @@ export function Header({ workspace = false }: { workspace?: boolean }) {
         <Link href="/tutorial" className="text-link">教程说明</Link>
         <Link className="pill light" href="/workspace">创作工作台</Link>
       </>}
+      <AccountMenu />
     </nav>
   </div></header>;
 }

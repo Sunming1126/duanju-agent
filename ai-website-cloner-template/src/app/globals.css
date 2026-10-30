@@ -2271,4 +2271,9 @@ img {
   .inspiration-analysis dl>div { grid-template-columns: 60px minmax(0,1fr); gap: 10px; }
 }
 @media(prefers-reduced-motion:reduce) { .inspiration-spinner { animation: none; } }
+@media(max-width:600px) {
+  .site-header .header-inner { margin-left: 12px; margin-right: 12px; gap: 8px; }
+  .site-header nav { gap: 8px; }
+  .site-header .pill { padding-left: 10px; padding-right: 10px; }
+}
 @media(max-width:420px) { .site-header .header-samples-link { display: none; } }

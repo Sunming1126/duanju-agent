@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 actor = ContextVar("studio_owner", default=None)
 COOKIE = "plotloom_space"
+AUTH_COOKIE = "plotloom_account"
 LEGACY = "legacy"
 
 
@@ -65,6 +66,11 @@ class SpaceStore:
             return None
         with self.store.transaction() as db:
             self.schema(db)
+            # Once claimed by an account, the old guest token must lose access.
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='studio_accounts'").fetchone():
+                linked = db.execute("SELECT 1 FROM studio_accounts a JOIN studio_spaces s ON a.space_id=s.id WHERE s.token_hash=?", (hashlib.sha256(token.encode()).hexdigest(),)).fetchone()
+                if linked:
+                    return None
             row = db.execute("SELECT id, legacy_access FROM studio_spaces WHERE token_hash=?", (hashlib.sha256(token.encode()).hexdigest(),)).fetchone()
             return dict(row) if row else None
 
@@ -126,13 +132,18 @@ def service():
 
 def session(request: Request, response: Response):
     spaces = service()
-    identity = spaces.resolve(request.cookies.get(COOKIE))
+    identity = request_identity(request)
     if not identity:
         identity, token = spaces.create()
         secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto", "").split(",")[0].strip() == "https"
         response.set_cookie(COOKIE, token, max_age=31536000, httponly=True, secure=secure, samesite="lax", path="/")
     response.headers["Cache-Control"] = "no-store, private"
-    return {"space_id": identity["id"], "isolated": True, "legacy_access": bool(identity["legacy_access"])}
+    return {"space_id": identity["id"], "isolated": True, "legacy_access": bool(identity["legacy_access"]), "user": identity.get("user")}
+
+
+def request_identity(request):
+    from .studio_auth import auth_service
+    return auth_service().resolve(request.cookies.get(AUTH_COOKIE)) or service().resolve(request.cookies.get(COOKIE))
 
 
 async def require_identity(request: Request):
@@ -155,9 +166,12 @@ async def require_identity(request: Request):
             raise HTTPException(403, "请在本网站内操作创作空间") from None
         if request.headers.get("sec-fetch-site") == "cross-site" or (origin and origin_host not in hosts):
             raise HTTPException(403, "请在本网站内操作创作空间")
-    identity = service().resolve(request.cookies.get(COOKIE))
+    identity = request_identity(request)
     if not identity:
         raise HTTPException(401, "独立创作空间尚未建立或已失效，请刷新页面")
+    expected_space = request.headers.get("x-plotloom-space")
+    if expected_space and expected_space != identity["id"]:
+        raise HTTPException(409, "登录账号或空间已在其他页面切换，请先备份未保存内容并刷新页面")
     token = actor.set(identity["id"])
     try:
         yield

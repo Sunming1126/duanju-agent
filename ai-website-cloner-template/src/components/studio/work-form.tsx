@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, Sparkles } from "lucide-react";
-import { jsonBody, downloadText, type ContentType, type Reference, type Section, type Work, type World, type WorkInput } from "@/lib/studio/api";
+import { ensureStudioSpace, scopedDraftKey, readScopedDraft, jsonBody, downloadText, type ContentType, type Reference, type Section, type Work, type World, type WorkInput } from "@/lib/studio/api";
 import { createWorkForStep } from "@/lib/studio/creation";
 import { applyInspiration, creationPayload, initialCreationDraft, type CreationDraft } from "@/lib/studio/inspiration";
 import { Inspiration } from "./inspiration";
@@ -39,6 +39,8 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [scope, setScope] = useState("");
+  useEffect(() => { void ensureStudioSpace().then(value => setScope(value.space_id)).catch(cause => setError(cause.message)); }, []);
   const [cacheError, setCacheError] = useState(false);
   const [otherTypeDraft, setOtherTypeDraft] = useState("");
   const lock = useRef(false);
@@ -46,19 +48,22 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   const snapshotRef = useRef(draft);
   const restoredKey = useRef("");
   const draftSourceId = sampleId ? `official-${sampleId}` : reference?.id;
-  const storageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}`;
+  const baseStorageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}`;
+  const storageKey = `${baseStorageKey}:space:${scope}`;
 
   useEffect(() => {
+    if (!scope) return;
     let disposed = false;
     void Promise.resolve().then(() => {
       if (disposed) return;
       try {
-        const sourceKey = creationDraftKeys(initialType, mode, draftSourceId).find(key => localStorage.getItem(key)) || storageKey;
-        const raw = localStorage.getItem(sourceKey);
+        readScopedDraft(baseStorageKey);
+        const sourceKey = creationDraftKeys(initialType, mode, draftSourceId).find(key => readScopedDraft(key)) || baseStorageKey;
+        const raw = readScopedDraft(sourceKey);
         if (raw) {
           const cached = JSON.parse(raw) as CreationDraft;
           if (cached.content_type === initialType && typeof cached.premise === "string" && typeof cached.title === "string") {
-            restoredKey.current = sourceKey;
+            restoredKey.current = scopedDraftKey(sourceKey);
             setDraft({ ...initialCreationDraft(initialType, reference), ...cached });
           } else if (["novel", "short_drama"].includes(cached.content_type)) {
             localStorage.setItem(`${storageKey}-other-type`, raw); setOtherTypeDraft(raw);
@@ -67,13 +72,13 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
         }
         const otherDraft = localStorage.getItem(`${storageKey}-other-type`);
         if (otherDraft) setOtherTypeDraft(otherDraft);
-        const savedBackup = localStorage.getItem(`${storageKey}-before-inspiration`) || localStorage.getItem(`${sourceKey}-before-inspiration`);
+        const savedBackup = localStorage.getItem(`${storageKey}-before-inspiration`) || readScopedDraft(`${sourceKey}-before-inspiration`);
         if (savedBackup) { const parsed = JSON.parse(savedBackup); if (parsed.content_type === initialType) setBackup(parsed); }
       } catch { setNotice("浏览器草稿无法读取，请手动填写并及时保存。"); }
       setReady(true);
     });
     return () => { disposed = true; };
-  }, [storageKey, initialType, reference, mode, draftSourceId]);
+  }, [storageKey, baseStorageKey, scope, initialType, reference, mode, draftSourceId]);
 
   useEffect(() => {
     snapshotRef.current = draft;

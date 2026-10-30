@@ -26,7 +26,7 @@ $checkPython = Join-Path $projectRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $checkPython)) { throw "Project virtual environment is missing: $checkPython" }
 $stamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
 $testDirectory = "data/deploy-checks-$stamp-$($sourceCommit.Substring(0, 8))"
-Invoke-Checked -Program $checkPython -Arguments @("-m", "pytest", "-q", "tests/test_studio_isolation.py", "tests/test_studio_concurrency.py", "tests/test_writing_modes.py", "tests/test_novel_backend.py", "tests/test_inspiration.py", "tests/test_plotloom_mvp.py", "tests/test_studio.py", "tests/test_library.py", "test_market_features.py", "test_trilang_samples.py", "test_japan_adaptation.py", "--basetemp", $testDirectory, "-p", "no:cacheprovider")
+Invoke-Checked -Program $checkPython -Arguments @("-m", "pytest", "-q", "tests/test_studio_auth.py", "tests/test_studio_isolation.py", "tests/test_studio_concurrency.py", "tests/test_writing_modes.py", "tests/test_novel_backend.py", "tests/test_inspiration.py", "tests/test_plotloom_mvp.py", "tests/test_studio.py", "tests/test_library.py", "test_market_features.py", "test_trilang_samples.py", "test_japan_adaptation.py", "--basetemp", $testDirectory, "-p", "no:cacheprovider")
 
 Push-Location -LiteralPath (Join-Path $projectRoot "ai-website-cloner-template")
 try {

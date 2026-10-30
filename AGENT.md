@@ -534,3 +534,13 @@
 - 发布前156项后端／市场、80项前端、lint／类型通过；上传完成后源码包及原runner双SHA-256匹配，独立服务器隔离检查、lint、43项相关前端及webpack生产构建通过。队列空闲、SQLite备份、原子切换及源码／数据／页面／样例／下载／权限边界核验通过，runner输出DEPLOYMENT_OK，无回滚。零模型请求，未启动浏览器／本机应用。
 - 正式运行58dbd41f00a5cd315108345c12ea44e0b2486196，release`/opt/plotloom-cn/releases/20261029T155425Z-inspiration-58dbd41f`，上版`20261029T125728Z-inspiration-5a0b84fa`；SQLite备份`studio-20261029T155425Z-inspiration.sqlite3`权限0600。日志`/tmp/plotloom-outline-phases-58dbd41-publish.log`；包哈希、回滚及完整记录见PLOTLOOM_DEPLOYMENT.md。
 - 公网额外只读报告ok：两类新建页及14份JS／CSS与本release哈希一致，阶段导航代码与样式已移除。数据库quick_check及六表原data逐条比对保持：作品18、世界15、任务44、候选0、灵感会话15、灵感任务28。中文三服务active、旧PID1948834不变、日文200、模型配置指纹和0600权限保持；未改用户原稿、Nginx、systemd、恢复码或其他服务。更新本地说明及交接当前运行状态；人工浏览器视觉／点击尚未验收，不声称真实整部生成或文学质量通过。
+
+### 2026-10-30：首页邮箱验证码与 Google 登录
+
+- 用户要求复用 ChatChat 登录到本站，仅邮箱验证码及 Google。完整读取协作规则并成功 start 从 e8e9ce1 快进至 14bd513；读取前端子目录规则及安装版本 Next 客户端文档。参考 ChatChat 的 OTP 与 Firebase 服务端身份验证原则，针对 Python/Next 实现独立账号，不改 ChatChat，不复制其 SMTP 密码、用户库、会话或 Firebase 私钥。
+- 共用页头右上角加入登录/账号弹窗，首页可用；邮箱六位码验证后自动建号，Google 网页使用 GIS 弹窗和官方 google-auth 校验签名、issuer、audience、有效期、已验证邮箱、稳定 sub 与空间绑定一次性 nonce。非 Gmail/Workspace 的已有邮箱须先 OTP 登录再关联 Google，禁止通过 email/googleId 直接登录。缺少服务配置明确提示未配置，邮件验证码无前端/日志调试输出，不发送真实邮件或复制密钥。
+- SQLite 增量账号、会话、OTP/限流/nonce 表；首次账号领取原访客空间，作品/世界/候选/任务归属与内容保持，旧访客凭证摘要立即作废；已有账号跨浏览器回到原空间，不自动合并访客作品。会话随机 HttpOnly/SameSite=Lax/HTTPS Secure，30天，仅摘要入库；退出仅撤销当前会话，未领取的访客空间保留，否则新建访客。保留访客创作能力，未新增强制登录门禁。
+- OTP HMAC摘要、10分钟有效/一次使用/5次错误/60秒重发及邮箱、IP、空间日限额；SMTP强制TLS或STARTTLS，传输不确定不重发。所有auth写入沿用同源和身份校验，旧标签请求显式绑定原空间，账号切换409阻止误存。新建及灵感本地草稿按空间命名；旧匿名草稿仅归属一个访客空间且迁移标记防止保存后旧稿重新出现，原始本地键仍保留。
+- 新增google-auth[requests]依赖及docs/PLOTLOOM_LOGIN.md配置/复用/数据/验证说明；本地发布清单加入auth检查，发布器停服前检查Google依赖，存在账号后禁止自动回滚到无账号程序。仅更新发布准备代码，没有执行安装线上依赖、服务重启或部署。
+- 验证：Python3.12临时环境176项完整后端/市场回归、82项前端检查通过，包含21项账号/原隔离组合回归及新增草稿/旧标签保护；ESLint、TypeScript、webpack生产构建及Bash语法通过。测试仅用临时SQLite和模拟邮件/Google，官方库校验委托另有测试，不把模拟结果当真实登录验收。系统旧Python3.9不支持项目既有联合类型，改用临时3.12；首次受限下载失败后通过正常授权安装临时依赖，未改全局环境。
+- 未启动应用/服务器/浏览器/模拟器/设备，未发真实验证码或Google授权请求，未触碰线上数据；真实SMTP与Google Web Client仍需维护者私有配置后自行启动验收，视觉/窄屏/点击尚未人工验收。结束按finish显式提交本次文件并推送，具体提交及远端一致性以交付为准。

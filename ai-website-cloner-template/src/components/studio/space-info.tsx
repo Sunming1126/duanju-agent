@@ -21,9 +21,9 @@ export function SpaceInfo({ onClose }: { onClose: () => void }) {
     return () => controller.abort();
   }, []);
   return <Modal title="我的空间" onClose={() => { if (!lock.current) onClose(); }}>
-    <p className="modal-description">本浏览器拥有独立的作品、世界和生成任务，其他浏览器无法查看或修改。官方样例与语料参考仍可公开使用。</p>
+    <p className="modal-description">{space?.user ? `当前已登录 ${space.user.email}，作品、世界和生成任务归属于此账号，其他浏览器登录后可继续访问。` : "本浏览器拥有独立的作品、世界和生成任务。可通过首页右上角登录，将此空间关联新账号。"}官方样例与语料参考仍可公开使用。</p>
     {space && <p className="studio-hint">空间编号：{space.space_id}</p>}
-    <p className="modal-description">再次使用此浏览器即可继续创作。更换浏览器或清理网站数据前，请先下载作品备份。</p>
+    <p className="modal-description">{space?.user ? "退出登录会进入新的访客空间，不会删除账号中的作品。建议定期下载作品备份。" : "再次使用此浏览器即可继续创作。更换浏览器或清理网站数据前，请先下载作品备份。"}</p>
     <section className="space-model-info" aria-labelledby="space-model-heading">
       <h3 id="space-model-heading">模型信息</h3>
       {status ? <dl><div><dt>当前模型</dt><dd>{status.model || "未配置"}</dd></div><div><dt>服务状态</dt><dd>{status.llm_ready ? "服务端已配置" : "服务端尚未配置"}</dd></div></dl> : modelError ? <p className="studio-error" role="alert">模型信息读取失败：{modelError}</p> : <p className="studio-hint" role="status">正在读取模型信息…</p>}

@@ -28,6 +28,8 @@ router = APIRouter(prefix="/api/studio", dependencies=[Depends(require_chinese_s
 # The child router uses the parent market boundary in both application entries.
 from .studio_inspiration import create_router as inspiration_router
 router.include_router(inspiration_router())
+from .studio_auth import create_router as auth_router
+router.include_router(auth_router())
 
 
 class WorldInput(BaseModel):

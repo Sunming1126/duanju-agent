@@ -74,3 +74,46 @@ test("expired identity does not retry a mutation and hides the previous workspac
     assert.equal(library.librarySnapshot(), undefined);
   } finally { globalThis.fetch = original; }
 });
+
+test("mutations carry the original space so a stale tab cannot write into a different account", async () => {
+  const api = load("api");
+  const original = globalThis.fetch;
+  const calls = [];
+  try {
+    globalThis.fetch = async (path, init) => {
+      calls.push({ path, init });
+      return path.endsWith("/session") ? json({ space_id: "account-a", isolated: true }) : json({ detail: "账号已切换，请刷新" }, 409);
+    };
+    await assert.rejects(api.backendRequest("/studio/works", { method: "POST", body: "{}" }), /账号已切换/);
+    assert.equal(calls[1].init.headers["X-Plotloom-Space"], "account-a");
+    assert.equal(calls.length, 2);
+    assert.equal(api.currentSpaceId(), "account-a");
+  } finally { globalThis.fetch = original; }
+});
+
+test("drafts are scoped to one space and legacy recovery cannot leak into a new guest or account", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalStorage = globalThis.localStorage;
+  const values = new Map([["plotloom-new-novel", "private legacy draft"]]);
+  globalThis.localStorage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  async function space(id, user) {
+    const api = load("api");
+    globalThis.fetch = async () => json({ space_id: id, isolated: true, user });
+    await api.ensureStudioSpace();
+    return api;
+  }
+  try {
+    const guest = await space("guest-a", null);
+    assert.equal(guest.readScopedDraft("plotloom-new-novel"), "private legacy draft");
+    const other = await space("guest-b", null);
+    assert.equal(other.readScopedDraft("plotloom-new-novel"), null);
+    assert.notEqual(other.scopedDraftKey("plotloom-new-novel"), guest.scopedDraftKey("plotloom-new-novel"));
+    const account = await space("account-b", { id: "b" });
+    assert.equal(account.readScopedDraft("plotloom-new-novel"), null);
+    const claimed = await space("guest-a", { id: "a" });
+    assert.equal(claimed.readScopedDraft("plotloom-new-novel"), "private legacy draft");
+    values.delete(guest.scopedDraftKey("plotloom-new-novel"));
+    assert.equal(guest.readScopedDraft("plotloom-new-novel"), null);
+    assert.equal(values.get("plotloom-new-novel"), "private legacy draft");
+  } finally { globalThis.fetch = originalFetch; globalThis.localStorage = originalStorage; }
+});
