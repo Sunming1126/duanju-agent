@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { LogIn, LogOut, Mail, UserRound } from "lucide-react";
+import { LogIn, Mail } from "lucide-react";
 import { Modal } from "@/components/sites/storyplay/shared";
 import { backendRequest as api, ensureStudioSpace, jsonBody, type StudioSpace } from "@/lib/studio/api";
 import styles from "./account.module.css";
@@ -18,29 +18,29 @@ function googleId() { return (window as Window & { google?: { accounts: { id: Go
 export function AccountMenu() {
   const [space, setSpace] = useState<StudioSpace>();
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const lock = useRef(false);
-  useEffect(() => { void ensureStudioSpace().then(setSpace).catch(() => { /* The login dialog offers an explicit retry. */ }); }, []);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { void ensureStudioSpace().then(setSpace).catch(() => setFailed(true)); }, []);
+  if (space?.user || (!space && !failed)) return null;
   return <>
-    <button className={`pill light ${styles.trigger}`} onClick={() => { setError(""); setOpen(true); }} aria-label={space?.user ? "账号信息" : "登录"}>
-      {space?.user ? <UserRound size={15} /> : <LogIn size={15} />}<span>{space?.user ? space.user.name : "登录"}</span>
+    <button className={`pill light ${styles.trigger}`} onClick={() => {
+      const inline = document.getElementById("account-login");
+      if (inline) { inline.scrollIntoView({ block: "start" }); inline.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true }); }
+      else setOpen(true);
+    }} aria-label="登录">
+      <LogIn size={15} /><span>登录</span>
     </button>
-    {open && (space?.user ? <Modal title="我的账号" onClose={() => { if (!lock.current) setOpen(false); }}>
-      <div className={styles.account}><UserRound size={30} /><strong>{space.user.name}</strong><span>{space.user.email}</span></div>
-      <p className="modal-description">作品与世界已关联此账号，在其他浏览器登录也可继续创作。</p>
-      <button className={`pill light ${styles.full}`} disabled={busy} onClick={async () => {
-        if (lock.current) return;
-        lock.current = true; setBusy(true); setError("");
-        try { await api("/studio/auth/logout", { method: "POST", body: "{}" }); googleId()?.disableAutoSelect(); window.location.reload(); }
-        catch (cause) { setError(cause instanceof Error ? cause.message : "退出失败，请重试"); lock.current = false; setBusy(false); }
-      }}><LogOut size={15} />{busy ? "正在退出…" : "退出登录"}</button>
-      {error && <p className={styles.error} role="alert">{error}</p>}
-    </Modal> : <LoginDialog onClose={() => setOpen(false)} />)}
+    {open && <LoginDialog onClose={() => setOpen(false)} />}
   </>;
 }
 
 export function LoginDialog({ onClose }: { onClose: () => void }) {
+  const lock = useRef(false);
+  return <Modal title="登录 Plotloom" onClose={() => { if (!lock.current) onClose(); }}><LoginForm onBusyChange={value => { lock.current = value; }} /></Modal>;
+}
+
+export function disableGoogleAutoSelect() { googleId()?.disableAutoSelect(); }
+
+export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) {
   const [config, setConfig] = useState<AuthConfig>();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -54,6 +54,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
   const googleButton = useRef<HTMLDivElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const mounted = useRef(true);
+  useEffect(() => { onBusyChange?.(!!busy); }, [busy, onBusyChange]);
   useEffect(() => {
     mounted.current = true;
     void api<AuthConfig>("/studio/auth/config").then(value => { if (mounted.current) setConfig(value); }).catch(cause => { if (mounted.current) setError(cause.message); });
@@ -79,7 +80,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
           lock.current = false;
         });
       } });
-      google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", width: 280 });
+      google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", width: Math.max(200, Math.min(280, googleButton.current.clientWidth)) });
     }).catch(cause => { if (!disposed) setGoogleError(cause.message); });
     return () => { disposed = true; };
   }, [config, googleReady]);
@@ -93,7 +94,7 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
     } catch (cause) { setError(cause instanceof Error ? cause.message : "发送失败，请稍后重试"); }
     finally { lock.current = false; setBusy(null); }
   }
-  return <Modal title="登录 Plotloom" onClose={() => { if (!lock.current) onClose(); }}>
+  return <div className={styles.loginForm}>
     <div className={styles.intro}><span><Mail size={19} /></span><p>登录后，在不同设备上继续你的故事。</p></div>
     <form className={styles.form} onSubmit={async event => {
       event.preventDefault(); if (lock.current) return;
@@ -119,5 +120,5 @@ export function LoginDialog({ onClose }: { onClose: () => void }) {
     </> : <button className={`outline-button ${styles.full}`} disabled>使用 Google 登录{config ? "（暂未配置）" : "（加载中）"}</button>}
     {googleError && <p className={styles.error} role="alert">{googleError}</p>}
     <p className={styles.footnote}>首次登录将自动创建账号，并关联当前浏览器空间的作品。已有账号登录后进入其原有空间，访客作品不会自动合并；请先导出备份。</p>
-  </Modal>;
+  </div>;
 }

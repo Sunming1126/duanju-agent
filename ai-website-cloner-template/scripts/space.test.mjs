@@ -91,6 +91,23 @@ test("mutations carry the original space so a stale tab cannot write into a diff
   } finally { globalThis.fetch = original; }
 });
 
+test("profile updates refresh the shared user snapshot without switching spaces or draft ownership", async () => {
+  const api = load("api");
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => json({ space_id: "account-a", isolated: true, user: { id: "a", name: "旧笔名" } });
+    await api.ensureStudioSpace();
+    const draft = api.scopedDraftKey("novel");
+    const updated = { id: "a", name: "新笔名", email: "author@example.com", avatar_url: "/api/backend/studio/auth/profile/avatar?v=new" };
+    await api.updateStudioUser(updated);
+    assert.deepEqual((await api.ensureStudioSpace()).user, updated);
+    assert.equal(api.currentSpaceId(), "account-a");
+    assert.equal(api.scopedDraftKey("novel"), draft);
+    await assert.rejects(api.updateStudioUser({ ...updated, id: "b" }), /账号已切换/);
+    assert.equal((await api.ensureStudioSpace()).user.id, "a");
+  } finally { globalThis.fetch = original; }
+});
+
 test("drafts are scoped to one space and legacy recovery cannot leak into a new guest or account", async () => {
   const originalFetch = globalThis.fetch;
   const originalStorage = globalThis.localStorage;

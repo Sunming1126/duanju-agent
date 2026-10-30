@@ -2157,15 +2157,7 @@ img {
 .world-library-actions>.outline-button,.world-library-actions>.pill,.world-library-actions>.text-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:8px 11px;font-size:12px;white-space:nowrap}
 .world-library-actions>.studio-import-world{position:relative;cursor:pointer}
 .world-library .works-filters{margin-top:0}
-.space-model-info{margin-top:22px;padding:16px;border:1px solid #ffffff18;border-radius:8px;background:#14151a}
-.space-model-info h3{font-size:14px;font-weight:600;color:#ddd5ed;margin-bottom:14px}
-.space-model-info dl{display:grid;gap:12px;font-size:13px}
-.space-model-info dl>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px}
-.space-model-info dt{color:#93929f}
-.space-model-info dd{color:#ddd5ed;overflow-wrap:anywhere}
-.space-model-info>.studio-hint{margin-top:14px}
 @media(max-width:700px){.world-library-toolbar{padding:12px;gap:14px}.world-library-controls,.world-library-actions{width:100%;gap:10px}.world-library-search{max-width:none;flex-basis:100%}.world-library-picker{flex:1}.world-library-picker select{flex:1;max-width:100%;width:100%}.world-library-actions>.outline-button,.world-library-actions>.pill,.world-library-actions>.text-button{flex:1 0 auto}.library-import-dialog .studio-candidate-actions{align-items:stretch;flex-direction:column}}
-.space-recovery{margin-top:22px;border-top:1px solid #ffffff1a;padding-top:16px}.space-recovery summary{cursor:pointer;color:#c6b5e5;font-size:14px}.space-recovery form{display:grid;gap:14px;margin-top:14px}.space-recovery label{display:grid;gap:8px;font-size:13px}.space-recovery input{padding:10px 12px;background:#14151a;border:1px solid #ffffff24;border-radius:6px;width:100%;min-width:0}.space-recovery p{margin-top:12px}
 .plotloom-nav-toggle{display:none}
 @media(max-width:700px){.plotloom-shell .plotloom-nav{display:block;min-height:50px}.plotloom-nav-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px;font-size:13px;color:#c6bcdf}.plotloom-nav:not(.is-open)>.sidebar-link{display:none}.plotloom-nav.is-open>.sidebar-link{display:inline-flex;margin:5px 3px}}
 

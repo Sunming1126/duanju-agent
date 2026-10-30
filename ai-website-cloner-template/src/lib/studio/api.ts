@@ -105,11 +105,18 @@ export type WorldPackage = {
   checksum: string;
 };
 
-export type StudioUser = { id: string; email: string; name: string };
+export type StudioUser = { id: string; email: string; name: string; avatar_url?: string | null };
 export type StudioSpace = { space_id: string; isolated: boolean; legacy_access: boolean; user?: StudioUser | null };
 let spaceRequest: Promise<StudioSpace> | undefined;
 let spaceId: string | undefined;
 let signedIn = false;
+export async function updateStudioUser(user: StudioUser) {
+  const space = await ensureStudioSpace();
+  if (spaceId !== space.space_id || space.user?.id !== user.id) throw new Error("账号已切换，请刷新页面");
+  const updated = { ...space, user };
+  spaceRequest = Promise.resolve(updated);
+  return updated;
+}
 export function currentSpaceId() { return spaceId; }
 export function scopedDraftKey(key: string) { return `${key}:space:${spaceId || "pending"}`; }
 export function readScopedDraft(key: string) {

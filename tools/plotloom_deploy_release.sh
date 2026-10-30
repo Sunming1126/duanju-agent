@@ -19,6 +19,7 @@ test -d "$old" && test -d "$base/shared/data"
 python="$base/venv/bin/python"
 test -x "$python" && test -x "$base/runtime/bin/node"
 "$python" -c 'from google.oauth2 import id_token; from google.auth.transport.requests import Request' || { echo 'Install the reviewed requirements in the dedicated Plotloom environment before publishing account login.' >&2; exit 1; }
+"$python" -c 'from PIL import Image, features; assert features.check("webp")' || { echo 'Install Pillow with WebP support in the dedicated Plotloom environment before publishing profile avatars.' >&2; exit 1; }
 export PATH="$base/runtime/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 build_backend=http://127.0.0.1:8766
 if [[ "${PLOTLOOM_REVIEW_ONLY:-0}" == 1 && -n "${PLOTLOOM_REVIEW_BACKEND_URL:-}" ]]; then
@@ -157,7 +158,7 @@ fi
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund
 runuser -u plotloom-cn -- env PATH="$PATH" npm run lint
-runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs
+runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs scripts/space.test.mjs scripts/account.test.mjs
 runuser -u plotloom-cn -- env PATH="$PATH" DUANJU_BACKEND_URL="$build_backend" NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=1024 npm run build -- --webpack
 grep -R -q 'inspiration-flow' .next/static/chunks
 test "$(readlink -f "$base/current")" = "$old"

@@ -80,6 +80,7 @@ class AuthStore:
     def schema(db):
         SpaceStore.schema(db)
         db.execute("CREATE TABLE IF NOT EXISTS studio_accounts(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,name TEXT NOT NULL,google_sub TEXT UNIQUE,space_id TEXT UNIQUE NOT NULL,created_at INTEGER NOT NULL)")
+        db.execute("CREATE TABLE IF NOT EXISTS studio_account_avatars(account_id TEXT PRIMARY KEY REFERENCES studio_accounts(id) ON DELETE CASCADE,image BLOB NOT NULL,version TEXT NOT NULL)")
         db.execute("CREATE TABLE IF NOT EXISTS studio_auth_sessions(token_hash TEXT PRIMARY KEY,account_id TEXT NOT NULL REFERENCES studio_accounts(id),expires_at INTEGER NOT NULL)")
         db.execute("CREATE TABLE IF NOT EXISTS studio_email_codes(email TEXT PRIMARY KEY,code_hash TEXT NOT NULL,sent_at INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,ready INTEGER NOT NULL DEFAULT 0,space_id TEXT NOT NULL)")
         db.execute("CREATE TABLE IF NOT EXISTS studio_auth_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,expires_at INTEGER NOT NULL)")
@@ -87,8 +88,11 @@ class AuthStore:
         db.execute("INSERT OR IGNORE INTO studio_identity_state VALUES('otp_secret',?)", (secrets.token_hex(32),))
 
     @staticmethod
-    def public(row):
-        return {key: row[key] for key in ("id", "email", "name")}
+    def public(db, row):
+        user = {key: row[key] for key in ("id", "email", "name")}
+        avatar = db.execute("SELECT version FROM studio_account_avatars WHERE account_id=?", (row["id"],)).fetchone()
+        user["avatar_url"] = f"/api/backend/studio/auth/profile/avatar?v={avatar['version']}" if avatar else None
+        return user
 
     def resolve(self, token):
         if not token or not re.fullmatch(r"[A-Za-z0-9_-]{43}", token):
@@ -96,7 +100,7 @@ class AuthStore:
         with self.store.transaction() as db:
             self.schema(db)
             row = db.execute("SELECT a.*,s.legacy_access FROM studio_auth_sessions t JOIN studio_accounts a ON a.id=t.account_id JOIN studio_spaces s ON s.id=a.space_id WHERE t.token_hash=? AND t.expires_at>?", (digest(token), int(time.time()))).fetchone()
-            return {"id": row["space_id"], "legacy_access": row["legacy_access"], "user": self.public(row)} if row else None
+            return {"id": row["space_id"], "legacy_access": row["legacy_access"], "user": self.public(db, row)} if row else None
 
     @staticmethod
     def limit(db, key, maximum, expires):
@@ -160,7 +164,7 @@ class AuthStore:
         token = secrets.token_urlsafe(32)
         db.execute("DELETE FROM studio_auth_sessions WHERE expires_at<=?", (int(time.time()),))
         db.execute("INSERT INTO studio_auth_sessions VALUES(?,?,?)", (digest(token), row["id"], int(time.time()) + SESSION_TTL))
-        return self.public(row), token
+        return self.public(db, row), token
 
     def email_login(self, email, code, space_id):
         result = None
@@ -239,6 +243,8 @@ class GoogleBody(BaseModel):
 
 def create_router():
     router = APIRouter(prefix="/auth")
+    from .studio_profile import create_router as profile_router
+    router.include_router(profile_router())
 
     @router.get("/config")
     def config():

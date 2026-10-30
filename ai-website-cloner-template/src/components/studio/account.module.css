@@ -1,4 +1,5 @@
 .trigger { max-width: 150px; min-height: 38px; gap: 7px; }
+.loginForm { min-width: 0; }
 .trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .intro { display: flex; align-items: center; gap: 12px; margin: 8px 0 24px; color: #bfc0c8; font-size: 14px; }
 .intro > span { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #393940; border-radius: 12px; color: #d7bcff; flex-shrink: 0; }
@@ -20,7 +21,5 @@
 .hint { color: #bdbdc8; }
 .error { color: #ffb6b6; }
 .footnote { color: #9999a6; margin-top: 22px; }
-.account { display: grid; justify-items: center; gap: 12px; margin: 20px 0; overflow-wrap: anywhere; }
-.account > span { color: #bdbdc8; font-size: 14px; }
 .full { width: 100%; min-height: 42px; justify-content: center; gap: 8px; }
 @media (max-width: 600px) { .trigger { max-width: 95px; padding: 8px 11px; } }

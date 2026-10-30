@@ -1,5 +1,6 @@
 """Offline authentication contract; temporary databases and fake email/Google only."""
 import json
+import io
 import time
 
 import pytest
@@ -10,6 +11,145 @@ import studio_main
 from agent import studio_api, studio_auth as auth
 from agent.studio_identity import AUTH_COOKIE, COOKIE, SpaceStore
 from agent.studio_store import StudioStore
+
+
+def avatar_bytes(format="PNG", size=(120, 80), color="red", **options):
+    from PIL import Image
+    stream = io.BytesIO()
+    Image.new("RGB", size, color).save(stream, format=format, **options)
+    return stream.getvalue()
+
+
+PROFILE = "/api/studio/auth/profile"
+
+
+def test_profile_updates_are_private_persist_and_leave_manuscript_ownership_unchanged(setup):
+    store, sent = setup
+    client, space = browser()
+    ident = work(client)
+    assert login(client, sent).status_code == 200
+    with store.transaction() as db:
+        before = list(map(tuple, db.execute("SELECT * FROM works")))
+    response = client.patch(PROFILE, json={"name": "  新笔名  "})
+    assert response.status_code == 200 and response.json()["user"]["name"] == "新笔名"
+    assert response.json()["user"]["avatar_url"] is None
+    assert response.headers["cache-control"] == "no-store, private"
+    assert client.get('/api/studio/session').json()['space_id'] == space
+    assert client.get('/api/studio/session').json()['user']['name'] == '新笔名'
+    other, _ = browser()
+    assert login(other, sent).status_code == 200
+    assert other.get('/api/studio/session').json()['user']['name'] == '新笔名'
+    assert other.get(f'/api/studio/works/{ident}').status_code == 200
+    with store.transaction() as db:
+        assert list(map(tuple, db.execute("SELECT * FROM works"))) == before
+
+
+@pytest.mark.parametrize('name', ['', '   ', 'x' * 81, 'a\nb', '\x00name', 'a\u200bb', 123])
+def test_profile_rejects_invalid_names_without_changing_account(setup, name):
+    _, sent = setup
+    client, _ = browser()
+    assert login(client, sent).status_code == 200
+    before = client.get('/api/studio/session').json()['user']
+    assert client.patch(PROFILE, json={'name': name}).status_code == 422
+    assert client.get('/api/studio/session').json()['user'] == before
+
+
+def test_profile_rejects_account_switch_and_cross_origin_and_protected_fields(setup):
+    _, sent = setup
+    guest, guest_space = browser()
+    assert guest.patch(PROFILE, json={'name': '访客'}).status_code == 401
+    assert guest.put(PROFILE + '/avatar', content=avatar_bytes()).status_code == 401
+    assert guest.get(PROFILE + '/avatar').status_code == 401
+    assert guest.delete(PROFILE + '/avatar').status_code == 401
+    client, _ = browser()
+    assert login(client, sent).status_code == 200
+    assert client.patch(PROFILE, json={'name': 'a'}, headers={'X-Plotloom-Space': guest_space}).status_code == 409
+    assert client.patch(PROFILE, json={'name': 'a'}, headers={'Origin': 'https://foreign.test'}).status_code == 403
+    assert client.put(PROFILE + '/avatar', content=avatar_bytes(), headers={'Origin': 'https://foreign.test'}).status_code == 403
+    assert client.delete(PROFILE + '/avatar', headers={'X-Plotloom-Space': guest_space}).status_code == 409
+    assert client.patch(PROFILE, json={'name': 'a', 'email': 'other@example.com'}).status_code == 422
+
+
+@pytest.mark.parametrize('format', ['PNG', 'JPEG', 'WEBP'])
+def test_avatar_reencoded_persisted_private_and_removed(setup, format):
+    from PIL import Image
+    _, sent = setup
+    client, _ = browser()
+    assert login(client, sent).status_code == 200
+    assert client.get(PROFILE + '/avatar').status_code == 404
+    response = client.put(PROFILE + '/avatar', content=avatar_bytes(format))
+    assert response.status_code == 200, response.text
+    url = response.json()['user']['avatar_url']
+    assert url.startswith('/api/backend/studio/auth/profile/avatar?v=')
+    image = client.get(PROFILE + '/avatar')
+    assert image.status_code == 200 and image.headers['content-type'] == 'image/webp'
+    assert image.headers['cache-control'] == 'no-store, private' and 'Cookie' in image.headers['vary']
+    assert image.headers['x-content-type-options'] == 'nosniff'
+    decoded = Image.open(io.BytesIO(image.content))
+    assert decoded.format == 'WEBP' and decoded.size == (256, 256) and not decoded.info.get('exif')
+    guest, _ = browser()
+    assert guest.get(PROFILE + '/avatar').status_code == 401
+    assert login(guest, sent, 'another@example.com').status_code == 200
+    assert guest.get(PROFILE + '/avatar').status_code == 404
+    second, _ = browser()
+    assert login(second, sent).status_code == 200
+    assert second.get(PROFILE + '/avatar').content == image.content
+    assert second.get('/api/studio/session').json()['user']['avatar_url'] == url
+    assert client.delete(PROFILE + '/avatar').json()['user']['avatar_url'] is None
+    assert second.get(PROFILE + '/avatar').status_code == 404
+
+
+def test_avatar_size_pixels_animation_and_invalid_bytes_preserve_existing_avatar(setup):
+    from PIL import Image
+    _, sent = setup
+    client, _ = browser()
+    assert login(client, sent).status_code == 200
+    assert client.put(PROFILE + '/avatar', content=avatar_bytes()).status_code == 200
+    before = client.get(PROFILE + '/avatar').content
+    animation = io.BytesIO()
+    Image.new('RGB', (10, 10), 'red').save(animation, format='PNG', save_all=True, append_images=[Image.new('RGB', (10, 10), 'blue')], duration=100)
+    cases = [(b'', 400), (b'<svg></svg>', 400), (b'not a png', 400), (b'x' * (2 * 1024 * 1024 + 1), 413),
+             (avatar_bytes(size=(3500, 3500)), 413), (avatar_bytes('GIF'), 415), (animation.getvalue(), 415), (avatar_bytes()[:40], 400)]
+    for data, expected in cases:
+        response = client.put(PROFILE + '/avatar', content=data, headers={'Content-Type': 'image/png'})
+        assert response.status_code == expected, response.text
+        assert client.get(PROFILE + '/avatar').content == before
+
+
+def test_custom_name_and_avatar_survive_subsequent_google_login(setup, monkeypatch):
+    _, sent = setup
+    client, _ = browser()
+    assert login(client, sent, 'author@gmail.com').status_code == 200
+    assert client.patch(PROFILE, json={'name': '我的笔名'}).status_code == 200
+    avatar = client.put(PROFILE + '/avatar', content=avatar_bytes()).json()['user']['avatar_url']
+    nonce = post(client, 'google/nonce').json()['nonce']
+    monkeypatch.setattr(auth, 'verify_google', lambda _: {'sub': 'stable-google-user', 'email': 'author@gmail.com', 'email_verified': True, 'name': 'Google 名称', 'nonce': nonce})
+    result = post(client, 'google', {'credential': 'x' * 30})
+    assert result.status_code == 200
+    assert result.json()['user']['name'] == '我的笔名' and result.json()['user']['avatar_url'] == avatar
+
+
+def test_profile_additive_schema_preserves_existing_accounts_and_exif_is_removed(setup):
+    from PIL import Image
+    store, sent = setup
+    client, space = browser()
+    assert login(client, sent).status_code == 200
+    with store.transaction() as db:
+        before = list(map(tuple, db.execute('SELECT * FROM studio_accounts')))
+        db.execute('DROP TABLE studio_account_avatars')
+    assert client.get('/api/studio/session').json()['user']['avatar_url'] is None
+    with store.transaction() as db:
+        assert list(map(tuple, db.execute('SELECT * FROM studio_accounts'))) == before
+    exif = Image.Exif()
+    exif[274] = 6
+    exif[270] = 'private image description'
+    assert client.put(PROFILE + '/avatar', content=avatar_bytes('JPEG', exif=exif)).status_code == 200
+    output = Image.open(io.BytesIO(client.get(PROFILE + '/avatar').content))
+    assert not output.getexif() and 'exif' not in output.info
+    old = client.get('/api/studio/session').json()['user']['avatar_url'].replace('/api/backend/', '/api/')
+    assert client.put(PROFILE + '/avatar', content=avatar_bytes(color='blue')).status_code == 200
+    assert client.get(old).status_code == 404
+    assert client.get('/api/studio/session').json()['space_id'] == space
 
 
 @pytest.fixture
