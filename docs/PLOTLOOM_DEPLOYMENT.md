@@ -1,5 +1,13 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 切换创作页签保持页面位置修复发布
+
+- 用户明确要求修复并部署；运行源码`2c054109897c94807429b40647a0a32d4acfb5ef`已同步GitHub。正式ProjectToolbar切换五页签不再调用revealWritingStage，键盘focus使用preventScroll，避免将顶部小说/剧本名称滚到页头后面。两类新建/已有作品共用；底部继续/保存下一步的定位功能保持。
+- release：`/opt/plotloom-cn/releases/20261030T122020Z-inspiration-2c054109`；previous：`20261030T115911Z-inspiration-04b953cf`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261030T122020Z-inspiration.sqlite3`（0600）。源码包SHA-256 `7471a8c7041c5cf195ddc78f303a4e8a2d7084536b75c08d9085a07fd55e3ea2`；原runner SHA-256 `74c1646bc49f3ba7eec4629b57f94431acd0105077128d774c086ab03af09dc9`，上传后双核验。
+- 本机82项前端、lint/类型通过；服务器49项后端、43项前端（含鼠标/键盘不滚动回归）、lint/类型/webpack构建通过。沿用仅给隔离发布进程设置PLOTLOOM_MAX_CONCURRENT=3以运行旧固定3路测试，正式服务5执行/10排队配置未改。队列空闲、SQLite备份、原子切换及源码/数据/样例/下载/公开页/管理边界全部通过，输出DEPLOYMENT_OK，无回滚；日志`/tmp/plotloom-tabs-publish.log`。
+- 额外只读报告服务器`/tmp/plotloom-tabs-live-report.json`为ok：公网两类新建页14份JS/CSS全部匹配release哈希，正式源码无页签revealWritingStage且有preventScroll。SQLite正常，六表原数据及账号全行与备份一致（18/15/44/0/15/28/2），模型/登录私有配置/恢复码指纹保持。中文api/web/worker active PID1940482/1940484/1940483，旧站1948834不变，日文200。
+- 未改Nginx/systemd、用户原稿或其他服务，零模型/邮件请求，未启动本机服务/浏览器。离线交互与公网资源核验不代表浏览器实际视觉/点击已验收。需要回滚时仅切回上述账号兼容04b953cf并保留shared/data，不恢复旧SQLite覆盖新增数据。
+
 ## 2026-10-30 正文并发提高至5路并完成真实测试
 
 - 用户明确授权调高并测试，仅改私有并发配置3→5→10→5，当前公网5执行/10排队。5路两轮10/10通过，10路9/10完成、一条输出未正常结束，无失败重试；共20次真实2000字目标正文生成，19次完成。详情见 `PLOTLOOM_LONG_CONCURRENCY.md`。
