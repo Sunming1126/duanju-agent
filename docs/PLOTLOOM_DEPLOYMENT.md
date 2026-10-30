@@ -1,5 +1,14 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 可配置调度、限流冷却与HTTP连接池发布
+
+- **运行源码：`5336738e027af774ee6bbaffcf69fcaef3a13c52`**，已推送GitHub。并发/队列/空间排队份额可配置，工作/灵感共用事务内分钟预算，429识别与上游Retry-After/周期额度冷却，普通/SSE共用工作者连接池。保留公平逐步调度、章节顺序、失败主动继续，模型参数与供应商入口保持。**生产仍3执行/10排队/每空间10排队，分钟预算未额外启用；未按短请求50路测试扩量。**
+- **release：`/opt/plotloom-cn/releases/20261030T071357Z-inspiration-5336738e`**；previous：`/opt/plotloom-cn/releases/20261030T061743Z-inspiration-35d89432`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261030T071357Z-inspiration.sqlite3`（0600）；回滚指针`backups/previous-20261030T071357Z-inspiration.txt`。沿用用户此前自动部署要求，未启动本机服务/浏览器。
+- 源码包`plotloom-login-20261030T071306Z-5336738e027a.zip`，SHA-256 `141763927d5c032c1566abaf62069a44d087473c8ebb5769dbb0ca8d24dc6a6c`；runner SHA-256 `74c1646bc49f3ba7eec4629b57f94431acd0105077128d774c086ab03af09dc9`，上传后双校验。只含已提交源码，无本机私有配置/运行数据。服务器先49项账号/隔离/调度/传输及43项相关前端，再lint/类型/webpack构建，队列空闲后备份、原子切换和常规源码/数据/页面/样例/管理边界核验均通过，输出DEPLOYMENT_OK，无回滚；日志`/tmp/plotloom-routing-5336738e-publish.log`。
+- 本机203项完整后端/市场、82项前端及lint/类型/构建通过。额外公网报告`/opt/plotloom-cn/backups/routing-final-audit-5336738e.json`为ok，本机忽略副本`data/deployment-bundles/routing-live-report.json`：实际队列状态3/10/10/无冷却，邮箱和Google配置有效，模型/私有登录配置指纹均保持，账号原记录保留，六表原data逐条一致（18作品/15世界/44任务/0候选/15灵感会话/28灵感任务）。中文三服务active，旧站PID1948834与所有PM2进程PID/状态保持，中日HTTPS200。
+- 当前通道仍`/api/coding/v3`。官方个人版使用范围、未查到统一固定并发承诺及主流路由研究详见`PLOTLOOM_ROUTING_AND_LIMITS.md`；此次上线通用控制能力，不代表供应商已授权Coding Plan用于多人网站后端。没有更换计费通道、购买套餐、伪装工具或新增真实LLM调用，未验收真实长篇负载/浏览器视觉。
+- 可回滚到上述35d89432账号兼容版并保留shared/data，不覆盖数据库。若后续启用私有调度配置，回滚旧版会忽略这些新环境项，需维护者重新核对有效策略；附加的调度状态表可保留，旧版不依赖这些表。不得回滚至无账号的更早程序。
+
 ## 2026-10-30 补齐 Google Web Client 配置
 
 - 用户按配置步骤提供 Google Web Client ID，沿用“完成后自动部署”的授权，只更新私有`PLOTLOOM_GOOGLE_CLIENT_ID`。本机`.env`和线上`shared/login.env`均0600，SMTP及其他字段逐项保持。不改业务源码，不重新构建前端，不切换release，运行源码仍为`35d89432ccb5596c086c0bfbeea9cd52120799d0`。
