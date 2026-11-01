@@ -6,6 +6,8 @@ ROUGH = "【粗纲】"
 
 def rough_preview(text):
     value = text.lstrip()
+    if value.startswith("[Synopsis]"):
+        return value[len("[Synopsis]"):].split("[", 1)[0].strip()
     if not value.startswith(ROUGH):
         return ""
     body = value[len(ROUGH):].lstrip("\r\n")
@@ -16,7 +18,13 @@ def rough_preview(text):
 def combined_outline(text, content_type, units):
     unit = "章" if content_type == "novel" else "集"
     delimiter = "【章节大纲】" if content_type == "novel" else "【分集大纲】"
-    value = text.strip()
+    value = text.strip().replace("\r\n", "\n")
+    regional = value.startswith("[Synopsis]\n")
+    if regional:
+        if value.count("[Synopsis]") != 1 or value.count("[Units]") != 1:
+            raise ValueError("Outline must contain one synopsis and one complete unit section")
+        value = value.replace("[Synopsis]", ROUGH, 1).replace("[Units]", delimiter, 1)
+        value = re.sub(r"^\[Unit ([1-9]\d*)\]\s*\n", lambda m: f"第{m[1]}{unit}：", value, flags=re.M)
     if not re.match(r"^【粗纲】\r?\n", value) or value.count(delimiter) != 1:
         raise ValueError("大纲需同时包含粗纲及完整分集／章节大纲；原稿保留，请核对后主动继续。")
     rough, body = value[len(ROUGH):].split(delimiter)
@@ -30,6 +38,8 @@ def combined_outline(text, content_type, units):
     entries = [body[item.start():headings[index + 1].start() if index + 1 < len(headings) else len(body)].strip() for index, item in enumerate(headings)]
     if any(not entry.split("：", 1)[1].strip() for entry in entries):
         raise ValueError("大纲存在空的集／章内容，原稿保留。")
+    if regional:
+        entries = [entry.split("：", 1)[1] for entry in entries]
     indent = lambda value: "\n".join("    " + line for line in value.split("\n"))
     canonical = "\n".join(["【Plotloom 大纲 v1】", "粗纲：", indent(rough), *[part for index, entry in enumerate(entries, 1) for part in (f"【单元 {index} 阶段 0】", indent(entry))], "【大纲结束】"])
     if len(canonical) > 50000:

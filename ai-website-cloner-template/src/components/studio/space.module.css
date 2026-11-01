@@ -35,8 +35,8 @@
 .settingRow > div { min-width: 0; }
 .settingRow h3, .ownership h3, .linkRow h3 { font-size: 12px; font-weight: 500; color: #d1cad9; margin: 0; }
 .settingRow p, .ownership p, .linkRow p { font-size: 11px; color: #837e8e; margin: 5px 0 0; line-height: 1.8; }
-.currentName { max-width: 180px; overflow-wrap: anywhere; text-align: right; }
-.rowValue { min-width: 0; color: #a59bad; font-size: 12px; text-align: right; overflow-wrap: anywhere; }
+.currentName { max-width: 180px; overflow-wrap: anywhere; text-align:end; }
+.rowValue { min-width: 0; color: #a59bad; font-size: 12px; text-align:end; overflow-wrap: anywhere; }
 .nameForm { padding: 16px 0; display: grid; gap: 12px; border-bottom: 1px solid #ffffff0d; }
 .main :is(.nameForm, .recovery) input { width: 100%; min-width: 0; color: #e7ddef; background: #0e0e14; border: 1px solid #ffffff25; border-radius: 7px; padding: 10px 12px; font-size: 13px; }
 .nameForm > div { display: flex; gap: 18px; }
@@ -77,7 +77,7 @@
 .service dl { margin: 21px 0; display: grid; gap: 15px; }
 .service dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; font-size: 11px; }
 .service dt { color: #8f859b; flex-shrink: 0; }
-.service dd { margin: 0; color: #b9b0c4; overflow-wrap: anywhere; text-align: right; font-variant-numeric: tabular-nums; }
+.service dd { margin: 0; color: #b9b0c4; overflow-wrap: anywhere; text-align:end; font-variant-numeric: tabular-nums; }
 .service dd.serviceState { color: #a6bcab; }
 .service > p { font-size: 11px; color: #82798d; line-height: 1.9; margin: 14px 0 0; }
 .helpLink { display: flex; align-items: center; gap: 10px; padding: 0 6px; color: #8d839a; font-size: 11px; }
@@ -93,7 +93,7 @@
 .skeleton > div:first-child { grid-column: 1 / -1; height: 196px; }
 .skeleton span { grid-column: 1 / -1; }
 @media (min-width: 1650px) { .main { max-width: 1210px; } }
-@media (max-width: 1100px) { .columns { grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; } .panel, .membership { padding: 22px; } .primaryColumn, .secondaryColumn { gap: 18px; } .settingRow { flex-wrap: wrap; gap: 12px; } .rowValue { text-align: left; } .currentName { text-align: left; } }
+@media (max-width: 1100px) { .columns { grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; } .panel, .membership { padding: 22px; } .primaryColumn, .secondaryColumn { gap: 18px; } .settingRow { flex-wrap: wrap; gap: 12px; } .rowValue { text-align:start; } .currentName { text-align:start; } }
 @media (max-width: 900px) { .columns { grid-template-columns: minmax(0, 1fr); } .skeleton { grid-template-columns: minmax(0, 1fr); } .profile { padding: 26px; } }
 @media (max-width: 700px) { .main { padding: 24px 16px 60px; } .profile { gap: 18px; padding: 22px; align-items: flex-start; } .avatar { width: 68px; height: 68px; flex-basis: 68px; border-radius: 19px; } .avatar > span { font-size: 28px; } .identity h2 { font-size: 21px; } .panel, .membership { border-radius: 13px; } .copyButton { max-width: 100%; } }
 @media (max-width: 420px) { .profile { flex-wrap: wrap; gap: 16px; } .identity { flex-basis: 100%; } .settingRow { align-items: flex-start; } .panel, .membership { padding: 20px; } .currentName { max-width: 190px; } .profileActions { gap: 10px; } }

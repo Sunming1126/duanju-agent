@@ -1,5 +1,5 @@
 """Compatibility facade routing each type to an independent writing policy."""
-from . import studio_novel, studio_drama
+from . import studio_novel, studio_drama, studio_region
 from .studio_novel import NovelSettings
 from .studio_drama import DramaSettings
 
@@ -22,15 +22,20 @@ def policy(work):
 
 
 def writing_context(work):
-    return policy(work).writing_context(work)
+    context = policy(work).writing_context(work)
+    if studio_region.regional(work):
+        context["成稿类型"] = work["content_type"]
+        context["output_locale"] = work["output_locale"]
+        context["market"] = work["market"]
+    return context
 
 
 def system_prompt(work):
-    return policy(work).system_prompt(work)
+    return studio_region.system_prompt(work) if studio_region.regional(work) else policy(work).system_prompt(work)
 
 
 def step_instruction(work, action, number=1, json_chapter=True):
-    return policy(work).step_instruction(work, action, number, json_chapter)
+    return studio_region.step_instruction(work, action, number, json_chapter) if studio_region.regional(work) else policy(work).step_instruction(work, action, number, json_chapter)
 
 
 def validate_chapter_format(content_type, text):

@@ -10,6 +10,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from . import llm
+from .studio_region import Market, Locale
 from .knowledge import get_kb
 from .studio_store import StudioStore, WORLD_FIELDS, WORLD_SECTIONS, canonical, export_work_text, work_summary
 from .studio_writing import NovelSettings, DramaSettings, canonical_mode, normalized_work, writing_context, system_prompt, step_instruction, validate_chapter_format
@@ -100,8 +101,8 @@ class WorkInput(BaseModel):
     words_per_chapter: int = Field(default=1000, ge=300, le=6000)
     novel_settings: Optional[NovelSettings] = None
     drama_settings: Optional[DramaSettings] = None
-    market: Literal["china"] = "china"
-    output_locale: Literal["zh-CN"] = "zh-CN"
+    market: Market = "china"
+    output_locale: Locale = "zh-CN"
     legacy_id: Optional[str] = Field(default=None, max_length=120)
     reference_ids: list[str] = Field(default_factory=list, max_length=10)
     world_snapshot: Optional[WorldInput] = None
@@ -282,14 +283,14 @@ def project_reference(item):
             "content_type": item.get("content_type", "short_drama")}
 
 
-def reference_items(content_type):
+def reference_items(content_type, market="china", locale="zh-CN"):
     from .market import market_matches
-    return [item for item in get_kb().items if market_matches(item, "china", "zh-CN", content_type)]
+    return [item for item in get_kb().items if market_matches(item, market, locale, content_type)]
 
 
 @router.get("/references")
-def references(query: str = Query(default="", max_length=500), content_type: Literal["short_drama", "novel"] = "short_drama", limit: int = Query(default=20, ge=1, le=50)):
-    rows = get_kb().search(query, top_k=limit, market="china", locale="zh-CN", content_type=content_type) if query.strip() else reference_items(content_type)[:limit]
+def references(query: str = Query(default="", max_length=500), content_type: Literal["short_drama", "novel"] = "short_drama", limit: int = Query(default=20, ge=1, le=50), market: Market = "china", output_locale: Locale = "zh-CN"):
+    rows = get_kb().search(query, top_k=limit, market=market, locale=output_locale, content_type=content_type) if query.strip() else reference_items(content_type, market, output_locale)[:limit]
     return {"items": [project_reference(item) for item in rows]}
 
 
@@ -305,12 +306,14 @@ def get_reference(ident: str):
 def reference_context(work):
     selected = []
     for ident in work.get("reference_ids", []):
-        item = get_reference(ident)
+        item = next((project_reference(row) for row in reference_items(work["content_type"], work.get("market", "china"), work.get("output_locale", "zh-CN")) if str(row.get("id")) == ident), None)
+        if item is None:
+            raise ValueError("Reference does not belong to the selected region and language")
         if item["content_type"] != work["content_type"]:
             raise ValueError("选中的参考素材与作品类型不一致，请调整后再生成。")
         selected.append(item)
     hits = get_kb().search(work["genre"] + " " + work["premise"], top_k=3,
-                           market="china", locale="zh-CN", content_type=work["content_type"])
+                           market=work.get("market", "china"), locale=work.get("output_locale", "zh-CN"), content_type=work["content_type"])
     seen = {item["id"] for item in selected}
     return selected + [project_reference(hit) for hit in hits if str(hit.get("id")) not in seen]
 
@@ -406,7 +409,8 @@ def import_work(body: dict):
 def duplicate_work(ident: str):
     work = store.get("works", ident)
     payload = {k: v for k, v in work.items() if k in WorkInput.model_fields}
-    payload.update(title=(work["title"][:74] + " · 副本"), legacy_id=None, world_id=None, archived=False)
+    suffix = {"zh-CN": " · 副本", "en": " · Copy", "ja-JP": " · コピー", "ar": " · نسخة"}[work.get("output_locale", "zh-CN")]
+    payload.update(title=(work["title"][:80 - len(suffix)] + suffix), legacy_id=None, world_id=None, archived=False)
     return store.create_work(WorkInput.model_validate(payload).model_dump())
 
 

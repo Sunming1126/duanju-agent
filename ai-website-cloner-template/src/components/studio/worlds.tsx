@@ -1,4 +1,6 @@
 "use client";
+import { useUI } from "@/lib/i18n/provider";
+
 
 import { StudioNav } from "./navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -23,6 +25,7 @@ import { worldDraftChecksum } from "@/lib/studio/world-codec";
 import { Header, Modal } from "@/components/sites/storyplay/shared";
 
 export function WorldWorkspace() {
+  const ui = useUI();
   const [search, setSearch] = useState("");
   const [archived, setArchived] = useState(false);
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -229,21 +232,19 @@ export function WorldWorkspace() {
       <div className="plotloom-shell">
         <StudioNav selected="世界模型" />
         <main className="plotloom-main world-library">
-          <h1 className="sr-only">世界模型</h1>
+          <h1 className="sr-only">{ui("世界模型")}</h1>
           {error && (
             <p className="storage-warning" role="alert">
-              {error}
+              {ui(error, true)}
               <button className="text-button" onClick={() => void load()}>
-                重新连接
-              </button>
+                {ui(" 重新连接 ")}</button>
             </p>
           )}
-          <div className="world-library-toolbar" role="group" aria-label="世界管理">
+          <div className="world-library-toolbar" role="group" aria-label={ui("世界管理")}>
             <div className="world-library-controls">
-            <label className="world-library-search"><Search size={16} aria-hidden="true" /><input aria-label="搜索世界" placeholder="搜索世界名称" value={search} onChange={e => setSearch(e.target.value)} /></label>
+            <label className="world-library-search"><Search size={16} aria-hidden="true" /><input aria-label={ui("搜索世界")} placeholder={ui("搜索世界名称")} value={search} onChange={e => setSearch(e.target.value)} /></label>
             <label className="world-library-picker">
-              当前世界
-              <select
+              {ui(" 当前世界 ")}<select
                 disabled={dirty || busy}
                 value={world?.id || ""}
                 onChange={(event) =>
@@ -253,15 +254,15 @@ export function WorldWorkspace() {
                   )
                 }
               >
-                <option value="">选择世界</option>
+                <option value="">{ui("选择世界")}</option>
                 {worlds.filter(item => !!item.archived === archived && item.name.includes(search)).map((item) => (
                   <option value={item.id} key={item.id}>
-                    {item.name} · v{item.revision}
+                    {item.name} {ui(" · v")}{ui(item.revision)}
                   </option>
                 ))}
               </select>
             </label>
-            <label className="world-library-archived"><input type="checkbox" checked={archived} onChange={e => setArchived(e.target.checked)} />显示归档世界</label>
+            <label className="world-library-archived"><input type="checkbox" checked={archived} onChange={e => setArchived(e.target.checked)} />{ui("显示归档世界")}</label>
             </div>
             <div className="world-library-actions">
             <button
@@ -274,8 +275,7 @@ export function WorldWorkspace() {
                 }
               }}
             >
-              <Plus size={14} /> 新建世界
-            </button>
+              <Plus size={14} /> {ui(" 新建世界 ")}</button>
             <button
               className="text-button"
               disabled={busy || loading}
@@ -283,17 +283,15 @@ export function WorldWorkspace() {
                 if (
                   !dirty ||
                   window.confirm(
-                    "重新加载会放弃未保存的世界设定。请先导出备份；确定重新加载吗？",
+                    ui("重新加载会放弃未保存的世界设定。请先导出备份；确定重新加载吗？"),
                   )
                 )
                   void load();
               }}
             >
-              重新加载
-            </button>
+              {ui(" 重新加载 ")}</button>
             <label className="outline-button studio-import-world">
-              <Upload size={14} /> 导入世界包
-              <input
+              <Upload size={14} /> {ui(" 导入世界包 ")}<input
                 type="file"
                 accept=".json,application/json"
                 disabled={busy}
@@ -306,48 +304,44 @@ export function WorldWorkspace() {
             </label>
             {world && (
               <>
-                <button className="outline-button" disabled={busy || dirty} onClick={async () => { setBusy(true); try { const value = await backendRequest<World>("/studio/worlds", { method: "POST", body: jsonBody({ name: world.name.slice(0, 74) + " · 副本", description: world.description, sections: world.sections }) }); await load(); setWorld(value); setNotice("已复制为独立世界"); } catch(e) { setNotice(String(e)); } finally { setBusy(false); } }}>复制</button>
-                <button className="outline-button" disabled={busy || dirty} onClick={async () => { setBusy(true); try { const value = await backendRequest<World>(`/studio/worlds/${world.id}`, { method: "PUT", body: jsonBody({ name: world.name, description: world.description, sections: world.sections, revision: world.revision, archived: !world.archived }) }); await load(); setWorld(value); setNotice(value.archived ? "世界已归档，作品副本不受影响" : "世界已恢复"); } catch(e) { setNotice(String(e)); } finally { setBusy(false); } }}>{world.archived ? "恢复" : "归档"}</button>
+                <button className="outline-button" disabled={busy || dirty} onClick={async () => { setBusy(true); try { const value = await backendRequest<World>("/studio/worlds", { method: "POST", body: jsonBody({ name: world.name.slice(0, 80 - ui(" · 副本").length) + ui(" · 副本"), description: world.description, sections: world.sections }) }); await load(); setWorld(value); setNotice("已复制为独立世界"); } catch(e) { setNotice(String(e)); } finally { setBusy(false); } }}>{ui("复制")}</button>
+                <button className="outline-button" disabled={busy || dirty} onClick={async () => { setBusy(true); try { const value = await backendRequest<World>(`/studio/worlds/${world.id}`, { method: "PUT", body: jsonBody({ name: world.name, description: world.description, sections: world.sections, revision: world.revision, archived: !world.archived }) }); await load(); setWorld(value); setNotice(value.archived ? "世界已归档，作品副本不受影响" : "世界已恢复"); } catch(e) { setNotice(String(e)); } finally { setBusy(false); } }}>{ui(world.archived ? "恢复" : "归档")}</button>
                 <button
                   className="outline-button"
                   disabled={busy}
                   onClick={() => void exportWorld()}
                 >
-                  <Download size={14} /> 导出
-                </button>
+                  <Download size={14} /> {ui(" 导出 ")}</button>
                 <button
                   className="pill light"
                   disabled={busy}
                   onClick={() => void save()}
                 >
-                  <Save size={14} /> 保存设定
-                </button>
+                  <Save size={14} /> {ui(" 保存设定 ")}</button>
               </>
             )}
             </div>
           </div>
-          <div className="works-filters">{status?.world_sections.map(s => <button key={s.id} className={s.id === section ? "active" : ""} onClick={() => setSection(s.id)}>{s.label}</button>)}</div>
+          <div className="works-filters">{status?.world_sections.map(s => <button key={s.id} className={s.id === section ? "active" : ""} onClick={() => setSection(s.id)}>{ui(s.label)}</button>)}</div>
           {notice && (
             <p className="studio-inline-notice" role="status">
-              {notice}
+              {ui(notice, true)}
             </p>
           )}
           {loading ? (
-            <div className="empty-workspace">正在读取世界…</div>
+            <div className="empty-workspace">{ui("正在读取世界…")}</div>
           ) : !world ? (
             <div className="empty-workspace">
               <Globe2 size={38} strokeWidth={1} />
-              <h2>还没有世界设定</h2>
+              <h2>{ui("还没有世界设定")}</h2>
               <p>
-                创建规则、角色、地点和历史，为小说或剧本提供一致的创作背景。
-              </p>
+                {ui(" 创建规则、角色、地点和历史，为小说或剧本提供一致的创作背景。 ")}</p>
             </div>
           ) : (
             <>
               <div className="studio-world-summary">
                 <label>
-                  世界名称
-                  <input
+                  {ui(" 世界名称 ")}<input
                     disabled={busy}
                     maxLength={80}
                     value={world.name}
@@ -355,8 +349,7 @@ export function WorldWorkspace() {
                   />
                 </label>
                 <label>
-                  一句话概述
-                  <textarea
+                  {ui(" 一句话概述 ")}<textarea
                     disabled={busy}
                     rows={2}
                     maxLength={5000}
@@ -367,22 +360,20 @@ export function WorldWorkspace() {
                   />
                 </label>
                 <p>
-                  v{world.revision} ·{" "}
-                  {dirty ? "有未保存的修改" : "已保存到服务器"} ·
-                  作品绑定时复制当前版本，之后各自独立
-                </p>
+                  {ui(" v")}{ui(world.revision)} {ui(" ·")}{ui(" ")}
+                  {ui(dirty ? "有未保存的修改" : "已保存到服务器")} {ui(" · 作品绑定时复制当前版本，之后各自独立 ")}</p>
               </div>
               <section className="editor-panel">
                 <div className="editor-panel-heading">
                   <div>
-                    <h2>{current?.label}</h2>
-                    <p>{current?.description}</p>
+                    <h2>{ui(current?.label)}</h2>
+                    <p>{ui(current?.description)}</p>
                   </div>
                 </div>
                 <div className="studio-world-fields create-form">
                   {current?.fields.map((field) => (
                     <label key={field.key}>
-                      {field.label}
+                      {ui(field.label)}
                       <textarea
                         disabled={busy}
                         rows={6}
@@ -396,7 +387,7 @@ export function WorldWorkspace() {
                             },
                           })
                         }
-                        placeholder={`写下${field.label}，避免彼此矛盾的设定。`}
+                        placeholder={ui(`写下${field.label}，避免彼此矛盾的设定。`)}
                       />
                     </label>
                   ))}
@@ -405,35 +396,31 @@ export function WorldWorkspace() {
             </>
           )}
           <p className="workspace-disclaimer">
-            本版适配了 StoryForge
-            的世界模块分类与冻结引用方式，不包含其地图、游戏和完整备份协议。
-          </p>
+            {ui(" 本版适配了 StoryForge 的世界模块分类与冻结引用方式，不包含其地图、游戏和完整备份协议。 ")}</p>
         </main>
       </div>
       {creating && (
-        <Modal title="新建世界" wide onClose={() => setCreating(false)}>
+        <Modal title={ui("新建世界")} wide onClose={() => setCreating(false)}>
           <form className="create-form studio-form" onSubmit={create}>
             <label>
-              世界名称
-              <input
+              {ui(" 世界名称 ")}<input
                 name="name"
                 required
                 maxLength={80}
-                placeholder="例如：雾海群岛"
+                placeholder={ui("例如：雾海群岛")}
               />
             </label>
             <label>
-              世界概述
-              <textarea
+              {ui(" 世界概述 ")}<textarea
                 name="description"
                 maxLength={5000}
                 rows={4}
-                placeholder="故事发生在怎样的世界？最重要的一条规则是什么？"
+                placeholder={ui("故事发生在怎样的世界？最重要的一条规则是什么？")}
               />
             </label>
             {formError && (
               <p className="studio-error" role="alert">
-                {formError}
+                {ui(formError, true)}
               </p>
             )}
             <div className="modal-actions">
@@ -442,11 +429,9 @@ export function WorldWorkspace() {
                 onClick={() => setCreating(false)}
                 className="text-button"
               >
-                取消
-              </button>
+                {ui(" 取消 ")}</button>
               <button disabled={busy} className="pill light" type="submit">
-                创建世界
-              </button>
+                {ui(" 创建世界 ")}</button>
             </div>
           </form>
         </Modal>

@@ -3,6 +3,7 @@ import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from .studio_region import NATIVE_SCENE
 
 
 class DramaSettings(BaseModel):
@@ -53,6 +54,6 @@ SCENE_HEADING = re.compile(r"^\s*(?:#{1,6}\s*)?(?:第[\d一二三四五六七八
 
 
 def validate_chapter_format(content_type, text):
-    scenes = len(SCENE_HEADING.findall(text))
+    scenes = len(SCENE_HEADING.findall(text)) + len(NATIVE_SCENE.findall(text))
     if not scenes:
         raise ValueError("模型未返回包含明确场次的短剧正文，未保存为有效候选。请主动重新生成。")

@@ -263,7 +263,7 @@ def test_no_edit_or_second_action_while_queued_and_no_stale_retry(setup):
 
 def test_market_input_and_model_guards_and_legacy_entry(setup, monkeypatch):
     _, service, client = setup
-    invalid = body().model_dump() | {"market": "japan"}
+    invalid = body().model_dump() | {"market": "unsupported"}
     assert client.post("/api/studio/inspirations", json=invalid).status_code == 422
     assert client.post("/api/studio/inspirations", json=body().model_dump() | {"prompt": "   "}).status_code == 422
     legacy = TestClient(main.app)

@@ -1,3 +1,7 @@
+import type { Market, Locale } from "@/lib/i18n/config";
+import { browserPreferences } from "@/lib/i18n/config";
+import { structuredText } from "@/lib/i18n/structured-text";
+import { createTranslator, localizedError } from "@/lib/i18n/translate";
 export type ContentType = "short_drama" | "novel";
 export type Section = {
   id: string;
@@ -55,8 +59,8 @@ export type WorkInput = {
   words_per_chapter: number;
   novel_settings?: NovelSettings | null;
   drama_settings?: DramaSettings | null;
-  market: "china";
-  output_locale: "zh-CN";
+  market: Market;
+  output_locale: Locale;
   legacy_id?: string | null;
   reference_ids: string[];
   world_snapshot?: WorldInput | null;
@@ -199,7 +203,7 @@ export async function backendRequest<T>(
               .map((item: { msg?: string }) => item.msg || "参数无效")
               .join("；")
           : "创作服务请求失败，请稍后重试或联系维护者。";
-    throw new Error(message);
+    throw new Error(localizedError(message, browserPreferences().locale, response.status));
   }
   return data as T;
 }
@@ -270,18 +274,14 @@ export function unitLabel(type: ContentType) {
   return type === "novel" ? "章" : "集";
 }
 export function localExport(work: Work) {
+  const ui = createTranslator(work.output_locale);
   const unit = unitLabel(work.content_type);
-  return [
-    work.title,
-    `计划 ${work.units}${unit}`,
-    `\n故事设定\n${work.premise}`,
-    `\n人物\n${work.characters}`,
-    `\n大纲\n${work.outline}`,
-    ...(work.creative ? [`\n创作参数\n${JSON.stringify(work.creative, null, 2)}`] : []),
-    ...(work.world_snapshot ? [`\n作品世界副本\n${JSON.stringify(work.world_snapshot, null, 2)}`] : []),
-    ...work.chapters.map(
-      (chapter) =>
-        `\n第${chapter.number}${unit} ${chapter.title}\n${chapter.content}`,
-    ),
+  return [work.title, ui(`计划 ${work.units}${unit}`),
+    `\n${ui("故事设定")}\n${work.premise}`,
+    `\n${ui("人物")}\n${structuredText(work.characters, work.output_locale)}`,
+    `\n${ui("大纲")}\n${structuredText(work.outline, work.output_locale)}`,
+    ...(work.creative ? [`\n${ui("创作参数")}\n${JSON.stringify(work.creative, null, 2)}`] : []),
+    ...(work.world_snapshot ? [`\n${ui("作品世界")}\n${JSON.stringify(work.world_snapshot, null, 2)}`] : []),
+    ...work.chapters.map(chapter => `\n${ui(`第${chapter.number}${unit}`)} ${chapter.title}\n${chapter.content}`),
   ].join("\n");
 }

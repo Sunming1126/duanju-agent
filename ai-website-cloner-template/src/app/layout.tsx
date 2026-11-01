@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { serverI18n } from "@/lib/i18n/server";
+import { LocaleProvider } from "@/lib/i18n/provider";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: {
     default: "Plotloom · 短剧与小说创作平台",
     template: "%s · Plotloom",
@@ -10,6 +12,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body>{children}</body></html>;
+export async function generateMetadata(): Promise<Metadata> {
+  const { ui } = await serverI18n();
+  return { ...metadata, title: { default: ui("Plotloom · 短剧与小说创作平台"), template: "%s · Plotloom" }, description: ui(metadata.description) };
+}
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { preferences } = await serverI18n();
+  return <html lang={preferences.locale} dir={preferences.locale === "ar" ? "rtl" : "ltr"} data-market={preferences.market}><body><LocaleProvider preferences={preferences}>{children}</LocaleProvider></body></html>;
 }

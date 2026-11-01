@@ -161,7 +161,7 @@ def test_validation_legacy_import_and_reference_isolation(studio):
     assert request('POST', '/works', dict(title='x', world_id='missing')).status_code == 404
     assert request('POST', '/works', dict(title='x', units=1, chapters=[dict(number=2)])).status_code == 422
     assert request('POST', '/works', dict(title='x', chapters=[dict(number=1), dict(number=1)])).status_code == 422
-    assert request('POST', '/works', dict(title='x', output_locale='ja-JP')).status_code == 422
+    assert request('POST', '/works', dict(title='x', output_locale='unsupported')).status_code == 422
     assert [item['id'] for item in request('GET', '/references?content_type=novel').json()['items']] == ['cn-novel']
     assert request('GET', '/references/jp-novel').status_code == 404
     assert request('GET', '/references?query=故事&content_type=short_drama').json()['items'][0]['id'] == 'cn-script'

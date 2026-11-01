@@ -1,3 +1,4 @@
+import { serverI18n } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SampleReader } from "@/components/studio/sample-reader";
@@ -8,7 +9,8 @@ export function generateStaticParams() { return officialSamples.map(sample => ({
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const sample = getOfficialSample(slug);
-  return sample ? { title: `${sample.work.title} · 官方${sample.work.content_type === "novel" ? "小说" : "剧本"}样例`, description: sample.logline } : { title: "未找到样例" };
+  const { ui } = await serverI18n();
+  return sample ? { title: `${sample.work.title} · ${ui("官方样例")}`, description: sample.logline } : { title: ui("未找到样例") };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

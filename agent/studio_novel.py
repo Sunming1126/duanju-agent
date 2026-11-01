@@ -44,6 +44,9 @@ def writing_context(work):
 
 
 def system_prompt(work):
+    from . import studio_region
+    if studio_region.regional(work):
+        return studio_region.system_prompt(work)
     return (
         "你是专业中文小说家，当前任务属于小说写作。以作品设定、已确认正文和指定叙事参数为准。"
         "原始素材与参考作品只提供素材，不决定成稿体裁，也不能把参考情节当作本书事实。\n"
@@ -89,6 +92,9 @@ def inspiration_guidance():
 
 
 def step_instruction(work, action, number=1, json_chapter=True):
+    from . import studio_region
+    if studio_region.regional(work):
+        return studio_region.step_instruction(work, action, number, json_chapter)
     instructions = {
         "premise": "完善小说故事设定。保留用户核心创意，写清人物原来的生活、具体欲望、不得不行动的原因、阻力与代价、关系变化、主线与结局方向。矛盾从人物选择和世界限制中发展，亮点落实到独特处境，避免只罗列标签、爽点和反转。不要写正文。",
         "characters": "写3至5位小说人物小传，尊重已有人物与事实。包含身份、具体欲望、弱点、内在冲突、关系和成长弧，说明视角人物及其知识边界。用生活经历、隐瞒的事、习惯或一次有代价的选择支撑性格；区别每个人的说话方式与误判，避免全员围绕主角服务。不要擅自把未知年龄写成事实。",
@@ -174,6 +180,11 @@ def messages_for(work, action, number, references, *, world=None, continuity=(),
             for ref in references if ref.get("content_type") == "novel"
         ],
     }
+    from . import studio_region
+    if studio_region.regional(work):
+        context["创作类型与专属参数"]["成稿类型"] = "novel"
+        context["创作类型与专属参数"]["output_locale"] = work["output_locale"]
+        context["创作类型与专属参数"]["market"] = work["market"]
     if action == "chapter":
         previous = sorted((c for c in work["chapters"] if c["number"] < number and c["content"].strip()), key=lambda c: c["number"])
         summaries = {item["number"]: item["summary"] for item in continuity}
@@ -211,9 +222,11 @@ PLAN = re.compile(r"^\s*【(?:本章任务|章节任务|写作分析|自我评�
 
 
 def validate_chapter_format(text):
+    from .studio_region import NATIVE_SCENE
     lines = [line for line in text.splitlines() if line.strip()]
-    speakers = len(SPEAKER.findall(text))
-    if SCENE.search(text) or (speakers >= 3 and speakers >= len(lines) / 2):
+    native_speakers = re.findall(r"^\s*[\u0600-\u06ff\u3040-\u30ff][\u0600-\u06ff\u3040-\u30ff\u4e00-\u9fff ]{0,35}[：:]\s*\S", text, re.M)
+    speakers = len(SPEAKER.findall(text)) + len(native_speakers)
+    if SCENE.search(text) or NATIVE_SCENE.search(text) or (speakers >= 3 and speakers >= len(lines) / 2):
         raise ValueError("模型返回了剧本场次或台词清单，未保存为小说正文。请检查素材后主动重新生成。")
     if PLAN.search(text):
         raise ValueError("模型把章节任务或写作分析混入小说正文，未保存为有效候选。请核对后主动重新生成。")

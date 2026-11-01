@@ -1,4 +1,7 @@
 "use client";
+import { usePreferences } from "@/lib/i18n/provider";
+import { useUI } from "@/lib/i18n/provider";
+
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
@@ -10,12 +13,13 @@ import styles from "./account.module.css";
 type AuthConfig = { email_enabled: boolean; google_client_id: string };
 type GoogleId = {
   initialize: (options: { client_id: string; nonce: string; callback: (response: { credential: string }) => void; auto_select: boolean }) => void;
-  renderButton: (element: HTMLElement, options: { type: string; theme: string; size: string; text: string; width: number }) => void;
+  renderButton: (element: HTMLElement, options: { type: string; theme: string; size: string; text: string; locale?: string; width: number }) => void;
   disableAutoSelect: () => void;
 };
 function googleId() { return (window as Window & { google?: { accounts: { id: GoogleId } } }).google?.accounts.id; }
 
 export function AccountMenu() {
+  const ui = useUI();
   const [space, setSpace] = useState<StudioSpace>();
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -26,21 +30,24 @@ export function AccountMenu() {
       const inline = document.getElementById("account-login");
       if (inline) { inline.scrollIntoView({ block: "start" }); inline.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true }); }
       else setOpen(true);
-    }} aria-label="登录">
-      <LogIn size={15} /><span>登录</span>
+    }} aria-label={ui("登录")}>
+      <LogIn size={15} /><span>{ui("登录")}</span>
     </button>
     {open && <LoginDialog onClose={() => setOpen(false)} />}
   </>;
 }
 
 export function LoginDialog({ onClose }: { onClose: () => void }) {
+  const ui = useUI();
   const lock = useRef(false);
-  return <Modal title="登录 Plotloom" onClose={() => { if (!lock.current) onClose(); }}><LoginForm onBusyChange={value => { lock.current = value; }} /></Modal>;
+  return <Modal title={ui("登录 Plotloom")} onClose={() => { if (!lock.current) onClose(); }}><LoginForm onBusyChange={value => { lock.current = value; }} /></Modal>;
 }
 
 export function disableGoogleAutoSelect() { googleId()?.disableAutoSelect(); }
 
 export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) {
+  const { locale } = usePreferences();
+  const ui = useUI();
   const [config, setConfig] = useState<AuthConfig>();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -80,10 +87,10 @@ export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => 
           lock.current = false;
         });
       } });
-      google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", width: Math.max(200, Math.min(280, googleButton.current.clientWidth)) });
+      google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", locale: locale === "zh-CN" ? "zh_CN" : locale === "ja-JP" ? "ja" : locale, width: Math.max(200, Math.min(280, googleButton.current.clientWidth)) });
     }).catch(cause => { if (!disposed) setGoogleError(cause.message); });
     return () => { disposed = true; };
-  }, [config, googleReady]);
+  }, [config, googleReady, locale]);
 
   async function sendCode() {
     if (lock.current || remaining || !emailInput.current?.reportValidity()) return;
@@ -95,30 +102,30 @@ export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => 
     finally { lock.current = false; setBusy(null); }
   }
   return <div className={styles.loginForm}>
-    <div className={styles.intro}><span><Mail size={19} /></span><p>登录后，在不同设备上继续你的故事。</p></div>
+    <div className={styles.intro}><span><Mail size={19} /></span><p>{ui("登录后，在不同设备上继续你的故事。")}</p></div>
     <form className={styles.form} onSubmit={async event => {
       event.preventDefault(); if (lock.current) return;
       lock.current = true; setBusy("login"); setError("");
       try { await api("/studio/auth/email-code/login", { method: "POST", body: jsonBody({ email: email.trim(), code }) }); window.location.reload(); }
       catch (cause) { setError(cause instanceof Error ? cause.message : "登录失败，请重试"); lock.current = false; setBusy(null); }
     }}>
-      <label htmlFor="login-email">邮箱地址</label>
-      <input ref={emailInput} id="login-email" type="email" autoComplete="email" placeholder="you@example.com" maxLength={254} required value={email} disabled={!!busy} onChange={event => { setEmail(event.target.value); setCode(""); setNotice(""); }} />
-      <label htmlFor="login-code">验证码</label>
-      <div className={styles.codeRow}><input id="login-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="6 位验证码" required value={code} disabled={!!busy} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} />
-        <button type="button" className="outline-button" disabled={!config?.email_enabled || !!busy || remaining > 0 || !email.trim()} onClick={() => void sendCode()}>{busy === "send" ? "发送中…" : remaining ? `${remaining} 秒后重发` : "获取验证码"}</button></div>
-      <button type="submit" className={`pill ${styles.submit}`} disabled={!config?.email_enabled || !!busy || code.length !== 6}>{busy === "login" ? "正在登录…" : "邮箱验证码登录"}</button>
+      <label htmlFor="login-email">{ui("邮箱地址")}</label>
+      <input ref={emailInput} id="login-email" type="email" autoComplete="email" placeholder={ui("you@example.com")} maxLength={254} required value={email} disabled={!!busy} onChange={event => { setEmail(event.target.value); setCode(""); setNotice(""); }} />
+      <label htmlFor="login-code">{ui("验证码")}</label>
+      <div className={styles.codeRow}><input id="login-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder={ui("6 位验证码")} required value={code} disabled={!!busy} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} />
+        <button type="button" className="outline-button" disabled={!config?.email_enabled || !!busy || remaining > 0 || !email.trim()} onClick={() => void sendCode()}>{ui(busy === "send" ? "发送中…" : remaining ? `${remaining} 秒后重发` : "获取验证码")}</button></div>
+      <button type="submit" className={`pill ${styles.submit}`} disabled={!config?.email_enabled || !!busy || code.length !== 6}>{ui(busy === "login" ? "正在登录…" : "邮箱验证码登录")}</button>
     </form>
-    {config && !config.email_enabled && <p className={styles.hint}>邮箱登录尚未配置，请联系维护者。</p>}
-    {notice && <p className={styles.hint} role="status">{notice}</p>}
-    {error && <p className={styles.error} role="alert">{error}</p>}
-    <div className={styles.divider}><span>或</span></div>
+    {config && !config.email_enabled && <p className={styles.hint}>{ui("邮箱登录尚未配置，请联系维护者。")}</p>}
+    {notice && <p className={styles.hint} role="status">{ui(notice, true)}</p>}
+    {error && <p className={styles.error} role="alert">{ui(error, true)}</p>}
+    <div className={styles.divider}><span>{ui("或")}</span></div>
     {config?.google_client_id ? <>
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setGoogleReady(true)} onError={() => setGoogleError("Google 登录加载失败，请检查网络或使用邮箱登录。")} />
-      <div ref={googleButton} className={styles.google} aria-label="Google 登录" inert={!!busy || undefined} />
-      {!googleReady && !googleError && <p className={styles.hint}>正在加载 Google 登录…</p>}
-    </> : <button className={`outline-button ${styles.full}`} disabled>使用 Google 登录{config ? "（暂未配置）" : "（加载中）"}</button>}
-    {googleError && <p className={styles.error} role="alert">{googleError}</p>}
-    <p className={styles.footnote}>首次登录将自动创建账号，并关联当前浏览器空间的作品。已有账号登录后进入其原有空间，访客作品不会自动合并；请先导出备份。</p>
+      <div ref={googleButton} className={styles.google} aria-label={ui("Google 登录")} inert={!!busy || undefined} />
+      {!googleReady && !googleError && <p className={styles.hint}>{ui("正在加载 Google 登录…")}</p>}
+    </> : <button className={`outline-button ${styles.full}`} disabled>{ui("使用 Google 登录")}{ui(config ? "（暂未配置）" : "（加载中）")}</button>}
+    {googleError && <p className={styles.error} role="alert">{ui(googleError, true)}</p>}
+    <p className={styles.footnote}>{ui("首次登录将自动创建账号，并关联当前浏览器空间的作品。已有账号登录后进入其原有空间，访客作品不会自动合并；请先导出备份。")}</p>
   </div>;
 }

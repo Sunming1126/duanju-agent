@@ -1,4 +1,7 @@
 "use client";
+import { useUI } from "@/lib/i18n/provider";
+import { usePreferences } from "@/lib/i18n/provider";
+
 
 import { Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
@@ -7,17 +10,19 @@ import { editorLabels, editorSteps, writingProgress, type EditorStep } from "@/l
 import styles from "./project.module.css";
 
 export function ProjectShell({ children }: { children: ReactNode }) {
-  return <div className={styles.project}>{children}</div>;
+  const ui = useUI();
+  return <div className={styles.project}>{ui(children)}</div>;
 }
 
 export function ProjectTitle({ type, title, disabled = false, onChange, actions }: {
   type: ContentType; title: string; disabled?: boolean; onChange: (title: string) => void; actions?: ReactNode;
 }) {
+  const ui = useUI();
   const label = type === "novel" ? "小说名称" : "剧本名称";
   return <header className={styles.header}>
     <span className={styles.titleMark} aria-hidden="true"><Sparkles size={20} /></span>
-    <input aria-label={label} placeholder={label} value={title} maxLength={80} disabled={disabled} onChange={event => { if (!disabled) onChange(event.target.value); }} />
-    {actions && <div className={styles.headerActions}>{actions}</div>}
+    <input dir="auto" aria-label={ui(label)} placeholder={ui(label)} value={title} maxLength={80} disabled={disabled} onChange={event => { if (!disabled) onChange(event.target.value); }} />
+    {actions && <div className={styles.headerActions}>{ui(actions)}</div>}
   </header>;
 }
 
@@ -25,6 +30,8 @@ export function ProjectToolbar({ type, current, value, disabled = false, onSelec
   type: ContentType; current: EditorStep; value: Pick<WorkInput, "premise" | "characters" | "outline" | "chapters" | "units">;
   disabled?: boolean; onSelect: (step: EditorStep) => void; actions?: ReactNode;
 }) {
+  const ui = useUI();
+  const { locale } = usePreferences();
   const progress = writingProgress(value);
   const labels = editorLabels(type);
   function revealTab(container: HTMLDivElement | null) {
@@ -43,17 +50,19 @@ export function ProjectToolbar({ type, current, value, disabled = false, onSelec
   }
   function select(step: EditorStep) { if (!disabled) onSelect(step); }
   return <div className={styles.toolbar}>
-    <div ref={revealTab} className={styles.tabs} role="tablist" aria-label={type === "novel" ? "小说创作流程" : "剧本创作流程"}>
+    <div ref={revealTab} className={styles.tabs} role="tablist" aria-label={ui(type === "novel" ? "小说创作流程" : "剧本创作流程")}>
       {editorSteps.map((step, index) => <button type="button" role="tab" key={step} id={`writing-tab-${step}`} aria-controls="writing-stage-panel" aria-selected={current === step} tabIndex={current === step ? 0 : -1} disabled={disabled} className={current === step ? styles.activeTab : undefined} onClick={() => select(step)} onKeyDown={event => {
         if (disabled) return;
         const count = editorSteps.length;
-        const next = event.key === "ArrowRight" ? (index + 1) % count : event.key === "ArrowLeft" ? (index + count - 1) % count : event.key === "Home" ? 0 : event.key === "End" ? count - 1 : -1;
+        const forward = locale === "ar" ? "ArrowLeft" : "ArrowRight";
+        const backward = locale === "ar" ? "ArrowRight" : "ArrowLeft";
+        const next = event.key === forward ? (index + 1) % count : event.key === backward ? (index + count - 1) % count : event.key === "Home" ? 0 : event.key === "End" ? count - 1 : -1;
         if (next < 0) return;
         event.preventDefault();
         select(editorSteps[next]);
         document.getElementById(`writing-tab-${editorSteps[next]}`)?.focus({ preventScroll: true });
-      }}><span>{labels[step]}</span><span className={styles.screenReaderOnly}>{current === step ? "当前步骤" : step === "settings" ? "创作参数和世界设定" : step === "chapter" ? `${progress.completed}/${value.units}${type === "novel" ? "章" : "集"}` : progress[step] ? "已填写" : "未填写"}</span></button>)}
+      }}><span>{ui(labels[step])}</span><span className={styles.screenReaderOnly}>{ui(current === step ? "当前步骤" : step === "settings" ? "创作参数和世界设定" : step === "chapter" ? `${progress.completed}/${value.units}${type === "novel" ? "章" : "集"}` : progress[step] ? "已填写" : "未填写")}</span></button>)}
     </div>
-    {actions && <div className={styles.actions}>{actions}</div>}
+    {actions && <div className={styles.actions}>{ui(actions)}</div>}
   </div>;
 }

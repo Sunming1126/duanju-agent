@@ -6,8 +6,8 @@ export type CharacterCard = {
   preamble?: string;
 };
 
-export function newCharacter(): CharacterCard {
-  return { name: "新角色", role: "", age: "", traits: [], background: "", relationships: "" };
+export function newCharacter(name = "新角色"): CharacterCard {
+  return { name, role: "", age: "", traits: [], background: "", relationships: "" };
 }
 
 const marker = /^【人物[：:]([^\n]*)】\s*$/;

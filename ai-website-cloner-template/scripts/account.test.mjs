@@ -1,3 +1,4 @@
+import { legacyI18nDependency } from "./i18n-test-support.mjs";
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -17,6 +18,7 @@ function loader({ hooks = React, api = {} } = {}) {
     const exports = {}; cache.set(path, exports);
     const code = ts.transpileModule(readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
     vm.runInThisContext(`(function(exports,require){${code}\n})`)(exports, name => {
+    const localeDependency = legacyI18nDependency(name); if(localeDependency) return localeDependency;
       if (name === 'react') return hooks;
       if (['react/jsx-runtime', 'lucide-react'].includes(name)) return require(name);
       if (name.endsWith('.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) };

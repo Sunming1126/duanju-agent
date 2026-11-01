@@ -1,3 +1,5 @@
+import { browserPreferences, type Market, type Locale } from "@/lib/i18n/config";
+import { createTranslator } from "@/lib/i18n/translate";
 import type { Chapter, ContentType, Reference, WorkInput, WorldInput, NovelSettings, DramaSettings } from "./api";
 import type { EditorStep } from "./workflow";
 import { creationMode, defaultNovelSettings, defaultDramaSettings } from "./writing";
@@ -25,6 +27,8 @@ export function showPreviousInspirationAnalysis(session: InspirationSession | un
 }
 
 export type CreationDraft = {
+  market?: Market;
+  output_locale?: Locale;
   title: string;
   content_type: ContentType;
   genre: string;
@@ -51,11 +55,13 @@ export type CreationDraft = {
   drama_settings: DramaSettings | null;
 };
 
-export function initialCreationDraft(type: ContentType, reference?: Reference): CreationDraft {
+export function initialCreationDraft(type: ContentType, reference?: Reference, preferences = browserPreferences()): CreationDraft {
+  const ui = createTranslator(preferences.locale);
   return {
+    market: preferences.market, output_locale: preferences.locale,
     title: "", content_type: type, genre: reference?.genre || (type === "novel" ? "都市日常" : "都市"), units: "12",
     words: type === "novel" ? "2000" : "800", audience: "general", genres: "", core: "", styles: "",
-    highlights: "", premise: reference ? `参考素材：${reference.title}\n${reference.logline}\n${reference.hook}\n\n我的创作方向：` : "", source_text: "",
+    highlights: "", premise: reference ? `${ui("参考素材：")}${reference.title}\n${reference.logline}\n${reference.hook}\n\n${ui("我的创作方向：")}` : "", source_text: "",
     characters: "", outline: "", chapters: [],
     world_id: "", world_snapshot: null,
     novel_settings: type === "novel" ? { ...defaultNovelSettings } : null,
@@ -67,7 +73,7 @@ export function initialCreationDraft(type: ContentType, reference?: Reference): 
 export function applyInspiration(draft: CreationDraft, analysis: WorkInput): CreationDraft {
   if (analysis.content_type !== draft.content_type) throw new Error("方案类型与当前创作类型不一致，请切换到对应入口。");
   return {
-    ...draft, title: analysis.title, genre: analysis.genre, units: String(analysis.units), words: String(analysis.words_per_chapter),
+    ...draft, market: analysis.market, output_locale: analysis.output_locale, title: analysis.title, genre: analysis.genre, units: String(analysis.units), words: String(analysis.words_per_chapter),
     audience: analysis.audience, premise: analysis.premise, source_text: draft.source_text || draft.premise, genres: (analysis.creative?.genres || []).join("\n"),
     core: (analysis.creative?.core || []).join("\n"), styles: (analysis.creative?.styles || []).join("\n"), tag_format: "lines",
     tag_source: { genres: [...(analysis.creative?.genres || [])], core: [...(analysis.creative?.core || [])], styles: [...(analysis.creative?.styles || [])] },
@@ -114,7 +120,7 @@ export function creationPayload(draft: CreationDraft, mode: string, generate: bo
     units, words_per_chapter: words, audience: draft.audience, premise: draft.premise.trim(), characters: draft.characters || "", outline: draft.outline || "", chapters: chapters.map(c => ({ ...c })),
     // An edited/generated snapshot is already an independent copy, never re-copy a library world over it.
     world_id: draft.world_snapshot ? null : draft.world_id || null, world_snapshot: draft.world_snapshot,
-    market: "china", output_locale: "zh-CN", reference_ids: reference ? [reference.id] : [],
+    market: draft.market || "china", output_locale: draft.output_locale || "zh-CN", reference_ids: reference ? [reference.id] : [],
     creative: { genres: tags(draft.genres || draft.genre, 3, "自定义题材", "genres"), core: tags(draft.core, 3, "核心设定", "core"), styles: tags(draft.styles, 5, "风格", "styles"),
       highlights: draft.highlights, source_text: ["小说改编", "剧本改写"].includes(mode) ? draft.source_text || draft.premise : "" },
   };

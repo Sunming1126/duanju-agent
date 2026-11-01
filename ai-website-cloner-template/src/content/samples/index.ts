@@ -1,3 +1,6 @@
+import { regionalSamples } from "./regional";
+import { createTranslator } from "@/lib/i18n/translate";
+import type { Locale } from "@/lib/i18n/config";
 import type { ContentType, WorkInput } from "@/lib/studio/api";
 import { lastLight } from "./last-light";
 import { platformSeven } from "./platform-seven";
@@ -21,17 +24,19 @@ export const officialSamples: readonly OfficialSample[] = [gateName, doorCard, t
 export const archivedSamples: readonly OfficialSample[] = [lastLight, receipt, platformSeven, rainCheck];
 
 export function getOfficialSample(slug: string, kind?: ContentType) {
-  return [...officialSamples, ...archivedSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
+  return [...officialSamples, ...archivedSamples, ...regionalSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
 }
+
+export function samplesForLocale(locale: Locale) { return locale === "zh-CN" ? officialSamples : regionalSamples.filter(sample => sample.work.output_locale === locale); }
 
 export function sampleCreationInput(sample: OfficialSample): WorkInput {
   const work = sample.work;
   return {
-    title: `${work.title} · 我的版本`, content_type: work.content_type, mode: work.mode, genre: work.genre,
+    title: `${work.title} · ${createTranslator(work.output_locale)("我的版本")}`, content_type: work.content_type, mode: work.mode, genre: work.genre,
     units: work.units, words_per_chapter: work.words_per_chapter, audience: work.audience,
     premise: work.premise, creative: structuredClone(work.creative), world_snapshot: structuredClone(work.world_snapshot),
     novel_settings: structuredClone(work.novel_settings), drama_settings: structuredClone(work.drama_settings),
-    characters: "", outline: "", chapters: [], reference_ids: [], world_id: null, market: "china", output_locale: "zh-CN",
+    characters: "", outline: "", chapters: [], reference_ids: [], world_id: null, market: work.market, output_locale: work.output_locale,
   };
 }
 
@@ -48,6 +53,10 @@ export const worldLabels: Record<string, string> = { world_rules: "世界规则"
 export function sampleDocument(sample: OfficialSample) {
   const work = sample.work;
   const novel = work.content_type === "novel";
+  if (work.output_locale !== "zh-CN") {
+    const ui = createTranslator(work.output_locale);
+    return [work.title, ui("官方样例"), ui("AI辅助创作"), sample.logline, "", ui("故事设定"), work.premise, "", ui("世界设定"), work.world_snapshot?.description || "", "", ui("人物"), work.characters, "", ui("大纲"), work.outline, "", ui("正文"), ...work.chapters.flatMap(c => ["", `${c.number}. ${c.title}`, c.content]), "", ...sample.lessons.map(lesson => `${lesson.title}\n${lesson.text}`)].join("\n");
+  }
   const perspective = { first_person: "第一人称", third_limited: "第三人称有限视角", omniscient: "全知视角", multiple: "多视角" };
   const settings = novel
     ? `短篇小说 · ${perspective[work.novel_settings!.perspective]}`

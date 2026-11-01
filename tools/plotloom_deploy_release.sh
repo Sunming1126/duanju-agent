@@ -152,13 +152,13 @@ print('Isolated backend import and inspiration route checks passed; no model cal
 PY
 
 if [[ -f "$release/tests/test_studio_auth.py" ]]; then
-    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
 fi
 
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund
 runuser -u plotloom-cn -- env PATH="$PATH" npm run lint
-runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs scripts/space.test.mjs scripts/account.test.mjs
+runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs scripts/space.test.mjs scripts/account.test.mjs scripts/i18n.test.mjs
 runuser -u plotloom-cn -- env PATH="$PATH" DUANJU_BACKEND_URL="$build_backend" NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=1024 npm run build -- --webpack
 grep -R -q 'inspiration-flow' .next/static/chunks
 test "$(readlink -f "$base/current")" = "$old"

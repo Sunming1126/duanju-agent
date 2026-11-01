@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from fastapi import HTTPException
+from .studio_region import unit_title
 from .studio_identity import authorize, visible, current_owner, owner
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -217,7 +218,7 @@ class StudioStore:
             if candidate["action"] == "chapter":
                 number = candidate["number"]
                 chapters = [chapter for chapter in work["chapters"] if chapter["number"] != number]
-                chapters.append({"number": number, "title": f"第{number}{'章' if work['content_type'] == 'novel' else '集'}",
+                chapters.append({"number": number, "title": unit_title(work, number),
                                  "content": candidate["text"]})
                 work["chapters"] = sorted(chapters, key=lambda chapter: chapter["number"])
             else:
@@ -250,6 +251,22 @@ def work_summary(work):
 
 
 def export_work_text(work):
+    locale = work.get("output_locale", "zh-CN")
+    if locale != "zh-CN":
+        from .studio_region import display_protocol
+        labels = {
+            "en": ["Plan", "Premise", "Characters", "Outline", "Writing settings", "Story world"],
+            "ja-JP": ["計画", "あらすじ", "登場人物", "構成", "執筆設定", "作品の世界設定"],
+            "ar": ["الخطة", "ملخص القصة", "الشخصيات", "المخطط", "إعدادات الكتابة", "عالم العمل"],
+        }[locale]
+        parts = [work["title"], f"{labels[0]}: {work['units']}", f"\n{labels[1]}\n" + work["premise"],
+                 f"\n{labels[2]}\n" + display_protocol(work["characters"], locale), f"\n{labels[3]}\n" + display_protocol(work["outline"], locale)]
+        if work.get("creative"):
+            parts.append(f"\n{labels[4]}\n" + json.dumps(work["creative"], ensure_ascii=False, indent=2))
+        if work.get("world_snapshot"):
+            parts.append(f"\n{labels[5]}\n" + json.dumps(work["world_snapshot"], ensure_ascii=False, indent=2))
+        parts.extend(f"\n{unit_title(work, c['number'])} {c['title']}\n{c['content']}" for c in sorted(work["chapters"], key=lambda c: c["number"]))
+        return "\n".join(parts)
     unit = "章" if work["content_type"] == "novel" else "集"
     parts = [work["title"], f"{'小说' if unit == '章' else '短剧'} · {work['genre']} · 计划{work['units']}{unit}",
              "\n故事设定\n" + work["premise"], "\n人物小传\n" + work["characters"], "\n大纲\n" + work["outline"]]

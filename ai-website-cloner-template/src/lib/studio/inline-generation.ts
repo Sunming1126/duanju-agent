@@ -1,3 +1,4 @@
+import { createTranslator } from "@/lib/i18n/translate";
 import type { Action, Work, WorldInput } from "./api";
 import type { EditorStep } from "./workflow";
 
@@ -45,6 +46,6 @@ export function previewGeneration(work: Work, result: GenerationResult): Work {
   if (result.action !== "chapter") return { ...work, [result.action]: result.text };
   const existing = work.chapters.find(chapter => chapter.number === result.number);
   return { ...work, chapters: [...work.chapters.filter(chapter => chapter.number !== result.number), {
-    number: result.number, title: existing?.title ?? `第${result.number}${work.content_type === "novel" ? "章" : "集"}`, content: result.text,
+    number: result.number, title: existing?.title ?? createTranslator(work.output_locale)(`第${result.number}${work.content_type === "novel" ? "章" : "集"}`), content: result.text,
   }].sort((a, b) => a.number - b.number) };
 }

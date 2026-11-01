@@ -1,3 +1,5 @@
+import { serverI18n } from "@/lib/i18n/server";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -5,7 +7,7 @@ import { Header } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "@/components/studio/navigation";
 import styles from "./tutorial.module.css";
 
-export const metadata: Metadata = {
+const pageMetadata: Metadata = {
   title: "创作教程",
   description: "了解如何在 Plotloom 创建剧本或小说、生成并审阅内容。",
 };
@@ -17,13 +19,16 @@ const steps = [
   { title: "保存和管理", text: "作品保存在与当前浏览器关联的独立空间，可在“我的作品”中继续编辑、导出或归档。更换浏览器前，请先导出备份。" },
 ];
 
-export default function TutorialPage() {
+export default async function TutorialPage() {
+  const { ui } = await serverI18n();
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav /><main className={`plotloom-main ${styles.tutorial}`}>
-    <div className={styles.heading}><span>CREATION GUIDE</span><h1>教程说明</h1><p>从一个想法开始，逐步完成你的剧本或小说。</p></div>
+    <div className={styles.heading}><span>{ui("创作教程")}</span><h1>{ui("教程说明")}</h1><p>{ui("从一个想法开始，逐步完成你的剧本或小说。")}</p></div>
     <ol className={styles.steps}>{steps.map((step, index) => <li key={step.title}>
-      <span className={styles.number}>{String(index + 1).padStart(2, "0")}</span>
-      <div><h2>{step.title}</h2><p>{step.text}</p></div>
+      <span className={styles.number}>{ui(String(index + 1).padStart(2, "0"))}</span>
+      <div><h2>{ui(step.title)}</h2><p>{ui(step.text)}</p></div>
     </li>)}</ol>
-    <div className={styles.actions}><Link className="pill light" href="/studio/scripts/new">开始剧本创作 <ArrowRight size={16} /></Link><Link className="outline-button" href="/studio/novels/new">开始小说创作 <ArrowRight size={16} /></Link><Link href="/samples">先看看官方样例 →</Link></div>
+    <div className={styles.actions}><Link className="pill light" href="/studio/scripts/new">{ui("开始剧本创作 ")}<ArrowRight size={16} /></Link><Link className="outline-button" href="/studio/novels/new">{ui("开始小说创作 ")}<ArrowRight size={16} /></Link><Link href="/samples">{ui("先看看官方样例 →")}</Link></div>
   </main></div></div>;
 }
+
+export async function generateMetadata() { const { ui } = await serverI18n(); return { ...pageMetadata, title: ui(pageMetadata.title), description: ui(pageMetadata.description) }; }

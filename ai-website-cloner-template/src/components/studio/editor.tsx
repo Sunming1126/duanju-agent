@@ -1,4 +1,6 @@
 "use client";
+import { useUI } from "@/lib/i18n/provider";
+
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -34,6 +36,7 @@ const active = activeGeneration;
 export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "", sampleId, sampleInput }: {
   id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string; sampleId?: string; sampleInput?: WorkInput;
 }) {
+  const ui = useUI();
   const router = useRouter();
   const history = useEditHistory<WorkInput>();
   const recordSnapshot = useRef(history.record);
@@ -293,42 +296,42 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     <div className="plotloom-shell">
       <StudioNav selected={isNovel ? "小说创作" : "剧本创作"} />
       <div className={styles.editorPane}><ProjectShell>
-        {error && <p className={styles.inlineMessage} role="alert">{error}<button type="button" onClick={() => window.location.reload()}>重新加载</button></p>}
-        {recovery && <div className={styles.inlineMessage}><button type="button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>导出待核对的本地编辑</button></div>}
-        {!id && !referenceReady ? <p className={styles.workspace} role="status">{error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…"}</p> : !id ? <WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
+        {error && <p className={styles.inlineMessage} role="alert">{ui(error, true)}<button type="button" onClick={() => window.location.reload()}>{ui("重新加载")}</button></p>}
+        {recovery && <div className={styles.inlineMessage}><button type="button" onClick={() => downloadText("旧版本本地编辑.json", recovery)}>{ui("导出待核对的本地编辑")}</button></div>}
+        {!id && !referenceReady ? <p className={styles.workspace} role="status">{ui(error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…")}</p> : !id ? <WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
           if (warning) try { localStorage.setItem(`plotloom-create-warning-${value.id}`, warning); } catch { /* Saved work remains available. */ }
           router.push(`${workEditorUrl(value.id, intent)}${warning ? "&notice=generation-unconfirmed" : ""}`);
-        }} /> : !work || !shownWork ? <p className={styles.workspace}>正在读取作品…</p> : <>
+        }} /> : !work || !shownWork ? <p className={styles.workspace}>{ui("正在读取作品…")}</p> : <>
           <ProjectTitle type={work.content_type} title={work.title} disabled={editingDisabled} onChange={title => update({ title })} actions={<div className={styles.utility}>
-            <span className={styles.saveState}>{busy ? "处理中…" : blocked ? "保存失败" : dirty ? "等待自动保存" : "已保存"}</span>
-            <button type="button" onClick={() => downloadText(`${work.title}.txt`, localExport(work))}>导出 TXT</button>
-            <button type="button" onClick={() => downloadText(`${work.title}.json`, jsonBody({ schema: "plotloom.work", version: 1, work: workPayload(work) }), "application/json")}>完整备份</button>
-            <button type="button" disabled={editingDisabled} onClick={() => void persist()}>保存</button>
+            <span className={styles.saveState}>{ui(busy ? "处理中…" : blocked ? "保存失败" : dirty ? "等待自动保存" : "已保存")}</span>
+            <button type="button" onClick={() => downloadText(`${work.title}.txt`, localExport(work))}>{ui("导出 TXT")}</button>
+            <button type="button" onClick={() => downloadText(`${work.title}.json`, jsonBody({ schema: "plotloom.work", version: 1, work: workPayload(work) }), "application/json")}>{ui("完整备份")}</button>
+            <button type="button" disabled={editingDisabled} onClick={() => void persist()}>{ui("保存")}</button>
           </div>} />
           <ProjectToolbar type={work.content_type} current={tab} value={work} disabled={busy} onSelect={step => { setPreview(undefined); setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); }} actions={<>
-            <button type="button" className={styles.tool} disabled={editingDisabled || pending} onClick={() => void generate("premise", true)} title={`生成故事梗概、人物、大纲及全部 ${work.units}${unit}正文`}><Sparkles size={17} />一键生成全部</button>
-            {tab === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={editingDisabled || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
-            {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title, shownWork.chapters)}><Download size={17} />导出为Word</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />正文字数</button></>}
-            <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab === "settings" ? "world" : tab)}><Sparkles size={17} />{tab === "settings" ? "AI 完善世界" : `AI 生成${tab === "premise" ? "故事梗概" : labels[tab]}`}</button>
+            <button type="button" className={styles.tool} disabled={editingDisabled || pending} onClick={() => void generate("premise", true)} title={ui(`生成故事梗概、人物、大纲及全部 ${work.units}${unit}正文`)}><Sparkles size={17} />{ui("一键生成全部")}</button>
+            {tab === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={editingDisabled || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />{ui("灵感创作")}</button>}
+            {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title, shownWork.chapters)}><Download size={17} />{ui("导出为Word")}</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />{ui("正文字数")}</button></>}
+            <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab === "settings" ? "world" : tab)}><Sparkles size={17} />{ui(tab === "settings" ? "AI 完善世界" : `AI 生成${tab === "premise" ? "故事梗概" : labels[tab]}`)}</button>
           </>} />
           <main className={styles.workspace}>
-            {notice && notice !== "已保存" && <p className={styles.inlineMessage} role="status">{notice}</p>}
+            {notice && notice !== "已保存" && <p className={styles.inlineMessage} role="status">{ui(notice, true)}</p>}
             {selectedJob && (active.includes(selectedJob.status) || ["failed", "stopped", "interrupted"].includes(selectedJob.status) || conflict) && <div className={styles.generationStatus} role="status">
-              {active.includes(selectedJob.status) ? <><span>{selectedJob.mode === "all" ? `全部生成 ${selectedJob.completed}/${selectedJob.total} · ` : ""}{labels[selectedJob.current.action as keyof typeof labels]}{selectedJob.current.action === "chapter" ? ` · 第${selectedJob.current.number}${unit}` : ""} · {selectedJob.status === "queued" ? "排队中" : selectedJob.status === "stopping" ? "正在停止" : "生成中"}</span><button type="button" onClick={() => void control(selectedJob, "stop")}>停止</button></> : ["failed", "stopped", "interrupted"].includes(selectedJob.status) ? <><span>{selectedJob.error || "生成已停止，已完成内容保留。"}</span><button type="button" onClick={() => void control(selectedJob, "resume")}>继续生成</button></> : null}
-              {conflict && <><span>{fillError || "生成期间内容有修改，当前编辑已保留。"}</span><button type="button" onClick={() => previewResult ? setPreview(undefined) : showGenerated()}>{previewResult ? "返回当前内容" : "查看生成稿"}</button><button type="button" onClick={() => downloadText(`${work.title}-生成稿.txt`, ready.map(result => result.text).join("\n\n"))}>导出生成稿</button>{fillError && <button type="button" onClick={() => window.location.reload()}>刷新核对</button>}</>}
+              {active.includes(selectedJob.status) ? <><span>{ui(selectedJob.mode === "all" ? `全部生成 ${selectedJob.completed}/${selectedJob.total} · ` : "")}{ui(labels[selectedJob.current.action as keyof typeof labels])}{ui(selectedJob.current.action === "chapter" ? ` · 第${selectedJob.current.number}${unit}` : "")} {ui(" · ")}{ui(selectedJob.status === "queued" ? "排队中" : selectedJob.status === "stopping" ? "正在停止" : "生成中")}</span><button type="button" onClick={() => void control(selectedJob, "stop")}>{ui("停止")}</button></> : ["failed", "stopped", "interrupted"].includes(selectedJob.status) ? <><span>{ui(selectedJob.error || "生成已停止，已完成内容保留。")}</span><button type="button" onClick={() => void control(selectedJob, "resume")}>{ui("继续生成")}</button></> : null}
+              {conflict && <><span>{ui(fillError || "生成期间内容有修改，当前编辑已保留。")}</span><button type="button" onClick={() => previewResult ? setPreview(undefined) : showGenerated()}>{ui(previewResult ? "返回当前内容" : "查看生成稿")}</button><button type="button" onClick={() => downloadText(`${work.title}-生成稿.txt`, ready.map(result => result.text).join("\n\n"))}>{ui("导出生成稿")}</button>{fillError && <button type="button" onClick={() => window.location.reload()}>{ui("刷新核对")}</button>}</>}
             </div>}
-            {settingsBackup && tab === "premise" && <button type="button" className="text-button" disabled={editingDisabled} onClick={() => { setNumericInput({}); update(settingsBackup); setSettingsBackup(undefined); setNotice("已恢复灵感回填前的设定。"); }}>恢复回填前的设定</button>}
-            {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={`每${unit}目标字数`} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={editingDisabled} onChange={value => { setNumericInput(current => ({ ...current, words_per_chapter: String(value) })); update({ words_per_chapter: value }); }} /></div>}
+            {settingsBackup && tab === "premise" && <button type="button" className="text-button" disabled={editingDisabled} onClick={() => { setNumericInput({}); update(settingsBackup); setSettingsBackup(undefined); setNotice("已恢复灵感回填前的设定。"); }}>{ui("恢复回填前的设定")}</button>}
+            {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={ui(`每${unit}目标字数`)} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={editingDisabled} onChange={value => { setNumericInput(current => ({ ...current, words_per_chapter: String(value) })); update({ words_per_chapter: value }); }} /></div>}
             <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`} className={styles.stage}>
-              {tab === "premise" && <ProjectSettings type={work.content_type} value={shownWork} disabled={editingDisabled} onChange={changeSettings}>{work.creative?.source_text && <details><summary>改编／改写原始素材</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
+              {tab === "premise" && <ProjectSettings type={work.content_type} value={shownWork} disabled={editingDisabled} onChange={changeSettings}>{work.creative?.source_text && <details><summary>{ui("改编／改写原始素材")}</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
               {tab === "settings" && <ProjectParameters type={work.content_type} value={previewResult ? shownWork : { ...work, ...numericInput }} worlds={worlds} sections={status?.world_sections} worldId={previewResult ? null : work.world_id} disabled={editingDisabled} onChange={changeSettings} onWorldChange={(world, sourceId) => update({ world_snapshot: world, world_id: sourceId || null })} onSaveWorld={previewResult ? undefined : () => void saveWorldLibrary()} onExportWorld={previewResult ? undefined : () => void exportWorld()} />}
               {tab === "characters" && <CharacterEditor key={`${filled.characters}:${!!previewResult}`} value={shownWork.characters} disabled={busy} readOnly={!!previewResult} onChange={characters => update({ characters })} onGenerate={() => void generate("characters")} generating={pending} />}
               {tab === "outline" && <OutlineEditor key={`${filled.outline}:${!!previewResult}`} value={shownWork.outline} type={work.content_type} units={work.units} roughPreview={previewResult ? undefined : outlineStreamPreview(selectedJob, work, dirty)} disabled={editingDisabled} onChange={outline => update({ outline })} />}
               {tab === "chapter" && <ManuscriptEditor type={work.content_type} chapters={shownWork.chapters} units={work.units} number={number} disabled={editingDisabled} generating={pending} onNumber={next => { setPreview(undefined); setNumber(next); window.history.replaceState(null, "", workEditorUrl(work.id, { step: "chapter", number: next })); }} onChange={chapters => update({ chapters })} onGenerate={() => void generate("chapter")} onContinue={() => void generate("chapter", false, true)} />}
             </div>
-            {nextStep && <div className={styles.bottom}><button type="button" className={styles.tool} disabled={editingDisabled} onClick={async () => { if (await persist()) { setTab(nextStep); window.history.replaceState(null, "", workEditorUrl(work.id, { step: nextStep, number })); revealWritingStage(); } }}>保存并进入{viewLabels[nextStep]} →</button></div>}
+            {nextStep && <div className={styles.bottom}><button type="button" className={styles.tool} disabled={editingDisabled} onClick={async () => { if (await persist()) { setTab(nextStep); window.history.replaceState(null, "", workEditorUrl(work.id, { step: nextStep, number })); revealWritingStage(); } }}>{ui("保存并进入")}{ui(viewLabels[nextStep])} {ui(" →")}</button></div>}
           </main>
-          {inspiration && <Inspiration type={work.content_type} initialPrompt={work.premise} onApply={applySettings} onClose={() => setInspiration(false)} />}
+          {inspiration && <Inspiration market={work.market} outputLocale={work.output_locale} type={work.content_type} initialPrompt={work.premise} onApply={applySettings} onClose={() => setInspiration(false)} />}
         </>}
       </ProjectShell></div>
     </div>
@@ -338,6 +341,7 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
 function NumberSetting({ label, value, min, max, disabled, onChange }: {
   label: string; value: number; min: number; max: number; disabled: boolean; onChange: (value: number) => void;
 }) {
+  const ui = useUI();
   const [input, setInput] = useState(String(value));
   const [error, setError] = useState("");
   function commit() {
@@ -347,5 +351,5 @@ function NumberSetting({ label, value, min, max, disabled, onChange }: {
     }
     setError(""); if (next !== value) onChange(next);
   }
-  return <label>{label}<input type="number" min={min} max={max} value={input} disabled={disabled} onChange={e => setInput(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />{error && <span className="studio-error" role="alert">{error}</span>}</label>;
+  return <label>{ui(label)}<input type="number" min={min} max={max} value={input} disabled={disabled} onChange={e => setInput(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />{error && <span className="studio-error" role="alert">{ui(error, true)}</span>}</label>;
 }

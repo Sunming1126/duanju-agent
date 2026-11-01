@@ -1,7 +1,7 @@
 """Shared market, locale, and content-type normalization helpers."""
 
-MARKETS = {"china", "japan", "global"}
-LOCALES = {"zh-CN", "en", "ja-JP"}
+MARKETS = {"china", "japan", "arab", "global"}
+LOCALES = {"zh-CN", "en", "ja-JP", "ar"}
 CONTENT_TYPES = {"short_drama", "novel", "manga", "inspiration"}
 
 
@@ -9,6 +9,8 @@ def normalize_market(value: str | None) -> str:
     value = str(value or "").strip().lower()
     if value in {"japan", "jp", "ja", "日本", "日本市场"}:
         return "japan"
+    if value in {"arab", "ar", "arabic"}:
+        return "arab"
     if value in {"global", "world", "国际"}:
         return "global"
     return "china"
@@ -16,6 +18,8 @@ def normalize_market(value: str | None) -> str:
 
 def normalize_locale(value: str | None, market: str | None = None) -> str:
     value = str(value or "").strip().lower()
+    if value in {"ar", "ar-sa", "ar-ae", "arabic"}:
+        return "ar"
     if value in {"ja", "ja-jp", "jp", "日本語", "日本"}:
         return "ja-JP"
     if value in {"en", "en-us", "en-gb", "英语", "英文"}:

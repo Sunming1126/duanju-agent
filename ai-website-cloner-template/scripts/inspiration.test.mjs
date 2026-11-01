@@ -1,3 +1,4 @@
+import { legacyI18nDependency } from "./i18n-test-support.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -11,6 +12,7 @@ function load(name) {
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const exports = {};
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, path => {
+    const localeDependency = legacyI18nDependency(path); if(localeDependency) return localeDependency;
     if (path === "./writing") return load("writing");
     throw new Error(`Unexpected dependency: ${path}`);
   });

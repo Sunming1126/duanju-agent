@@ -1,4 +1,6 @@
 "use client";
+import { useUI } from "@/lib/i18n/provider";
+
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -15,6 +17,7 @@ import { storyConcepts, conceptImage } from "./story-concepts";
 import { Header, Modal } from "./shared";
 
 export function DramaLibrary() {
+  const ui = useUI();
   const params = useSearchParams();
   const [selected, setSelected] = useState<string | null>(() =>
     storyConcepts.some((item) => item.slug === params.get("concept"))
@@ -27,10 +30,10 @@ export function DramaLibrary() {
     () =>
       storyConcepts.filter(
         (item) =>
-          `${item.title} ${item.japaneseTitle}`.includes(query.trim()) &&
+          `${ui(item.title)} ${ui(item.description)}`.toLowerCase().includes(query.trim().toLowerCase()) &&
           (genre === "全部" || item.genre === genre),
       ),
-    [query, genre],
+    [query, genre, ui],
   );
   const current = storyConcepts.find((item) => item.slug === selected);
   return (
@@ -38,28 +41,25 @@ export function DramaLibrary() {
       <Header workspace />
       <main className="library-main">
         <Link className="back-link" href="/">
-          <ArrowLeft size={15} /> 返回首页
-        </Link>
+          <ArrowLeft size={15} /> {ui(" 返回首页 ")}</Link>
         <div className="library-title">
           <div>
-            <span className="eyebrow gold">PLOTLOOM ORIGINAL CONCEPTS</span>
-            <h1>故事灵感</h1>
-            <p>从一幅画面，展开一个属于你的世界。</p>
+            <span className="eyebrow gold">{ui("原创故事概念")}</span>
+            <h1>{ui("故事灵感")}</h1>
+            <p>{ui("从一幅画面，展开一个属于你的世界。")}</p>
           </div>
           <Link href="/studio/novels/new" className="pill light">
-            开始创作 <ArrowRight size={16} />
+            {ui(" 开始创作 ")}<ArrowRight size={16} />
           </Link>
         </div>
         {params.has("detail") && (
           <p className="storage-warning">
-            旧版参考海报已移除。你可以浏览下方新创作的故事概念。
-          </p>
+            {ui(" 旧版参考海报已移除。你可以浏览下方新创作的故事概念。 ")}</p>
         )}
         <div className="library-filters">
           <div className="genre-row">
             <span>
-              <SlidersHorizontal size={15} /> 题材
-            </span>
+              <SlidersHorizontal size={15} /> {ui(" 题材 ")}</span>
             {["全部", ...new Set(storyConcepts.map((item) => item.genre))].map(
               (item) => (
                 <button
@@ -67,18 +67,18 @@ export function DramaLibrary() {
                   className={genre === item ? "active" : ""}
                   onClick={() => setGenre(item)}
                 >
-                  {item}
+                  {ui(item)}
                 </button>
               ),
             )}
           </div>
           <div className="library-toolbar">
-            <span>原创动漫视觉概念</span>
+            <span>{ui("原创动漫视觉概念")}</span>
             <label className="search-field">
               <Search size={16} />
               <input
-                aria-label="搜索故事概念"
-                placeholder="搜索中文或日文标题"
+                aria-label={ui("搜索故事概念")}
+                placeholder={ui("搜索中文或日文标题")}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -86,8 +86,8 @@ export function DramaLibrary() {
           </div>
         </div>
         <div className="library-results">
-          <span>共 {shown.length} 个概念</span>
-          <span>Plotloom 原创企划 · AI 绘制</span>
+          <span>{ui("共 ")}{ui(shown.length)} {ui(" 个概念")}</span>
+          <span>{ui("Plotloom 原创企划 · AI 绘制")}</span>
         </div>
         {shown.length ? (
           <div className="library-grid">
@@ -100,22 +100,22 @@ export function DramaLibrary() {
                 <div className="library-poster">
                   <Image
                     src={conceptImage(item.slug)}
-                    alt={item.alt}
+                    alt={ui(item.alt)}
                     width={1024}
                     height={1536}
                     sizes="(max-width: 640px) 44vw, 240px"
                   />
                   <span className="poster-overlay">
                     <span>
-                      探索故事 <ChevronRight size={16} />
+                      {ui(" 探索故事 ")}<ChevronRight size={16} />
                     </span>
                   </span>
                 </div>
-                <h2>{item.title}</h2>
+                <h2>{ui(item.title)}</h2>
                 <p>
-                  {item.genre}
+                  {ui(item.genre)}
                   <span>
-                    查看概念 <ArrowRight size={12} />
+                    {ui(" 查看概念 ")}<ArrowRight size={12} />
                   </span>
                 </p>
               </button>
@@ -124,7 +124,7 @@ export function DramaLibrary() {
         ) : (
           <div className="empty-workspace">
             <Search size={34} />
-            <h2>没有找到相关概念</h2>
+            <h2>{ui("没有找到相关概念")}</h2>
             <button
               className="outline-button"
               onClick={() => {
@@ -132,34 +132,32 @@ export function DramaLibrary() {
                 setGenre("全部");
               }}
             >
-              清除筛选
-            </button>
+              {ui(" 清除筛选 ")}</button>
           </div>
         )}
         <p className="workspace-disclaimer">
-          以上为本项目生成的原创视觉概念与虚构故事简介，不代表已上线作品、市场排名或真实语料。
-        </p>
+          {ui(" 以上为本项目生成的原创视觉概念与虚构故事简介，不代表已上线作品、市场排名或真实语料。 ")}</p>
       </main>
       {current && (
-        <Modal title="原创故事概念" wide onClose={() => setSelected(null)}>
+        <Modal title={ui("原创故事概念")} wide onClose={() => setSelected(null)}>
           <div className="drama-detail">
             <Image
               src={conceptImage(current.slug)}
-              alt={current.alt}
+              alt={ui(current.alt)}
               width={1024}
               height={1536}
               sizes="280px"
             />
             <div>
-              <span className="detail-tag">{current.genre} · AI 视觉概念</span>
-              <h2>{current.title}</h2>
-              <p lang="ja">{current.japaneseTitle}</p>
+              <span className="detail-tag">{ui(current.genre)} {ui(" · AI 视觉概念")}</span>
+              <h2>{ui(current.title)}</h2>
+
               <div className="detail-description">
-                <h3>故事起点</h3>
-                <p>{current.description}</p>
+                <h3>{ui("故事起点")}</h3>
+                <p>{ui(current.description)}</p>
               </div>
               <Link className="pill light" href="/studio/novels/new">
-                创建自己的故事 <ArrowRight size={15} />
+                {ui(" 创建自己的故事 ")}<ArrowRight size={15} />
               </Link>
             </div>
           </div>

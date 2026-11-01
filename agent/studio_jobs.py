@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
+from .studio_region import unit_title
 from .studio_store import now, export_work_text
 from .studio_writing import normalized_work, writing_context, system_prompt, step_instruction, validate_chapter_format
 from .studio_queue import records as queue_records, paused, pause_after_rate_limit, policy, capacity, reserve_dispatch
@@ -218,7 +219,7 @@ def apply_result(work, result):
         number = result["number"]
         existing = next((c for c in work["chapters"] if c["number"] == number), None)
         work["chapters"] = sorted([c for c in work["chapters"] if c["number"] != number] +
-                                  [{"number": number, "title": existing["title"] if existing else f"第{number}{'章' if work['content_type']=='novel' else '集'}", "content": result["text"]}], key=lambda c: c["number"])
+                                  [{"number": number, "title": existing["title"] if existing else unit_title(work, number), "content": result["text"]}], key=lambda c: c["number"])
     elif result["action"] == "world":
         work["world_snapshot"] = result["world"]
     else:

@@ -35,11 +35,11 @@
 .sample-reader-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:25px}
 .sample-reader-actions a{display:inline-flex;align-items:center;gap:8px;font-size:12px;min-height:42px}
 .sample-reading-layout{display:grid;grid-template-columns:170px minmax(0,780px);gap:40px;align-items:start}
-.sample-contents{position:sticky;top:120px;display:flex;flex-direction:column;gap:3px;border-left:1px solid #ffffff16;padding-left:15px}
+.sample-contents{position:sticky;top:120px;display:flex;flex-direction:column;gap:3px;border-inline-start:1px solid #ffffff16;padding-inline-start:15px}
 .sample-contents>span{font-size:10px;color:#7c6e8e;letter-spacing:.1em;padding:0 8px 16px}
 .sample-contents a{font-size:12px;line-height:1.8;color:#a798b6;padding:7px 8px;border-radius:4px;overflow-wrap:anywhere}
 .sample-contents a:hover{color:#eee3fa;background:#ffffff06}
-.sample-contents .sample-chapter-link{font-size:10px;color:#8c7a9e;padding-left:19px}
+.sample-contents .sample-chapter-link{font-size:10px;color:#8c7a9e;padding-inline-start:19px}
 .sample-reading-body{min-width:0}
 .sample-section{scroll-margin-top:115px;margin-bottom:50px;padding-bottom:38px;border-bottom:1px solid #ffffff12}
 .sample-section-number{font-size:10px;letter-spacing:.14em;color:#8c76a7}
@@ -55,7 +55,7 @@
 .sample-world h3{font-size:12px;color:#d1bddf;margin-bottom:6px}
 .sample-world .sample-text{font-size:12px}
 .sample-character-list,.sample-outline{display:grid;gap:16px}
-.sample-character-list p,.sample-outline p{font-size:14px;line-height:2;color:#b9adC5;overflow-wrap:anywhere;border-left:2px solid #9b79c333;padding-left:20px}
+.sample-character-list p,.sample-outline p{font-size:14px;line-height:2;color:#b9adC5;overflow-wrap:anywhere;border-inline-start:2px solid #9b79c333;padding-inline-start:20px}
 .sample-chapter{scroll-margin-top:115px;padding-top:16px;margin-top:35px}
 .sample-chapter>span{font-size:10px;letter-spacing:.15em;color:#ac967a}
 .sample-chapter>h3{font-size:22px;margin:12px 0 28px;color:#e5d7c4;font-weight:500}
@@ -66,7 +66,7 @@
 .sample-chapter.is-drama>span{color:#7fa49b}
 .sample-chapter.is-drama .sample-prose{font-size:14px;line-height:2.05;color:#b9c7c5}
 .sample-lessons{display:grid;gap:24px}
-.sample-lessons>div{padding-left:35px;position:relative}
+.sample-lessons>div{padding-inline-start:35px;position:relative}
 .sample-lessons span{position:absolute;left:0;top:2px;font-size:11px;color:#9076a7}
 .sample-lessons h3{font-size:15px;color:#d0bedf;margin-bottom:8px}
 .sample-lessons p{font-size:13px;color:#a899b8;line-height:1.9}

@@ -5,6 +5,8 @@ const backend = (
 ).replace(/\/$/, "");
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["geoip-country"],
+  outputFileTracingIncludes: { "/*": ["./node_modules/geoip-country/data/**/*"] },
   async rewrites() {
     return [
       { source: "/api/backend/studio/:path*", destination: `${backend}/api/studio/:path*` },

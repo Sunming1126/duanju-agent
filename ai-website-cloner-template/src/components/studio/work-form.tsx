@@ -1,4 +1,7 @@
 "use client";
+import { usePreferences } from "@/lib/i18n/provider";
+import { useUI } from "@/lib/i18n/provider";
+
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, Sparkles } from "lucide-react";
@@ -25,12 +28,14 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   sampleId?: string; sampleInput?: WorkInput;
   onCreated: (work: Work, intent: CreationIntent, warning: string) => void | Promise<void>; onClose: () => void;
 }) {
+  const ui = useUI();
+  const preferences = usePreferences();
   const history = useEditHistory<CreationDraft>();
   const formRef = useRef<HTMLFormElement>(null);
   const generateRef = useRef<HTMLButtonElement>(null);
   const initialType: ContentType = kind || reference?.content_type || (mode === "小说创作" ? "novel" : "short_drama");
   const [draft, setDraft] = useState(() => {
-    const initial = initialCreationDraft(initialType, reference);
+    const initial = initialCreationDraft(initialType, reference, preferences);
     return sampleInput ? applyInspiration(initial, sampleInput) : initial;
   });
   const [inspiration, setInspiration] = useState(mode === "灵感策划" || mode === "灵感创作");
@@ -48,7 +53,8 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   const snapshotRef = useRef(draft);
   const restoredKey = useRef("");
   const draftSourceId = sampleId ? `official-${sampleId}` : reference?.id;
-  const baseStorageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}`;
+  const defaultRegion = preferences.market === "china" && preferences.locale === "zh-CN";
+  const baseStorageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}${defaultRegion ? "" : `-${preferences.market}-${preferences.locale}`}`;
   const storageKey = `${baseStorageKey}:space:${scope}`;
 
   useEffect(() => {
@@ -58,13 +64,13 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       if (disposed) return;
       try {
         readScopedDraft(baseStorageKey);
-        const sourceKey = creationDraftKeys(initialType, mode, draftSourceId).find(key => readScopedDraft(key)) || baseStorageKey;
+        const sourceKey = (defaultRegion ? creationDraftKeys(initialType, mode, draftSourceId) : [baseStorageKey]).find(key => readScopedDraft(key)) || baseStorageKey;
         const raw = readScopedDraft(sourceKey);
         if (raw) {
           const cached = JSON.parse(raw) as CreationDraft;
           if (cached.content_type === initialType && typeof cached.premise === "string" && typeof cached.title === "string") {
             restoredKey.current = scopedDraftKey(sourceKey);
-            setDraft({ ...initialCreationDraft(initialType, reference), ...cached });
+            setDraft({ ...initialCreationDraft(initialType, reference, preferences), ...cached, market: cached.market || "china", output_locale: cached.output_locale || "zh-CN" });
           } else if (["novel", "short_drama"].includes(cached.content_type)) {
             localStorage.setItem(`${storageKey}-other-type`, raw); setOtherTypeDraft(raw);
             setNotice("旧版草稿类型与当前入口不同，已保留备份；本页按当前入口创建作品。");
@@ -78,7 +84,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       setReady(true);
     });
     return () => { disposed = true; };
-  }, [storageKey, baseStorageKey, scope, initialType, reference, mode, draftSourceId]);
+  }, [storageKey, baseStorageKey, scope, initialType, reference, mode, draftSourceId, preferences, defaultRegion]);
 
   useEffect(() => {
     snapshotRef.current = draft;
@@ -136,24 +142,24 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   return <>
     <ProjectTitle type={type} title={draft.title} disabled={disabled} onChange={title => update({ title })} />
     <ProjectToolbar type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => setDraft(current => ({ ...current, step: next }))} actions={<>
-      <button form="plotloom-create-form" type="submit" name="intent" value="all" className={styles.tool} disabled={disabled} title={`生成故事梗概、人物、大纲及全部 ${safeUnits}${type === "novel" ? "章" : "集"}正文`}><Sparkles size={17} />一键生成全部</button>
-      {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />灵感创作</button>}
+      <button form="plotloom-create-form" type="submit" name="intent" value="all" className={styles.tool} disabled={disabled} title={ui(`生成故事梗概、人物、大纲及全部 ${safeUnits}${type === "novel" ? "章" : "集"}正文`)}><Sparkles size={17} />{ui("一键生成全部")}</button>
+      {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />{ui("灵感创作")}</button>}
       <>
-        {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />导出为Word</button>}
-        <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />{step === "settings" ? "AI 完善世界" : `AI 生成${labels[step]}`}</button>
+        {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />{ui("导出为Word")}</button>}
+        <button ref={generateRef} form="plotloom-create-form" type="submit" name="intent" value="generate" className={styles.primary} disabled={disabled}><Sparkles size={17} />{ui(step === "settings" ? "AI 完善世界" : `AI 生成${labels[step]}`)}</button>
       </>
     </>} />
     <div className={styles.workspace}><form ref={formRef} id="plotloom-create-form" className={styles.form} onSubmit={submit} onKeyDown={event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.defaultPrevented && event.target.getAttribute("role") !== "combobox") event.preventDefault(); }} noValidate>
-      {sampleInput && <p className={styles.inlineMessage}>已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。</p>}
-      {cacheError && <p className={styles.inlineMessage} role="status">当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。</p>}
-      {notice && <p className={styles.inlineMessage} role="status">{notice}</p>}
-      {backup && <button type="button" className="text-button" disabled={busy} onClick={() => { history.record(draft); setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>恢复回填前的表单</button>}
-      {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>导出旧类型草稿备份</button>}
+      {sampleInput && <p className={styles.inlineMessage}>{ui("已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。")}</p>}
+      {cacheError && <p className={styles.inlineMessage} role="status">{ui("当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。")}</p>}
+      {notice && <p className={styles.inlineMessage} role="status">{ui(notice, true)}</p>}
+      {backup && <button type="button" className="text-button" disabled={busy} onClick={() => { history.record(draft); setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>{ui("恢复回填前的表单")}</button>}
+      {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>{ui("导出旧类型草稿备份")}</button>}
       <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={styles.stage}>
         {step === "premise" && <ProjectSettings type={type} value={projectSettingsFromDraft(draft)} disabled={disabled} onChange={patch => update(applyProjectSettings(draft,patch))}>
           <div className={styles.worldArea}>
-            {draft.source_text && ["小说改编", "剧本改写"].includes(mode) && <details><summary>回填前的原始素材（创建作品时一并保留）</summary><pre className="plotloom-pre">{draft.source_text}</pre></details>}
-            <label>导入 TXT 素材（最多2 MB / 50,000字符）<input type="file" accept=".txt,text/plain" disabled={disabled} onChange={async e => {
+            {draft.source_text && ["小说改编", "剧本改写"].includes(mode) && <details><summary>{ui("回填前的原始素材（创建作品时一并保留）")}</summary><pre className="plotloom-pre">{draft.source_text}</pre></details>}
+            <label>{ui("导入 TXT 素材（最多2 MB / 50,000字符）")}<input type="file" accept=".txt,text/plain" disabled={disabled} onChange={async e => {
               const file = e.target.files?.[0]; e.target.value = ""; if (!file) return;
               const previous = snapshotRef.current.premise; setError("");
               try { if (file.size > 2 * 1024 * 1024) throw new Error("文件超过2 MB。"); const text = await file.text(); if (text.length > 50000) throw new Error("文件超过50,000字符。"); if (snapshotRef.current.premise !== previous) throw new Error("读取文件期间故事想法已修改，请重新选择文件。"); update({ premise: text }); }
@@ -166,9 +172,9 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
         {step === "outline" && <OutlineEditor value={draft.outline} type={type} units={safeUnits} disabled={disabled} onChange={outline => update({ outline })} />}
         {step === "chapter" && <ManuscriptEditor type={type} chapters={draft.chapters} units={safeUnits} number={number} disabled={disabled} onNumber={number => update({ chapter_number: number })} onChange={chapters => update({ chapters })} onGenerate={generateCurrent} />}
       </div>
-      {error && <p className="studio-error" role="alert">{error}</p>}
-      {created.current && <a className="text-button" href={`/studio/works/${created.current.id}`}>草稿已创建，打开作品 →</a>}
-      <div className={styles.bottom}><div>{nextStep && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(nextStep)}>继续：{labels[nextStep]} →</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{busy ? "正在保存…" : "保存全部内容，创建作品"}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>返回作品库</button></div></div>
+      {error && <p className="studio-error" role="alert">{ui(error, true)}</p>}
+      {created.current && <a className="text-button" href={`/studio/works/${created.current.id}`}>{ui("草稿已创建，打开作品 →")}</a>}
+      <div className={styles.bottom}><div>{nextStep && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(nextStep)}>{ui("继续：")}{ui(labels[nextStep])} {ui(" →")}</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{ui(busy ? "正在保存…" : "保存全部内容，创建作品")}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>{ui("返回作品库")}</button></div></div>
     </form></div>
     {inspiration && <Inspiration key={type} type={type} initialPrompt={draft.premise} onApply={apply} onClose={() => setInspiration(false)} />}
   </>;

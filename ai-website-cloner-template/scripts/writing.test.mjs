@@ -1,3 +1,4 @@
+import { legacyI18nDependency } from "./i18n-test-support.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -17,6 +18,7 @@ function load(path) {
   const exports = {};
   cache.set(path, exports);
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, name => {
+    const localeDependency = legacyI18nDependency(name); if(localeDependency) return localeDependency;
     if (["react", "react/jsx-runtime", "lucide-react"].includes(name)) return require(name);
     if (name.endsWith(".module.css")) return { __esModule: true, default: {} };
     if (name === "next/link") return { __esModule: true, default: props => React.createElement("a",props) };
