@@ -217,7 +217,9 @@ test "$ready" = 1
 
 "$python" - "$archive" "$release" "$db" "$backup" <<'PY'
 import hashlib, json, sqlite3, sys, zipfile
+from http.cookiejar import Cookie, CookieJar
 from pathlib import Path
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen as anonymous_open, build_opener, HTTPCookieProcessor
 from urllib.error import HTTPError
 archive, release, database, backup = sys.argv[1:]
@@ -232,7 +234,13 @@ with sqlite3.connect('file:' + backup + '?mode=ro', uri=True) as previous, sqlit
         if previous.execute("SELECT 1 FROM sqlite_master WHERE name=?", (table,)).fetchone():
             assert current.execute('SELECT count(*) FROM ' + table).fetchone()[0] >= previous.execute('SELECT count(*) FROM ' + table).fetchone()[0], table
 for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
-    opener = build_opener(HTTPCookieProcessor())
+    # Keep the existing Chinese sample checks independent of the caller's country.
+    # A cookie jar preserves the session cookie used by the private API checks too.
+    cookies = CookieJar()
+    cookies.set_cookie(Cookie(0, 'plotloom-preferences', 'zh-CN~china', None, False,
+                             urlsplit(base).hostname, False, False, '/', True,
+                             False, None, True, None, None, {}))
+    opener = build_opener(HTTPCookieProcessor(cookies))
     urlopen = opener.open
     try:
         anonymous_open(base + '/api/backend/studio/works', timeout=30)
