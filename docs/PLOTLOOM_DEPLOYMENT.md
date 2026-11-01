@@ -1,5 +1,13 @@
 # Plotloom 中文版发布记录
 
+## 2026-10-30 作品、语料与我的空间顶部精简上线
+
+- 运行源码`7819ce9b7c0360c507e30d0a2442a4532c93b92c`已同步GitHub。三页内容区顶部重复大标题、附近小字及多余留白移除，作品导入移入筛选工具栏，侧栏和原功能保持。
+- release：`/opt/plotloom-cn/releases/20261030T142259Z-inspiration-7819ce9b`；previous：`20261030T131801Z-inspiration-0857f883`；数据库备份：`/opt/plotloom-cn/backups/studio-20261030T142259Z-inspiration.sqlite3`（0600）。源码包SHA256 `cb719f64b91cab1791d296e4ccec302f5feb26947f4b0a96fc232bc71c21587b`，runner SHA256 `c0433e2b8a0fdf18fd5cbc34d16d618a84e35d8c36cad072ece5c43180ed1f52`。
+- 首次连接执行前断开，经只读确认无发布进程／日志后重连。npm安装因磁盘满在停服前停止，current未变；仅清理40个非当前release构建缓存、本次失败node_modules及专用下载缓存，释放约4GB，保留运行版本、历史发布文件、shared/data和备份。最终64项后端、56项前端、lint／类型与webpack构建通过，空闲队列、SQLite备份、原子切换与发布检查输出DEPLOYMENT_OK，无回滚。日志`/tmp/plotloom-headings-publish-final.log`。
+- 只读补验`backups/headings-live-report.json`为ok：公网和回环三页无顶部h1／多余说明，JS/CSS逐份匹配release；六表及账号逐行与备份一致18/15/44/0/15/28/2，SQLite正常，并发5/10保持。中文服务active，旧站PID1948834不变，日文200。零模型／邮件调用，未改用户数据、配置、Nginx或systemd，未启动浏览器或本机应用；人工视觉仍由用户验收。
+- 回滚仅切回上述0857f883并保留shared/data，不恢复旧库；回滚将恢复三页顶部标题。
+
 ## 2026-10-30 我的空间完整账号设置页上线
 
 - 运行源码`0857f883dee9a480410fc632072f4a2e79b4d08c`已同步GitHub；完整/account页面、昵称／头像保存、登录后隐藏页头账号按钮及会员积分未开放预留已上线。
