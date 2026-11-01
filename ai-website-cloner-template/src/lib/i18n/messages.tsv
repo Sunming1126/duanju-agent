@@ -174,7 +174,7 @@ JPG、PNG、WebP · 最大 2 MiB · 自动居中裁剪	JPG, PNG, WebP · Up to 2
 {0} 个请求	{0} requests	{0}リクエスト	{0} طلبات
 多人等待时轮流调度，同一作品的章节按顺序衔接。	Tasks take turns when several writers are waiting. Chapters of a work stay in sequence.	複数の利用者が待機している場合は順番に処理し、同じ作品の章は順序を守ります。	تُوزع المهام بالتناوب عند انتظار عدة كتّاب، وتُكتب فصول العمل بالترتيب.
 生成请求暂缓启动，排队内容已保留。	Generation is temporarily paused. Queued tasks are preserved.	生成の開始を一時保留しています。待機中のタスクは保持されています。	بدء التوليد مؤجل مؤقتًا. المهام المنتظرة محفوظة.
-模型信息读取失败：	Could not load model information: 	モデル情報を読み込めません：	تعذر تحميل معلومات النموذج: 
+模型信息读取失败：	Could not load model information: 	モデル情報を読み込めません：	تعذر تحميل معلومات النموذج:
 正在读取服务信息…	Loading service information…	サービス情報を読み込み中…	جارٍ تحميل معلومات الخدمة…
 正在读取个人空间	Loading your space	スペースを読み込み中	جارٍ تحميل مساحتك
 正在读取个人空间…	Loading your space…	スペースを読み込み中…	جارٍ تحميل مساحتك…
@@ -263,8 +263,8 @@ JPG、PNG、WebP · 最大 2 MiB · 自动居中裁剪	JPG, PNG, WebP · Up to 2
 大纲编辑	Outline editor	構成エディター	محرر المخطط
 大纲总长度不能超过50,000字，请精简后保存。	The outline must not exceed 50,000 characters. Shorten it before saving.	構成は50,000文字以内に短くしてから保存してください。	يجب ألا يتجاوز المخطط 50,000 حرف. اختصره قبل الحفظ.
 写下故事的整体走向……	Describe the overall story arc…	物語全体の流れを書きましょう…	صِف المسار العام للقصة…
-原有大纲完整保留在此，可直接编辑，也可逐	Your original outline is preserved. Edit it here or add individual 	元の構成を全文保持しています。ここで編集するか、各	المخطط الأصلي محفوظ. حرره هنا أو أضف مخطط كل 
-全文包含全部粗纲与分	The full text contains the synopsis and all 	全文には全体あらすじと各	يحتوي النص الكامل على الملخص العام ومخططات 
+原有大纲完整保留在此，可直接编辑，也可逐	Your original outline is preserved. Edit it here or add individual 	元の構成を全文保持しています。ここで編集するか、各	المخطط الأصلي محفوظ. حرره هنا أو أضف مخطط كل
+全文包含全部粗纲与分	The full text contains the synopsis and all 	全文には全体あらすじと各	يحتوي النص الكامل على الملخص العام ومخططات
 补充分纲。	outlines.	の構成を補足できます。	.
 内容，修改后保留原文。	outlines, preserving your original text when edited.	の構成が含まれ、変更時も原文を保持します。	مع الحفاظ على النص الأصلي عند التحرير.
 正文	Manuscript	本文	النص
@@ -278,11 +278,11 @@ JPG、PNG、WebP · 最大 2 MiB · 自动居中裁剪	JPG, PNG, WebP · Up to 2
 从一个动作、一句对话，或一个无法回头的决定开始……	Begin with an action, a line of dialogue, or an irreversible decision…	一つの行動、一言の会話、後戻りできない決断から…	ابدأ بفعل أو جملة حوار أو قرار لا رجعة فيه…
 场1 地点 日 内 出场人物： 写下人物的行动与对白……	INT. LOCATION - DAY\nCast:\nWrite action and dialogue…	INT. 場所 - 昼\n登場人物：\n行動と会話を書きましょう…	INT. المكان - نهار\nالشخصيات:\nاكتب الأفعال والحوار…
 点击按钮创建新{0}，AI辅助您生成初稿	Create a new {0} and let AI help with the first draft	新しい{0}を作成し、AIで初稿を作れます	أنشئ {0} جديدًا واستعن بالذكاء الاصطناعي للمسودة الأولى
-添加一	Add a 	追加：	إضافة 
-创建新	Create 	新規作成：	إنشاء 
-续写本	Continue this 	この	متابعة 
-计划内的	Planned 	計画内の	المخطط من 
-此	this 	この	هذا 
+添加一	Add a 	追加：	إضافة
+创建新	Create 	新規作成：	إنشاء
+续写本	Continue this 	この	متابعة
+计划内的	Planned 	計画内の	المخطط من
+此	this 	この	هذا
 章	chapter	章	فصل
 集	episode	話	حلقة
 章节	Chapters	章	الفصول
@@ -290,14 +290,14 @@ JPG、PNG、WebP · 最大 2 MiB · 自动居中裁剪	JPG, PNG, WebP · Up to 2
 集数	Episode count	話数	عدد الحلقات
 字	characters	文字	حرف
 纲	outline	構成	مخطط
-第	No. 	第	رقم 
+第	No. 	第	رقم
 第1集	Episode 1	第1話	الحلقة 1
 第{0}{1}	{1} {0}	第{0}{1}	{1} {0}
 第{0}{1}标题	{1} {0} title	第{0}{1}のタイトル	عنوان {1} {0}
 第{0}{1}正文编辑	Edit {1} {0}	第{0}{1}の本文編集	تحرير {1} {0}
 第{0}{1}尚未创建	{1} {0} has not been created	第{0}{1}は未作成です	لم يُنشأ {1} {0} بعد
 第{0}{1}{2}纲	{1} {0} {2} outline	第{0}{1}{2}の構成	مخطط {1} {0} {2}
-· 第	· No. 	・第	· رقم 
+· 第	· No. 	・第	· رقم
 计划	Plan	計画	الخطة
 计划 {0}{1}	Plan: {0} {1}s	計画：{0}{1}	الخطة: {0} {1}
 完整	Complete	全	كامل
@@ -315,7 +315,7 @@ AI生成本{0}	Generate this {0}	この{0}をAI生成	توليد هذا {0}
 · 生成中	· Generating	・生成中	· قيد التوليد
 排队中	Queued	待機中	في الانتظار
 已排队，正在等待创作服务	Queued, waiting for the writing service	待機列に入りました。創作サービスの処理待ちです	أُضيف إلى الطابور بانتظار خدمة الكتابة
-全部生成 {0}/{1} · 	Generate all {0}/{1} · 	一括生成 {0}/{1}・	توليد الكل {0}/{1} · 
+全部生成 {0}/{1} · 	Generate all {0}/{1} · 	一括生成 {0}/{1}・	توليد الكل {0}/{1} ·
 停止	Stop	停止	إيقاف
 正在停止	Stopping	停止中	جارٍ الإيقاف
 继续生成	Resume generation	生成を再開	استئناف التوليد
@@ -328,7 +328,7 @@ AI生成本{0}	Generate this {0}	この{0}をAI生成	توليد هذا {0}
 生成内容回填未确认，请刷新核对；原稿和生成稿均保留。	Could not confirm applying the draft. Refresh to check; both drafts are preserved.	生成稿の反映を確認できません。更新して確認してください。原稿と生成稿は保持されています。	تعذر تأكيد تطبيق المسودة. حدّث للتحقق؛ النص الأصلي والمولّد محفوظان.
 提交未确认，请刷新当前步骤核对。	Submission not confirmed. Refresh this step to check.	送信を確認できません。このステップを更新して確認してください。	لم يُؤكد الإرسال. حدّث هذه المرحلة للتحقق.
 刷新核对	Refresh to check	更新して確認	تحديث للتحقق
-继续：	Continue: 	続き：	متابعة: 
+继续：	Continue: 	続き：	متابعة:
 目标受众	Audience	読者・視聴者層	الجمهور المستهدف
 男频	Male audience	男性向け	جمهور رجالي
 女频	Female audience	女性向け	جمهور نسائي
@@ -597,7 +597,7 @@ AI 灵感策划	AI story planning	AIで物語を企画	تخطيط القصة ب�
 灵感策划	Idea planning	アイデア企画	تخطيط الأفكار
 灵感创作步骤	Idea workshop steps	アイデア創作の手順	مراحل ورشة الأفكار
 从一个念头开始	Begin with an idea	一つの着想から	ابدأ بفكرة
-描述你的想法，探索三个故事方向，再把喜欢的方案变成	Describe an idea, explore three directions, then turn your favorite into a 	着想を伝え、3つの方向を比べ、気に入った案を形に：	صِف فكرتك واستكشف ثلاثة اتجاهات ثم حوّل المفضل إلى 
+描述你的想法，探索三个故事方向，再把喜欢的方案变成	Describe an idea, explore three directions, then turn your favorite into a 	着想を伝え、3つの方向を比べ、気に入った案を形に：	صِف فكرتك واستكشف ثلاثة اتجاهات ثم حوّل المفضل إلى
 自然语言描述故事想法	Describe your story idea	物語の着想を自由に記述	صِف فكرة قصتك بكلماتك
 01 描述想法	01 Describe your idea	01 着想を伝える	01 صِف الفكرة
 02 打磨方案	02 Refine a plan	02 案を磨く	02 طوّر الخطة
@@ -692,7 +692,7 @@ AI 灵感策划	AI story planning	AIで物語を企画	تخطيط القصة ب�
 正在读取语料…	Loading references…	参考資料を読み込み中…	جارٍ تحميل المراجع…
 （加载中）	(loading)	（読み込み中）	(جارٍ التحميل)
 （暂未配置）	(not configured)	（未設定）	(غير معدّ)
-（不超过	(up to 	（上限	(حتى 
+（不超过	(up to 	（上限	(حتى
 Plotloom · 短剧与小说创作平台	Plotloom · Screenplay and Novel Studio	Plotloom · 脚本と小説の創作スタジオ	Plotloom · استوديو السيناريو والرواية
 Plotloom 短剧与小说创作平台，从灵感、世界设定到故事正文，让创作逐步成形。	Plotloom: develop ideas, build worlds and write screenplays and novels.	Plotloom で着想と世界設定を育て、脚本や小説を形にしましょう。	طوّر أفكارك وابنِ العوالم واكتب السيناريو والرواية مع Plotloom.
 世界设定 · 本地创作	Worldbuilding	世界設定	بناء العالم
@@ -744,7 +744,7 @@ AI辅助创作	AI-assisted writing	AI支援による創作	كتابة بمساع
 {0} · 自然文风 · {1}	{0} · Natural prose · {1}	{0}・自然な文章・{1}	{0} · نثر طبيعي · {1}
 {0}短剧 · 单集目标 {1} 分钟 · 紧凑场景	{0} drama · {1} minutes per episode · Focused scenes	{0}ドラマ・1話目標{1}分・集中的なシーン	دراما {0} · {1} دقائق للحلقة · مشاهد مركزة
 Plotloom官方样例-{0}.txt	Plotloom-example-{0}.txt	Plotloom公式サンプル-{0}.txt	Plotloom-نموذج-{0}.txt
-题材参考：	Genre reference: 	ジャンルの参考：	مرجع النوع: 
+题材参考：	Genre reference: 	ジャンルの参考：	مرجع النوع:
 参考题材方向，人物与故事独立创作。	Genre reference only; characters and story are original.	ジャンルのみ参考にし、人物と物語は独自に創作しています。	مرجع للنوع فقط؛ الشخصيات والقصة أصلية.
 红果热播总榜 ·	Hongguo popular chart ·	Hongguo 人気ランキング・	ترتيب Hongguo للأكثر مشاهدة ·
 名《	: “	位「	: «
@@ -756,7 +756,7 @@ Plotloom官方样例-{0}.txt	Plotloom-example-{0}.txt	Plotloom公式サンプル
 查看来源 ↗	View source ↗	出典を見る ↗	عرض المصدر ↖
 该条目尚无故事梗概。	No premise is available for this entry.	この項目にはあらすじがありません。	لا يتوفر ملخص لهذا العنصر.
 此条目暂无更多情节拆解，详见来源。	No further plot breakdown is available. See the source.	詳しい展開の分析はありません。出典をご確認ください。	لا يتوفر تحليل إضافي للحبكة. راجع المصدر.
-开场参考：	Opening reference: 	冒頭の参考：	مرجع البداية: 
+开场参考：	Opening reference: 	冒頭の参考：	مرجع البداية:
 预览资料	Preview reference	参考資料をプレビュー	معاينة المرجع
 查看旧站中文历史	View earlier Chinese-site history	旧中国語サイトの履歴を見る	عرض سجل الموقع الصيني السابق
 个正文单元 · 只读历史	units · Read-only history	単位・読み取り専用の履歴	وحدات · سجل للقراءة فقط
@@ -864,8 +864,8 @@ PLOTLOOM ORIGINAL CONCEPTS	Original story concepts	オリジナルの物語企�
 失败	Failed	失敗	فشل
 已中断	Interrupted	中断	منقطع
 已停止	Stopped	停止済み	متوقف
-参考素材：	Reference: 	参考素材：	المصدر المرجعي: 
-我的创作方向：	My story direction: 	自分の創作方針：	اتجاه قصتي: 
+参考素材：	Reference: 	参考素材：	المصدر المرجعي:
+我的创作方向：	My story direction: 	自分の創作方針：	اتجاه قصتي:
 官方{0}样例	Official {0} example	公式{0}サンプル	نموذج {0} رسمي
 完整{0}章	Complete chapters: {0}	全{0}章	الفصول الكاملة: {0}
 完整{0}集	Complete episodes: {0}	全{0}話	الحلقات الكاملة: {0}
