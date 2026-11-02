@@ -1,5 +1,12 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-02 移除回填前恢复功能上线
+
+- 用户明确授权部署，start成功，运行源码c1f9dc12d79c1ab0371b967a34a4836800819659。release `/opt/plotloom-cn/releases/20261102T043631Z-inspiration-c1f9dc12`，previous `20261102T031220Z-inspiration-06cf01a9`，SQLite备份 `backups/studio-20261102T043631Z-inspiration.sqlite3`。包SHA256 b6077e0293cecc6a736a877231fefb9796b33578c51d4c19ee1401866a988fdc，runner SHA256 9374cbdde7419a7e2f5fd5ee02c0980aabdc835f308677043af88842281b101d，上传后双校验。日志 `/tmp/plotloom-remove-restore-publish.log`。
+- 本机257后端／101前端／lint／类型检查，服务器115后端／67前端／lint／类型及webpack构建通过。空闲队列、备份、原子切换及发布器检查通过，DEPLOYMENT_OK，无回滚。仅隔离测试进程设并发3，正式5/10保持。
+- `backups/remove-restore-20261102-live-report.json`为ok：发布源文件不再含专用备份读写／状态，生产JS中中英文恢复按钮文案消失；四语言36个公网页面、RTL、地区路由及6份外语样例／下载／回填通过。SQLite正常，六表及账号／头像全行保留18/15/44/0/15/28/2/0，私有配置／恢复码指纹保持。三服务active PID448841/448842/448843，旧站1948834未变、日文200。本轮未修改Nginx／systemd、调用模型／邮件或启动浏览器；HTTP与资源验证不等于实际点击验收。
+- 回滚仅在确认current仍为本版后切回上述06cf01a9并重启Plotloom三服务，保留shared/data，不恢复旧数据库；回滚将恢复旧按钮。本轮未清理历史文件。
+
 ## 2026-11-02 四语言与地区创作风格上线
 
 - 用户明确授权部署，运行源码 `06cf01a9259065da7291ca04269cdb69eaa0c99f` 已同步GitHub，包含四语言实现及发布器中文样例显式Cookie偏好修正。常规Git链路超时后以本次进程HTTP/1.1恢复正常同步，没有更改全局设置或使用强推。
