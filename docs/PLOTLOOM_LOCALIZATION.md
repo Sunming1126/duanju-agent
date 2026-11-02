@@ -1,6 +1,6 @@
 # Plotloom 四语言与地区创作风格
 
-2026-11-01。本轮交付源码，未部署、重启服务或调用真实模型。
+源码交付于2026-11-01，2026-11-02已获用户授权并正式上线。运行源码06cf01a9，发布和回滚记录见[PLOTLOOM_DEPLOYMENT.md](PLOTLOOM_DEPLOYMENT.md)。未调用真实模型。
 
 ## 使用规则
 
@@ -43,6 +43,8 @@
 
 发布入口已纳入地区后端回归及前端四语言渲染检查。部署仍按项目既有双哈希、隔离检查、空闲队列、SQLite 备份和兼容回滚流程执行；本轮未获新部署指令，不执行线上切换。
 
+上线补充：2026-11-02已核实本站Nginx直连访客、覆盖X-Real-IP，Next仅监听回环。Next生产响应会覆盖Proxy写入的Vary，因此本站Nginx location另加 `add_header Vary Cookie always;`，保留Next自身的Vary字段；公网实测Cookie及private/no-store存在。上述“未获部署指令”描述仅对应最初源码交付阶段。迁移或重建代理时须保留这个配置并重新验证最终HTTP响应。
+
 ## 生成约定
 
 `WorkInput` 与灵感输入接受 `market=china|japan|arab|global`、`output_locale=zh-CN|ja-JP|ar|en`，两者独立。旧默认不变，未知枚举拒收。标记随作品、备份、灵感解析和任务快照流转，无 SQLite 表结构迁移。
@@ -60,6 +62,8 @@
 最终验证数字与协作记录见 AGENT.md。本机完整广泛测试中，原 `test_three_cases_use_six_jobs_and_archive_only_their_own_works` 的 POSIX 文件模式 `0600` 断言在 Windows 返回 `0666`，此平台限制单列记录；原断言未降低，最终跨平台回归显式排除这一项。首次因本机缺少 google-auth／Pillow 导致失败后，仅在项目 .venv 安装 requirements.txt 已声明的依赖，并以 Python UTF-8 模式解决 Windows 默认 GBK 读取报告的问题。
 
 没有启动网站、开发服务器、浏览器、模拟器或设备，没有真实模型／邮件调用、线上数据操作或部署。SSR 和构建通过不等于浏览器点击、320～1440px 视觉、实际公网地区路由或四语言长篇文学质量已验收；上线前仍须在授权环境实际验收。
+
+以上为源码开发阶段的验证边界。2026-11-02部署后已通过四语言36个主要公网页面、6份外语样例全文／下载／回填、图片哈希、RTL属性、缓存头、7组可信IP路由和Cookie优先级的HTTP补验；旧作品／账号／私有配置保留。未启动浏览器、调用真实模型或验证多国实际网络及长篇文学效果，不将HTTP结构检查当作实际视觉／点击验收。
 
 ## 原创图片与提示词
 

@@ -1,5 +1,15 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-02 四语言与地区创作风格上线
+
+- 用户明确授权部署，运行源码 `06cf01a9259065da7291ca04269cdb69eaa0c99f` 已同步GitHub，包含四语言实现及发布器中文样例显式Cookie偏好修正。常规Git链路超时后以本次进程HTTP/1.1恢复正常同步，没有更改全局设置或使用强推。
+- release：`/opt/plotloom-cn/releases/20261102T031220Z-inspiration-06cf01a9`；previous：`20261030T142259Z-inspiration-7819ce9b`；SQLite备份：`/opt/plotloom-cn/backups/studio-20261102T031220Z-inspiration.sqlite3`（0600）。源码包 `plotloom-20261101T144630Z-06cf01a92590.zip`，SHA256 `0d172fb301a6fb536f225e6ca82ba779d474281f1d05963ba9649e1c98756094`；runner SHA256 `9374cbdde7419a7e2f5fd5ee02c0980aabdc835f308677043af88842281b101d`。上传后双校验再执行，日志 `/tmp/plotloom-localization-publish.log`。
+- 本机257项后端、101项前端、lint及类型通过；Linux115项后端、67项前端、lint／类型／webpack构建通过。隔离测试进程显式并发3，正式5执行／10排队保持。空闲队列、数据库备份、原子切换及源码／页面／中文样例／访问边界检查通过，输出DEPLOYMENT_OK，无回滚。
+- 实核Next只监听127.0.0.1:3001，DNS直达本机，本站Nginx覆盖X-Real-IP为remote_addr，无额外real-IP／CDN配置。公网补验发现Next运行时覆盖Proxy的Vary，已仅在本站location加入 `add_header Vary Cookie always;`，nginx -t及reload通过；原配置备份 `backups/nginx-localization-before-20261102.conf`（0600）。页面保持private/no-store，公网Vary包含Cookie。其他虚拟主机／systemd配置未改。
+- 只读报告 `backups/localization-20261101-live-report.json` 为ok：四语言各9个公网页面共36页的lang／dir／地区／缓存头通过，英语和阿拉伯语界面可见文字无中日文残留；阿拉伯语RTL，中国／阿拉伯图片原文件哈希正确，standalone内IPv4／IPv6库齐全。6份外语样例阅读／第三单元／下载／回填入口通过。7组可信回环IP请求覆盖中国、日本、阿拉伯、英语及IPv6／无效地址；独立界面与地区Cookie优先，公网伪造内部／真实IP头不能绕过Nginx。自动地区验证为可信回环模拟地址，并非实际跨国浏览器访问。
+- SQLite正常，六表及账号／头像记录与备份全行一致：18作品／15世界／44任务／0候选／15灵感会话／28灵感任务／2账号／0头像；模型、登录及恢复码指纹保持。中文api／worker／web active，PID387665／387666／387667；旧站PID1948834不变、日文站200。无真实模型／邮件请求或用户作品修改，未启动本机服务／浏览器；实际视觉／点击、多语长篇质量仍未人工验收。磁盘剩余约2.2GB，本轮未删除缓存或历史文件。
+- 回滚先核实current仍为本次release，只切回上述账号兼容7819ce9b并重启Plotloom三服务，保留shared/data，不恢复旧SQLite覆盖新数据；旧程序将恢复中文单语。Vary新增头可保留；如需撤销，核对备份及本站差异后恢复上述单个站点配置，nginx -t通过后reload。
+
 ## 2026-10-30 作品、语料与我的空间顶部精简上线
 
 - 运行源码`7819ce9b7c0360c507e30d0a2442a4532c93b92c`已同步GitHub。三页内容区顶部重复大标题、附近小字及多余留白移除，作品导入移入筛选工具栏，侧栏和原功能保持。

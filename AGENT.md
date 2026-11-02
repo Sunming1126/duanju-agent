@@ -672,3 +672,10 @@
 
 - 用户明确要求部署，成功start同步debbc27；只读确认线上7819ce9b、Plotloom独立三服务及旧站active，Next只监听127.0.0.1:3001，Nginx站点覆盖X-Real-IP为remote_addr，不需改代理配置。磁盘剩余约3.1GB，发布前继续监测。
 - 本机PrepareOnly后端／前端、lint及类型检查通过；检查发现既有发布器的中文样例断言依赖默认中文，而新地区选择可能默认英语。仅为这组既有验收加入明确中文偏好的CookieJar，保留原身份会话Cookie和所有断言，不改变线上默认地区规则。最终发布、备份及公网四语补验完成后另记。
+
+### 2026-11-02：四语言正式部署与公网补验完成
+
+- 延续用户部署及继续指示，确认上传已完整而current仍旧版；源码包／runner双SHA256核对，以已推送06cf01a9259065da7291ca04269cdb69eaa0c99f运行原发布器。Linux115项后端、67项前端、lint／类型／webpack通过；此前本机257后端／101前端／lint／类型通过。队列空闲、SQLite备份、原子切换及常规检查返回DEPLOYMENT_OK，无回滚。release20261102T031220Z-inspiration-06cf01a9，previous7819ce9b，备份studio-20261102T031220Z-inspiration.sqlite3权限0600。
+- 真实IP与回环监听设置正确。公网补验发现Next运行时覆盖Proxy的Vary，必要地仅给本站Nginx location补add_header Vary Cookie always；先备份backups/nginx-localization-before-20261102.conf，nginx -t及reload成功，最终private/no-store和Vary Cookie通过。没有修改其他虚拟主机／systemd；配置相对基线仅这一行。
+- 四语言36个主要公网页面、6份外语样例阅读／下载／回填、中国／阿拉伯图片哈希、standalone国家库、7组可信回环IP模拟和手动独立偏好通过；公网伪造真实IP／内部头无效，英语与阿拉伯语可见UI无中日文残留。报告backups/localization-20261101-live-report.json为ok。此为HTTP／结构与模拟IP验收，未启动浏览器或进行实际多国网络视觉／点击验收。
+- SQLite正常，原六表／账号／头像全行保持18/15/44/0/15/28/2/0，模型／登录／恢复码指纹不变，正式并发5/10保持。中文三服务active PID387665/387666/387667，旧站PID1948834未变、日文200；零模型／邮件请求，不改用户作品。磁盘约2.2GB，无本轮清理。完整发布、哈希及保留shared/data的兼容回滚见PLOTLOOM_DEPLOYMENT.md；多语言真实生成质量和人工视觉仍待后续验收。结束仅提交本次发布记录并同步GitHub。
