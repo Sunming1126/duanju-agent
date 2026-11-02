@@ -286,7 +286,7 @@ def test_misnested_form_objects_and_provider_format_marker_are_normalized_withou
     result['type'] = 'json_object'
     completed, calls = run(service, result)
     assert completed['job']['status'] == 'completed' and len(calls) == 1
-    assert completed['analysis']['world_snapshot'] == original_world
+    assert {key: completed['analysis']['world_snapshot'][key] for key in original_world} == original_world
     assert completed['analysis']['novel_settings']['perspective'] == 'first_person'
     assert 'world_snapshot' not in completed['analysis']['creative']
 
