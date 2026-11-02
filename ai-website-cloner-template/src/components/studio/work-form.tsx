@@ -101,7 +101,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       const next = applyInspiration(draft, analysis);
       history.record(draft); setDraft({ ...next, step: "premise" }); setInspiration(false); setError("");
       setNotice("方案已回填。请检查故事想法、题材、核心设定、世界观及生成参数，确认后再创建作品。");
-    } catch (e) { setError(e instanceof Error ? e.message : "方案回填失败"); }
+    } catch (e) { setError(e instanceof Error ? e.message : "方案回填失败"); throw e; }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {

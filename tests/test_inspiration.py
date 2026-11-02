@@ -57,6 +57,54 @@ def run(service, result):
     return service.view(job["session_id"]), calls
 
 
+@pytest.mark.parametrize('operation', ['generate', 'revise', 'analyze'])
+def test_inspiration_actual_transport_always_enforces_json(setup, monkeypatch, operation):
+    import httpx
+    _, service, _ = setup
+    ident = service.create(body())
+    if operation != 'generate':
+        session, _ = run(service, {'plans': plans()})
+        action(service, session, operation, feedback='保留故事方向')
+    result = {'plans': plans()} if operation == 'generate' else plans()[0] if operation == 'revise' else analysis()
+    captured = []
+    async def post(client, url, **kwargs):
+        captured.append(kwargs['json'])
+        return httpx.Response(200, request=httpx.Request('POST',url), json={'choices':[{'finish_reason':'stop','message':{'content':json.dumps(result)}}]})
+    monkeypatch.setattr(api.llm.httpx.AsyncClient, 'post', post)
+    asyncio.run(execute(service, service.claim()))
+    assert service.view(ident)['job']['status'] == 'completed'
+    assert len(captured) == 1 and captured[0]['response_format'] == {'type':'json_object'}
+    assert captured[0]['max_tokens'] == 10000
+
+
+def test_analysis_normalizes_single_tags_and_structured_description_without_losing_content(setup):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {'plans': plans()})
+    action(service, session, 'analyze')
+    result = analysis()
+    result['creative']['genres'] = '悬疑，都市'
+    result['world_snapshot']['description'] = ['钟城', '时间规则']
+    session, calls = run(service, result)
+    assert session['job']['status'] == 'completed'
+    assert session['analysis']['creative']['genres'] == ['悬疑，都市']
+    assert session['analysis']['world_snapshot']['description'] == '钟城\n时间规则'
+    assert len(calls) == 1
+
+
+def test_invalid_analysis_reports_field_names_without_leaking_model_values_or_retrying(setup):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {'plans': plans()})
+    action(service, session, 'analyze')
+    result = analysis()
+    result['creative']['core'] = ['SECRET-' + 'x' * 90]
+    failed, calls = run(service, result)
+    assert failed['job']['status'] == 'failed'
+    assert 'creative.core' in failed['job']['error'] and 'SECRET' not in failed['job']['error']
+    assert failed['plans'] == session['plans'] and len(calls) == 1
+
+
 def action(service, session, operation, index=0, **changes):
     return service.action(session["id"], InspirationAction(action=operation, revision=session["revision"],
         plan_id=session["plans"][index]["id"], request_key=str(uuid.uuid4()), **changes))

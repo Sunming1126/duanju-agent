@@ -290,7 +290,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
     try {
       const patch = settingsPatch(work,analysis);
       setNumericInput({}); setNumber(current => Math.min(current,analysis.units)); update(patch); setInspiration(false); setNotice("灵感方案已回填，人物、大纲和正文保留。请检查设定后继续创作。");
-    } catch (cause) { setNotice(cause instanceof Error ? cause.message : "回填失败"); }
+    } catch (cause) { setNotice(cause instanceof Error ? cause.message : "回填失败"); throw cause; }
   }
   return <div className="workspace-page" onClickCapture={event => {
     if ((dirty || busy) && event.target instanceof Element && event.target.closest("a")) { event.preventDefault(); event.stopPropagation(); setNotice("请先保存或导出当前编辑后离开。"); }

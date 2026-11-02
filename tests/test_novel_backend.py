@@ -38,6 +38,36 @@ def create(jobs, saved, **changes):
     return jobs.create(saved['id'], JobInput(revision=saved['revision'], request_key=str(uuid.uuid4()), **changes))
 
 
+@pytest.mark.parametrize('kind', ['novel', 'short_drama'])
+def test_all_button_preserves_completed_steps_and_resume_only_retries_failed_chapter(setup, kind):
+    store, jobs = setup
+    saved = work(store, content_type=kind, units=2)
+    create(jobs, saved, mode='all')
+    unit, marker = ('章','章节大纲') if kind == 'novel' else ('集','分集大纲')
+    prose = PROSE if kind == 'novel' else '场1 书店 日 内\n出场人物：叶宁\n△叶宁推门进来，放下旧书。\n叶宁：我来核对那张收条，书主还没有找到。\n△她翻开账页，指着尚未结清的一行。'
+    outputs = ['原创设定与人物选择形成完整的故事方向。'*3,'原创人物的欲望、弱点和相互冲突。'*3,
+               '【粗纲】\n发现收据，追索旧账，核实证据并解决眼前的误会。\n【'+marker+'】\n第1'+unit+'：发现收据，核实地址。\n第2'+unit+'：核对旧账，做出选择。',
+               json.dumps({'text':prose,'summary':'核对收据。'}), 'Not JSON']
+    calls=[]
+    async def generate(messages, **kwargs):
+        calls.append(kwargs)
+        return outputs[len(calls)-1]
+    failed = asyncio.run(execute(jobs, jobs.claim(), generate))
+    assert failed['status']=='failed' and len(failed['results'])==4
+    assert len(calls)==5 and calls[3]['json_mode'] and calls[4]['json_mode']
+    assert all('json_mode' not in call for call in calls[:3])
+    prior=copy.deepcopy(failed['results'])
+    jobs.control(failed['id'],'resume')
+    retries=[]
+    async def finish(messages, **kwargs):
+        retries.append(kwargs)
+        return json.dumps({'text':prose,'summary':'旧账核实完成。'})
+    done = asyncio.run(execute(jobs, jobs.claim(), finish))
+    assert done['status']=='completed' and len(retries)==1
+    assert done['results'][:4]==prior
+    assert [c['number'] for c in jobs.adopt(done['id'])['chapters']]==[1,2]
+
+
 def context(messages):
     return json.loads(messages[1]['content'].split('\n任务：')[0].split('\n', 1)[1])
 
@@ -188,8 +218,8 @@ def test_bad_chapter_delivery_is_specific_and_never_adopted_or_retried(setup, ra
     assert store.get('works', saved['id'])['chapters'] == []
 
 
-@pytest.mark.parametrize('kind,action', [('novel','chapter'), ('novel','premise'), ('short_drama','chapter')])
-def test_actual_transport_enforces_json_only_for_novel_chapters(setup, monkeypatch, kind, action):
+@pytest.mark.parametrize('kind,action', [('novel','chapter'), ('novel','premise'), ('short_drama','chapter'), ('novel','world'), ('short_drama','world')])
+def test_actual_transport_enforces_json_for_both_chapter_types_and_worlds(setup, monkeypatch, kind, action):
     import httpx
     store, jobs = setup
     monkeypatch.setattr(api.llm, '_refresh_config', lambda: None)
@@ -201,6 +231,7 @@ def test_actual_transport_enforces_json_only_for_novel_chapters(setup, monkeypat
         captured.append(kwargs['json'])
         text = PROSE if kind == 'novel' else '场1 书店 日 内\n出场人物：叶宁\n△叶宁推门进来，放下旧书。\n叶宁：我来核对那张收条，书主还没有找到。\n△她翻开账页，指着尚未结清的一行。'
         raw = json.dumps({'text': text, 'summary': '核对收条，书主尚未确认。'}) if action == 'chapter' else PROSE
+        if action == 'world': raw = json.dumps({'name':'书店','description':'原创场景','sections':{'world_rules':'不能凭空修改账目'}})
         return httpx.Response(200, request=httpx.Request('POST', url), json={'choices':[{'finish_reason':'stop','message':{'content':raw}}]})
     monkeypatch.setattr(api.llm.httpx.AsyncClient, 'post', post)
     saved = work(store, content_type=kind)
@@ -209,7 +240,7 @@ def test_actual_transport_enforces_json_only_for_novel_chapters(setup, monkeypat
     assert done['status'] == 'completed', done['error']
     assert len(captured) == 1 and captured[0]['max_tokens'] == 12000
     assert 'thinking' not in captured[0]
-    assert captured[0].get('response_format') == ({'type':'json_object'} if kind == 'novel' and action == 'chapter' else None)
+    assert captured[0].get('response_format') == ({'type':'json_object'} if action in {'chapter','world'} else None)
     assert store.get('works', saved['id'])['chapters'] == []
     if kind == 'novel' and action == 'chapter':
         assert '【本次交付协议】' in captured[0]['messages'][0]['content']

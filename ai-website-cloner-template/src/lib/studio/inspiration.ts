@@ -72,6 +72,7 @@ export function initialCreationDraft(type: ContentType, reference?: Reference, p
 /** Analysis fills editable fields only. It never creates a work or starts generation. */
 export function applyInspiration(draft: CreationDraft, analysis: WorkInput): CreationDraft {
   if (analysis.content_type !== draft.content_type) throw new Error("方案类型与当前创作类型不一致，请切换到对应入口。");
+  if (analysis.units < Math.max(1, ...(draft.chapters || []).map(c => c.number))) throw new Error("方案计划数量小于已有正文的最大编号，请先在灵感方案中调整数量。");
   return {
     ...draft, market: analysis.market, output_locale: analysis.output_locale, title: analysis.title, genre: analysis.genre, units: String(analysis.units), words: String(analysis.words_per_chapter),
     audience: analysis.audience, premise: analysis.premise, source_text: draft.source_text || draft.premise, genres: (analysis.creative?.genres || []).join("\n"),

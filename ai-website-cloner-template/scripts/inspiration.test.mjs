@@ -20,6 +20,13 @@ function load(name) {
 }
 const helpers = load("inspiration");
 
+test('inspiration cannot reduce the plan below existing chapters or partially mutate the draft',()=>{
+  const draft={...helpers.initialCreationDraft('novel'),chapters:[{number:30,title:'Keep',content:'Original prose'}]};
+  const before=JSON.stringify(draft);
+  assert.throws(()=>helpers.applyInspiration(draft,analysis('novel')),/最大编号/);
+  assert.equal(JSON.stringify(draft),before);
+});
+
 const analysis = (type) => ({
   title: "钟城来信", content_type: type, genre: "悬疑", mode: "灵感创作", units: 24,
   words_per_chapter: 1200, audience: "female", premise: "修表师收到来自未来的信，寻找妹妹。", characters: "", outline: "", chapters: [],

@@ -290,6 +290,8 @@ def parse_result(job, raw):
     if clean.startswith("```"):
         clean = clean.split("\n", 1)[1].rsplit("```", 1)[0]
     data = json.loads(clean)
+    if not isinstance(data, dict):
+        raise ValueError("模型灵感结果必须是JSON对象")
     if job["action"] == "generate":
         plans = data.get("plans")
         if not isinstance(plans, list) or len(plans) != 3:
@@ -311,9 +313,15 @@ def parse_result(job, raw):
     creative = data.get("creative")
     if isinstance(creative, dict) and "highlights" in creative:
         creative["highlights"] = form_text(creative["highlights"])
+    if isinstance(creative, dict):
+        for key in ("genres", "core", "styles"):
+            if isinstance(creative.get(key), str):
+                creative[key] = [creative[key]]
     world = data.get("world_snapshot")
     if isinstance(world, dict) and isinstance(world.get("sections"), dict):
         world["sections"] = {key: form_text(value) for key, value in world["sections"].items()}
+        if "description" in world:
+            world["description"] = form_text(world["description"])
     work = WorkInput.model_validate({**data, "content_type": job["snapshot"]["input"]["content_type"], "mode": "灵感创作",
                                      "market": job["snapshot"]["input"]["market"], "output_locale": job["snapshot"]["input"]["output_locale"]})
     if (not work.premise.strip() or not work.genre.strip() or not work.creative.genres or not work.creative.core
@@ -329,7 +337,7 @@ async def execute(inspirations, job, generate=None):
     try:
         err = {}
         raw = await (generate or llm.chat)(messages_for(job), temperature=0.8, max_tokens=10000,
-                                           timeout=240, retries=1, reject_truncated=True, err_box=err)
+                                           timeout=240, retries=1, reject_truncated=True, err_box=err, json_mode=True)
         if not raw or not raw.strip() or len(raw) > 60000:
             if err.get("kind") == "rate_limit":
                 pause_after_rate_limit(inspirations.store, err)
@@ -338,6 +346,17 @@ async def execute(inspirations, job, generate=None):
         inspirations.finish(job["id"], result=result)
     except asyncio.CancelledError:
         raise
+    except json.JSONDecodeError as exc:
+        inspirations.finish(job["id"], error=f"灵感结果不是有效JSON（第{exc.lineno}行，第{exc.colno}列）；已有方案和输入保留，请手动重试。")
+    except ValueError as exc:
+        from pydantic import ValidationError
+        if isinstance(exc, ValidationError):
+            fields = sorted({'.'.join(map(str, error['loc'])) for error in exc.errors(include_input=False, include_url=False)})
+            detail = '、'.join(fields)[:160]
+            message = f"灵感表单字段不符合要求：{detail}。已有方案和输入保留，请重新解析。"
+        else:
+            message = str(exc)[:200] + "。已有方案和输入保留，请检查后手动重试。"
+        inspirations.finish(job["id"], error=message)
     except Exception:
         inspirations.finish(job["id"], error="灵感生成或解析失败，已有方案和输入均保留；请检查模型服务后手动重试。")
 

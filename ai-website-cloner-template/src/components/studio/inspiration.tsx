@@ -14,7 +14,7 @@ const pending = (session?: InspirationSession) => !!session && ["queued", "runni
 
 export function Inspiration({ type, initialPrompt, onApply, onClose, market, outputLocale }: {
   market?: Market; outputLocale?: Locale;
-  type: ContentType; initialPrompt: string; onApply: (analysis: WorkInput) => void; onClose: () => void;
+  type: ContentType; initialPrompt: string; onApply: (analysis: WorkInput) => void | Promise<void>; onClose: () => void;
 }) {
   const ui = useUI();
   const preferences = usePreferences();
@@ -167,7 +167,7 @@ export function Inspiration({ type, initialPrompt, onApply, onClose, market, out
           <div className="inspiration-plan-grid">{session.plans.map((plan, index) => <PlanCard key={`${plan.id}:${plan.title}:${plan.summary}:${plan.story}`} plan={plan} index={index} disabled={waiting} selected={session.job.action === "analyze" && session.job.status === "completed" && session.analyzed_plan_id === plan.id} onSave={async value => !!(await run(`/studio/inspirations/${session.id}/plans/${plan.id}`, { ...value, revision: session.revision }, "PUT"))} onAction={(action, feedback = "") => void actOnPlan(plan, action, feedback)} />)}</div>
         </>}
         {showAnalysis && session.analysis && <section className="inspiration-analysis" ref={analysisRef} tabIndex={-1} aria-label={ui(previousAnalysis ? "上次解析结果" : "已解析选定方案")}><span className="inspiration-eyebrow">{ui(previousAnalysis ? "上次解析结果 · 本次任务未成功" : "已解析选定方案")}</span><h3>{session.analysis.title}</h3><dl><div><dt>{ui("题材")}</dt><dd>{ui(session.analysis.creative?.genres?.join(" · "))}</dd></div><div><dt>{ui("核心设定")}</dt><dd>{ui(session.analysis.creative?.core?.join(" · "))}</dd></div><div><dt>{ui("风格")}</dt><dd>{ui(session.analysis.creative?.styles?.join(" · "))}</dd></div><div><dt>{ui("核心亮点")}</dt><dd>{session.analysis.creative?.highlights}</dd></div><div><dt>{ui("世界观")}</dt><dd>{session.analysis.world_snapshot?.description}</dd></div></dl><p className="studio-hint">{ui("回填后仍可修改全部参数。确认表单前不会创建作品或生成正文。")}</p>
-          {!review ? <button type="button" className="inspiration-primary" disabled={waiting} onClick={() => setReview(true)}>{ui("使用这个方案，查看回填确认 ")}<ArrowRight size={16} /></button> : <div className="inspiration-confirm" role="status"><p>{ui("将替换表单中的名称、故事想法、题材、核心设定、风格、亮点、数量、受众和世界观。原表单会保留一份可恢复备份。")}</p><button type="button" className="inspiration-primary" disabled={waiting} onClick={() => onApply(session.analysis!)}>{ui("确认回填创作表单")}</button><button type="button" className="text-button" onClick={() => setReview(false)}>{ui("返回检查")}</button></div>}
+          {!review ? <button type="button" className="inspiration-primary" disabled={waiting} onClick={() => setReview(true)}>{ui("使用这个方案，查看回填确认 ")}<ArrowRight size={16} /></button> : <div className="inspiration-confirm" role="status"><p>{ui("将替换表单中的名称、故事想法、题材、核心设定、风格、亮点、数量、受众和世界观，保留已写的人物、大纲和正文。")}</p><button type="button" className="inspiration-primary" disabled={waiting} onClick={async () => { setError(""); try { await onApply(session.analysis!); } catch (cause) { setError(cause instanceof Error ? cause.message : "方案回填失败"); scrollToTop(); } }}>{ui("确认回填创作表单")}</button><button type="button" className="text-button" onClick={() => setReview(false)}>{ui("返回检查")}</button></div>}
           <button type="button" className="text-button" disabled={waiting} onClick={() => { setDismissedJobId(session.job.id); setViewPrevious(false); setReview(false); scrollToTop(); }}>{ui("返回三个方案")}</button>
         </section>}
       </>}
