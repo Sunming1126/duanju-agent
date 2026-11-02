@@ -721,3 +721,8 @@
 - 最终相关回归144项通过；新增未知字段无损保留、错层级及冲突拒绝。私有报告/tmp/plotloom-generation-check-vypfu1g1，最终后端哈希cce4b4ac8a434b007e6bc88b5b5d08f03b60019a8a0fb11a7554cc8f28ace12a，均未接触生产作品。正式发布继续按原流程执行。
 
 - 验证补记：错层级用例最初直接比较原world对象，遗漏WorldInput原有market／archived默认字段，出现143通过／1断言失败；改为逐个比较原输入字段后，最终144项全部通过，未修改业务校验。已将同一原创响应经最终后端输出带到真实前端applyInspiration及creationPayload重放，名称、标签和世界内容保持，验证通过，无新增模型调用或用户作品操作。
+
+### 2026-11-02：格式及灵感修复正式部署完成
+
+- 已推送09c6eda5通过最终PrepareOnly，本机285后端／108前端／lint／类型及生产构建通过。为避免重复上传图片，从已提交Git归档生成完整源文件哈希清单，服务器基包加少量差异重建完整固定元数据ZIP，本机与服务器整包SHA一致；原runner哈希独立校验。Linux132后端／73前端／lint／类型／webpack通过，队列空闲、SQLite备份及原子切换成功，DEPLOYMENT_OK无回滚。release20261102T153618Z-inspiration-09c6eda5，previous5e57d91c，备份studio-20261102T153618Z-inspiration.sqlite3权限0600；完整哈希／日志见PLOTLOOM_DEPLOYMENT.md。
+- generation-fix-20261102-live-report.json为ok：四语36页／地区／RTL／样例／登录限制及初始中性加载通过，源码与原稿／账号／任务全行保留20/15/47/0/17/32/2/0，SQLite及配置／恢复码指纹保持，正式5/10保持。三服务active PID914130/914131/914132，旧站1948834未变、日文200；未改Nginx／systemd或真实用户作品，没有追加模型请求，原创实测总数仍5。实际浏览器点击和长篇质量未验收。空间约769MB，除此前两份旧依赖外未继续清理。更新正式状态与回滚记录，结束仅提交本次说明并同步GitHub。

@@ -1,5 +1,14 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-02 一键正文JSON／灵感回填及登录闪屏修复上线
+
+- 用户明确要求检查、修复并部署。运行源码 `09c6eda5b2838da0718f16ef5fee827ce1024079`，包含f76188f登录闪屏及c4b5781／6e5d981格式修复。release `/opt/plotloom-cn/releases/20261102T153618Z-inspiration-09c6eda5`，previous `20261102T065430Z-inspiration-5e57d91c`，SQLite备份 `backups/studio-20261102T153618Z-inspiration.sqlite3`（0600）。日志 `/tmp/plotloom-generation-fix-publish.log`。
+- 最终Git已提交源码经PrepareOnly检查后，从Git归档生成固定元数据完整ZIP；复用已上传基包、仅传变更文件，在服务器逐文件核对完整提交清单并重建同一完整包，最终字节SHA256一致 `eebca332d57b42035fd4e723aeebc0c691adbece8541bb11acc56e9822877a6e`；runner SHA256 `a9f01195fd51d785ec0cc021fae9d610a4cca9cf0a266ce6984ae774aa22c2d0`。完整包仍仅含已提交文件，不含临时数据或配置。
+- 本机285后端／108前端／lint／类型／生产构建通过，服务器132后端／73前端／lint／类型／webpack通过；空闲队列、备份、原子切换及源码／数据／页面／样例／权限检查通过，DEPLOYMENT_OK，无回滚。正式并发5/10保持。
+- 隔离原创实测共5次请求，无自动重试：小说858字符、短剧523字符、灵感三方案通过；首次解析世界字段错误、修正后单独复验解析仍因对象错层失败。保存后者原创响应，最终适配器对同一响应重放通过WorkInput及前端applyInspiration／creationPayload，没有第6次模型请求。详细边界和格式修复见PLOTLOOM_GENERATION_FORMATS.md；不把离线重放说成最终提示词新请求成功，不重发用户失败任务。私有报告 `/tmp/plotloom-generation-check-vypfu1g1`。
+- 公网／回环 `backups/generation-fix-20261102-live-report.json`为ok：四语36页、地区路由／RTL、样例下载／回填、登录限制及初始中性加载正常；生产数据与本次备份全行一致20作品／15世界／47任务／0候选／17灵感会话／32灵感任务／2账号／0头像，SQLite正常。模型／登录配置／恢复码指纹保持。中文三服务active PID914130/914131/914132，旧站1948834未变、日文200，无本轮Nginx／systemd变更。未进行真实浏览器视觉或点击验收。
+- 构建前仅移除20261023T165735Z与20261023T172132Z两份无账号旧版的可重装node_modules，保留源码、用户数据、备份和当前可用回滚版本；清单backups/generation-fix-cache-cleanup.json。结束剩余空间约769MB，未继续扩大清理。回滚先核对current，只切回上述账号兼容5e57d91c并重启Plotloom三服务，保留shared/data，不能用旧SQLite覆盖新作品；回滚会恢复本次修复前的行为。
+
 ## 2026-11-02 小说／剧本登录门槛上线
 
 - 用户明确授权部署，start成功同步5e57d91。运行源码 `5e57d91ce565da89c6e543cc8b6970354aa8251f`；release `/opt/plotloom-cn/releases/20261102T065430Z-inspiration-5e57d91c`，previous `20261102T043631Z-inspiration-c1f9dc12`；SQLite备份 `backups/studio-20261102T065430Z-inspiration.sqlite3`（0600）。包SHA256 `87e49c893da6d2dfac8851521698b4e3c5b428af2f083f7af83636762c4358e8`，runner SHA256 `64e4cb53bd4f60032cc106aa3e2c95a123a6089eb9a0f8d1bf8a8c5a113c05eb`，上传后双核验。日志 `/tmp/plotloom-creation-login-publish.log`。
