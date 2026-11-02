@@ -1,5 +1,13 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-02 小说／剧本登录门槛上线
+
+- 用户明确授权部署，start成功同步5e57d91。运行源码 `5e57d91ce565da89c6e543cc8b6970354aa8251f`；release `/opt/plotloom-cn/releases/20261102T065430Z-inspiration-5e57d91c`，previous `20261102T043631Z-inspiration-c1f9dc12`；SQLite备份 `backups/studio-20261102T065430Z-inspiration.sqlite3`（0600）。包SHA256 `87e49c893da6d2dfac8851521698b4e3c5b428af2f083f7af83636762c4358e8`，runner SHA256 `64e4cb53bd4f60032cc106aa3e2c95a123a6089eb9a0f8d1bf8a8c5a113c05eb`，上传后双核验。日志 `/tmp/plotloom-creation-login-publish.log`。
+- 本机274后端／105前端／lint／类型通过，服务器132后端／71前端／lint／类型／webpack通过；空闲队列、SQLite备份、原子切换及发布器检查返回DEPLOYMENT_OK，无回滚。测试进程并发3，正式5/10保持。
+- `backups/creation-login-20261102-live-report.json`为ok：公网和回环中，带有效访客空间及伪造账号Cookie的小说／剧本创建、作品写入、灵感及任务请求401；新建／已有编辑地址先显示登录提示，无创作表单。四语36页、地区路由／RTL、样例／下载／受保护回填地址通过。登录后创建与退出失效由服务器临时库真实账号会话回归验证，弹窗及返回原链接由前端模拟DOM测试验证；没有操作真实邮箱／Google授权或进行浏览器点击验收。
+- SQLite正常，与本次备份全行一致19作品／15世界／45任务／0候选／16灵感会话／30灵感任务／2账号／0头像。模型、登录配置及恢复码指纹保持；三服务active PID547346/547347/547348，旧站1948834未变、日文200。无真实模型／邮件调用、用户作品写入或Nginx／systemd变更。本轮未清理历史文件；结束剩余空间约480MB，后续发布前需复核容量。
+- 需回滚时先确认current仍为本版，只切回上述c1f9dc12并重启Plotloom三服务，保留shared/data，不恢复旧数据库；回滚会重新允许访客创作。
+
 ## 2026-11-02 移除回填前恢复功能上线
 
 - 用户明确授权部署，start成功，运行源码c1f9dc12d79c1ab0371b967a34a4836800819659。release `/opt/plotloom-cn/releases/20261102T043631Z-inspiration-c1f9dc12`，previous `20261102T031220Z-inspiration-06cf01a9`，SQLite备份 `backups/studio-20261102T043631Z-inspiration.sqlite3`。包SHA256 b6077e0293cecc6a736a877231fefb9796b33578c51d4c19ee1401866a988fdc，runner SHA256 9374cbdde7419a7e2f5fd5ee02c0980aabdc835f308677043af88842281b101d，上传后双校验。日志 `/tmp/plotloom-remove-restore-publish.log`。
