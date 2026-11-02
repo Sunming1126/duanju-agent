@@ -39,7 +39,6 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
     return sampleInput ? applyInspiration(initial, sampleInput) : initial;
   });
   const [inspiration, setInspiration] = useState(mode === "灵感策划" || mode === "灵感创作");
-  const [backup, setBackup] = useState<CreationDraft>();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,8 +77,6 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
         }
         const otherDraft = localStorage.getItem(`${storageKey}-other-type`);
         if (otherDraft) setOtherTypeDraft(otherDraft);
-        const savedBackup = localStorage.getItem(`${storageKey}-before-inspiration`) || readScopedDraft(`${sourceKey}-before-inspiration`);
-        if (savedBackup) { const parsed = JSON.parse(savedBackup); if (parsed.content_type === initialType) setBackup(parsed); }
       } catch { setNotice("浏览器草稿无法读取，请手动填写并及时保存。"); }
       setReady(true);
     });
@@ -102,8 +99,6 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   function apply(analysis: WorkInput) {
     try {
       const next = applyInspiration(draft, analysis);
-      setBackup(draft);
-      try { localStorage.setItem(`${storageKey}-before-inspiration`, jsonBody(draft)); } catch { /* In-memory undo remains available. */ }
       history.record(draft); setDraft({ ...next, step: "premise" }); setInspiration(false); setError("");
       setNotice("方案已回填。请检查故事想法、题材、核心设定、世界观及生成参数，确认后再创建作品。");
     } catch (e) { setError(e instanceof Error ? e.message : "方案回填失败"); }
@@ -153,7 +148,6 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       {sampleInput && <p className={styles.inlineMessage}>{ui("已载入官方样例设定，可自由修改，写出你自己的版本。确认下方设定后再开始创作。")}</p>}
       {cacheError && <p className={styles.inlineMessage} role="status">{ui("当前浏览器无法保存新建草稿，请及时点击“保存全部内容，创建作品”，将输入保存到作品中。")}</p>}
       {notice && <p className={styles.inlineMessage} role="status">{ui(notice, true)}</p>}
-      {backup && <button type="button" className="text-button" disabled={busy} onClick={() => { history.record(draft); setDraft(backup); setNotice("已恢复回填前的表单，灵感方案仍保留。"); }}>{ui("恢复回填前的表单")}</button>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>{ui("导出旧类型草稿备份")}</button>}
       <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={styles.stage}>
         {step === "premise" && <ProjectSettings type={type} value={projectSettingsFromDraft(draft)} disabled={disabled} onChange={patch => update(applyProjectSettings(draft,patch))}>

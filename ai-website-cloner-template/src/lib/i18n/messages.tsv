@@ -641,10 +641,6 @@ AI 灵感策划	AI story planning	AIで物語を企画	تخطيط القصة ب�
 回填后仍可修改全部参数。确认表单前不会创建作品或生成正文。	All settings remain editable. No work or manuscript is created before confirmation.	反映後もすべて変更できます。確認するまでは作品や本文を作成しません。	تبقى جميع الإعدادات قابلة للتعديل. لا يُنشأ عمل أو نص قبل التأكيد.
 将替换表单中的名称、故事想法、题材、核心设定、风格、亮点、数量、受众和世界观。原表单会保留一份可恢复备份。	This replaces the title, idea, genre, core, style, highlights, count, audience and world. Your current form is backed up for recovery.	作品名・着想・ジャンル・設定・作風・魅力・数量・対象層・世界観を置き換えます。元の入力は復元用に保持します。	سيستبدل العنوان والفكرة والنوع والأساس والأسلوب والمزايا والعدد والجمهور والعالم. يُحفظ النموذج الحالي للاستعادة.
 确认回填创作表单	Apply to creation form	作成フォームに反映	تطبيق على نموذج الإنشاء
-恢复回填前的表单	Restore previous form	反映前の入力に戻す	استعادة النموذج السابق
-恢复回填前的设定	Restore previous settings	反映前の設定に戻す	استعادة الإعدادات السابقة
-已恢复回填前的表单，灵感方案仍保留。	Previous form restored. Story plans are preserved.	元の入力に戻しました。企画案は保持されています。	استُعيد النموذج السابق. خطط القصص محفوظة.
-已恢复灵感回填前的设定。	Previous settings restored.	反映前の設定に戻しました。	استُعيدت الإعدادات السابقة.
 回填前的原始素材（创建作品时一并保留）	Original source before applying (saved with the work)	反映前の原素材（作品作成時に保存）	المصدر الأصلي قبل التطبيق (يُحفظ مع العمل)
 方案已回填。请检查故事想法、题材、核心设定、世界观及生成参数，确认后再创建作品。	Plan applied. Review the idea, genre, core settings, world and parameters before creating your work.	案を反映しました。着想・ジャンル・設定・世界観・生成パラメーターを確認してから作品を作成してください。	طُبقت الخطة. راجع الفكرة والنوع والإعدادات والعالم والمعلمات قبل إنشاء العمل.
 灵感方案已回填，人物、大纲和正文保留。请检查设定后继续创作。	Plan applied. Characters, outline and manuscript are preserved. Review the settings and continue.	案を反映しました。人物・構成・本文は保持されています。設定を確認して創作を続けてください。	طُبقت الخطة مع الحفاظ على الشخصيات والمخطط والنص. راجع الإعدادات وتابع.

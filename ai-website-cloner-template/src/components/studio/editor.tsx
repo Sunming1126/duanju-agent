@@ -41,7 +41,6 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
   const history = useEditHistory<WorkInput>();
   const recordSnapshot = useRef(history.record);
   const [inspiration, setInspiration] = useState(false);
-  const [settingsBackup, setSettingsBackup] = useState<Partial<Work>>();
   const [numericInput, setNumericInput] = useState<{units?: string; words_per_chapter?: string}>({});
   const [wordOpen, setWordOpen] = useState(false);
   const [work, setWork] = useState<Work | null>(null);
@@ -285,7 +284,6 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
     if (!work || busy || mutating.current) return;
     try {
       const patch = settingsPatch(work,analysis);
-      setSettingsBackup({...settingsPatch(work,workPayload(work)),world_id:work.world_id});
       setNumericInput({}); setNumber(current => Math.min(current,analysis.units)); update(patch); setInspiration(false); setNotice("灵感方案已回填，人物、大纲和正文保留。请检查设定后继续创作。");
     } catch (cause) { setNotice(cause instanceof Error ? cause.message : "回填失败"); }
   }
@@ -320,7 +318,6 @@ export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "",
               {active.includes(selectedJob.status) ? <><span>{ui(selectedJob.mode === "all" ? `全部生成 ${selectedJob.completed}/${selectedJob.total} · ` : "")}{ui(labels[selectedJob.current.action as keyof typeof labels])}{ui(selectedJob.current.action === "chapter" ? ` · 第${selectedJob.current.number}${unit}` : "")} {ui(" · ")}{ui(selectedJob.status === "queued" ? "排队中" : selectedJob.status === "stopping" ? "正在停止" : "生成中")}</span><button type="button" onClick={() => void control(selectedJob, "stop")}>{ui("停止")}</button></> : ["failed", "stopped", "interrupted"].includes(selectedJob.status) ? <><span>{ui(selectedJob.error || "生成已停止，已完成内容保留。")}</span><button type="button" onClick={() => void control(selectedJob, "resume")}>{ui("继续生成")}</button></> : null}
               {conflict && <><span>{ui(fillError || "生成期间内容有修改，当前编辑已保留。")}</span><button type="button" onClick={() => previewResult ? setPreview(undefined) : showGenerated()}>{ui(previewResult ? "返回当前内容" : "查看生成稿")}</button><button type="button" onClick={() => downloadText(`${work.title}-生成稿.txt`, ready.map(result => result.text).join("\n\n"))}>{ui("导出生成稿")}</button>{fillError && <button type="button" onClick={() => window.location.reload()}>{ui("刷新核对")}</button>}</>}
             </div>}
-            {settingsBackup && tab === "premise" && <button type="button" className="text-button" disabled={editingDisabled} onClick={() => { setNumericInput({}); update(settingsBackup); setSettingsBackup(undefined); setNotice("已恢复灵感回填前的设定。"); }}>{ui("恢复回填前的设定")}</button>}
             {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={ui(`每${unit}目标字数`)} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={editingDisabled} onChange={value => { setNumericInput(current => ({ ...current, words_per_chapter: String(value) })); update({ words_per_chapter: value }); }} /></div>}
             <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`} className={styles.stage}>
               {tab === "premise" && <ProjectSettings type={work.content_type} value={shownWork} disabled={editingDisabled} onChange={changeSettings}>{work.creative?.source_text && <details><summary>{ui("改编／改写原始素材")}</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}
