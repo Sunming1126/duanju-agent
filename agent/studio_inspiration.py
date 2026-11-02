@@ -245,8 +245,12 @@ def messages_for(job):
                     'world_snapshot（name、description、sections）。highlights必须是纯文本字符串，不能是列表或对象。'
                     'world_snapshot的name、description及sections内每个值必须是纯文本字符串，不能是列表或对象。'
                     'world_snapshot必须提供世界规则和主要地点；'
+                    '推荐固定使用sections={"world_rules":"世界规则纯文本","locations":"主要地点纯文本"}，'
+                    '不要把时代、现实背景或地点名称直接作为sections的键；这些内容写在对应字符串值中。'
                     f'sections只允许这些键：{", ".join(sorted(WORLD_FIELDS))}。'
                     '不要生成正文、人物小传或章节大纲，不要改变选定方案。未指定数量时默认12，未指定字数时小说2000、剧本800。')
+            task += ('world_snapshot、novel_settings及drama_settings必须与creative平级，不能放进creative内部；'
+                     'creative只包含genres、core、styles、highlights。不要返回type或response_format元数据。')
             if novel:
                 task += ('可附带novel_settings：form为serial或short_story；perspective为third_limited、first_person、omniscient或multiple；'
                          'prose_style为natural、immersive、literary或light；pacing为balanced、fast或slow_burn。按选定故事的小说叙事确定，不返回drama_settings。')
@@ -305,6 +309,17 @@ def parse_result(job, raw):
     # Only allow form fields; the model cannot create manuscripts, links or references.
     required = {"title", "genre", "premise", "audience", "units", "words_per_chapter", "creative", "world_snapshot"}
     allowed = required | {"novel_settings", "drama_settings"}
+    # Unambiguously lift known form objects misplaced under creative. Never merge
+    # competing versions or allow the provider to choose identity/market fields.
+    creative = data.get("creative")
+    if isinstance(creative, dict):
+        for key in ("world_snapshot", "novel_settings", "drama_settings"):
+            if key in creative:
+                if key in data and data[key] != creative[key]:
+                    raise ValueError("灵感解析包含互相冲突的表单字段")
+                data[key] = creative.pop(key)
+    if data.get("type") == "json_object":
+        data.pop("type")
     if not isinstance(data, dict) or set(data) - allowed or not required.issubset(data):
         raise ValueError("模型解析结果缺少创作表单字段")
     # The model may describe locations/rules/highlights as lists or objects.
@@ -319,6 +334,15 @@ def parse_result(job, raw):
                 creative[key] = [creative[key]]
     world = data.get("world_snapshot")
     if isinstance(world, dict) and isinstance(world.get("sections"), dict):
+        # Provider-added world notes remain editable prose, never schema keys.
+        # Keep every value and still validate the canonical required sections.
+        extra = {key: value for key, value in world["sections"].items() if key not in WORLD_FIELDS}
+        if extra:
+            description = form_text(world.get("description", ""))
+            if not isinstance(description, str):
+                raise ValueError("世界观概述必须是文本")
+            world["description"] = description + "\n\n" + json.dumps(extra, ensure_ascii=False, indent=2)
+            world["sections"] = {key: value for key, value in world["sections"].items() if key in WORLD_FIELDS}
         world["sections"] = {key: form_text(value) for key, value in world["sections"].items()}
         if "description" in world:
             world["description"] = form_text(world["description"])

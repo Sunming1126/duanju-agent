@@ -246,8 +246,7 @@ def test_structured_model_world_notes_and_highlights_become_editable_text(setup)
     assert json.loads(fields["world_snapshot"]["sections"]["characters"])["父亲"] == "固执但关心女儿"
 
 
-@pytest.mark.parametrize("sections", [{"world_rules": [], "locations": ["街道"]}, {"world_rules": 123, "locations": "街道"},
-                                     {"world_rules": ["现实"], "locations": ["街道"], "unexpected": ["额外字段"]}])
+@pytest.mark.parametrize("sections", [{"world_rules": [], "locations": ["街道"]}, {"world_rules": 123, "locations": "街道"}])
 def test_structured_notes_keep_required_fields_types_and_world_whitelist(setup, sections):
     _, service, _ = setup
     service.create(body())
@@ -258,6 +257,50 @@ def test_structured_notes_keep_required_fields_types_and_world_whitelist(setup, 
     failed, _ = run(service, result)
     assert failed["job"]["status"] == "failed" and failed["analysis"] is None
     assert failed["plans"] == session["plans"]
+
+
+def test_model_extra_world_sections_are_preserved_as_description_not_live_fields(setup):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {"plans": plans()})
+    action(service, session, "analyze")
+    result = analysis()
+    result['world_snapshot']['sections']['time_period'] = {'period':'现代','notes':['旧车站','雨伞']}
+    completed, calls = run(service, result)
+    world = completed['analysis']['world_snapshot']
+    assert completed['job']['status'] == 'completed' and len(calls) == 1
+    assert 'time_period' not in world['sections']
+    assert json.loads(world['description'].split('\n\n',1)[1]) == {'time_period':{'period':'现代','notes':['旧车站','雨伞']}}
+    assert world['sections']['world_rules'] == result['world_snapshot']['sections']['world_rules']
+
+
+def test_misnested_form_objects_and_provider_format_marker_are_normalized_without_invention(setup):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {"plans": plans()})
+    action(service, session, 'analyze')
+    result = analysis()
+    original_world = copy.deepcopy(result['world_snapshot'])
+    result['creative']['world_snapshot'] = result.pop('world_snapshot')
+    result['creative']['novel_settings'] = {'perspective':'first_person'}
+    result['type'] = 'json_object'
+    completed, calls = run(service, result)
+    assert completed['job']['status'] == 'completed' and len(calls) == 1
+    assert completed['analysis']['world_snapshot'] == original_world
+    assert completed['analysis']['novel_settings']['perspective'] == 'first_person'
+    assert 'world_snapshot' not in completed['analysis']['creative']
+
+
+def test_conflicting_misnested_world_is_rejected_without_overwriting_plan(setup):
+    _, service, _ = setup
+    service.create(body())
+    session, _ = run(service, {"plans": plans()})
+    action(service, session, 'analyze')
+    result = analysis()
+    result['creative']['world_snapshot'] = {'name':'Conflicting world','sections':{}}
+    failed, calls = run(service, result)
+    assert failed['job']['status'] == 'failed' and '冲突' in failed['job']['error']
+    assert failed['plans'] == session['plans'] and len(calls) == 1
 
 
 def test_recovery_is_worker_owned_and_session_survives_restart(setup):
