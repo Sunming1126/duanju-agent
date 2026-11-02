@@ -275,7 +275,7 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
             assert '2026-10-27' in document and 'https://hongguoduanju.com/rank/hot-drama' in document
         with urlopen(base + '/studio/' + kind + '/new?sample=' + slug, timeout=30) as response:
             body = response.read().decode('utf-8')
-            assert response.status == 200 and '请先登录后使用小说或剧本创作。' in body
+            assert response.status == 200 and 'aria-busy="true"' in body and 'id="plotloom-create-form"' not in body
     for path in ('/samples/not-a-sample/download', '/studio/novels/new?sample=temporary-parent', '/studio/scripts/new?sample=gate-name'):
         try:
             with urlopen(base + path, timeout=30) as response:

@@ -114,6 +114,9 @@ export type StudioSpace = { space_id: string; isolated: boolean; legacy_access: 
 let spaceRequest: Promise<StudioSpace> | undefined;
 let spaceId: string | undefined;
 let signedIn = false;
+// A previous successful bootstrap can avoid a guest screen during client navigation.
+// Server-side authorization still decides whether writes are allowed.
+export function hasKnownStudioAccount() { return signedIn && !!spaceId; }
 export async function updateStudioUser(user: StudioUser) {
   const space = await ensureStudioSpace();
   if (spaceId !== space.space_id || space.user?.id !== user.id) throw new Error("账号已切换，请刷新页面");

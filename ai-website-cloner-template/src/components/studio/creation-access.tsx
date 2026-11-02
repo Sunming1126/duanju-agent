@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useUI } from "@/lib/i18n/provider";
-import { backendRequest, ensureStudioSpace, type StudioSpace } from "@/lib/studio/api";
+import { backendRequest, ensureStudioSpace, hasKnownStudioAccount, type StudioSpace } from "@/lib/studio/api";
 import { creationDestination, loginRequiredEvent } from "@/lib/studio/creation-access";
 import { LoginDialog } from "./account-menu";
 import { useRouter } from "next/navigation";
+import { Header } from "@/components/sites/storyplay/shared";
+import { StudioNav } from "./navigation";
 
 async function verifiedSession() {
   // Share the initial cookie bootstrap with the header and all other panels.
@@ -52,17 +54,21 @@ export function CreationAccess() {
 
 export function CreationGuard({ children }: { children: ReactNode }) {
   const ui = useUI();
-  const [allowed, setAllowed] = useState(false);
+  const [allowed, setAllowed] = useState(hasKnownStudioAccount);
+  const [checked, setChecked] = useState(false);
   const [error, setError] = useState(false);
   useEffect(() => {
     let disposed = false;
     void verifiedSession().then(space => {
       if (disposed) return;
-      if (space.user) setAllowed(true);
-      else window.dispatchEvent(new CustomEvent(loginRequiredEvent, { detail: window.location.href }));
-    }).catch(() => { if (!disposed) setError(true); });
+      setAllowed(!!space.user); setChecked(true);
+      if (!space.user) window.dispatchEvent(new CustomEvent(loginRequiredEvent, { detail: window.location.href }));
+    }).catch(() => { if (!disposed) { setError(true); setChecked(true); } });
     return () => { disposed = true; };
   }, []);
   if (allowed) return children;
-  return <div className="workspace-page"><p role="status">{ui(error ? "无法建立独立创作空间，请检查连接并刷新；请求不会自动重试。" : "请先登录后使用小说或剧本创作。")}</p><button type="button" className="pill" onClick={() => window.dispatchEvent(new CustomEvent(loginRequiredEvent, { detail: window.location.href }))}>{ui("登录")}</button></div>;
+  return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav /><main className="studio-main" aria-busy={!checked}>
+    <p role="status">{ui(!checked ? "正在加载…" : error ? "无法建立独立创作空间，请检查连接并刷新；请求不会自动重试。" : "请先登录后使用小说或剧本创作。")}</p>
+    {checked && <button type="button" className="pill" onClick={() => window.dispatchEvent(new CustomEvent(loginRequiredEvent, { detail: window.location.href }))}>{ui("登录")}</button>}
+  </main></div></div>;
 }
