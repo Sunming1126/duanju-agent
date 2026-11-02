@@ -195,6 +195,9 @@ export async function backendRequest<T>(
     if (response.status === 401) { spaceRequest = undefined; spaceId = undefined; }
     const detail =
       typeof data === "object" && data !== null ? data.detail : undefined;
+    if (response.status === 401 && detail === "请先登录后使用小说或剧本创作。" && typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("plotloom-login-required", { detail: window.location.href }));
+    }
     const message =
       typeof detail === "string"
         ? detail

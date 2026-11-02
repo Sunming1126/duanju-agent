@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { serverI18n } from "@/lib/i18n/server";
 import { LocaleProvider } from "@/lib/i18n/provider";
+import { CreationAccess } from "@/components/studio/creation-access";
 
 const metadata: Metadata = {
   title: {
@@ -18,5 +19,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { preferences } = await serverI18n();
-  return <html lang={preferences.locale} dir={preferences.locale === "ar" ? "rtl" : "ltr"} data-market={preferences.market}><body><LocaleProvider preferences={preferences}>{children}</LocaleProvider></body></html>;
+  return <html lang={preferences.locale} dir={preferences.locale === "ar" ? "rtl" : "ltr"} data-market={preferences.market}><body><LocaleProvider preferences={preferences}><CreationAccess />{children}</LocaleProvider></body></html>;
 }

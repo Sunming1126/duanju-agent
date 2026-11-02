@@ -182,6 +182,15 @@ def login(client, sent, email='author@example.com'):
 
 
 def work(client):
+    # Legacy visitor manuscripts predate the login gate; seed them directly to
+    # retain the account-claim migration checks without permitting new guest writes.
+    if not client.get('/api/studio/session').json().get('user'):
+        from agent.studio_identity import actor
+        token = actor.set(client.get('/api/studio/session').json()['space_id'])
+        try:
+            return studio_api.store.create_work(studio_api.WorkInput(title='保留的私人作品', premise='寻找失踪的信').model_dump())['id']
+        finally:
+            actor.reset(token)
     response = client.post('/api/studio/works', json={'title':'保留的私人作品','premise':'寻找失踪的信'})
     assert response.status_code == 200, response.text
     return response.json()['id']

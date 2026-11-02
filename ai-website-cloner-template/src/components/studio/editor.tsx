@@ -8,6 +8,7 @@ import { Download, Settings, Sparkles } from "lucide-react";
 import { backendRequest as api, jsonBody, workPayload, downloadText, localExport, unitLabel,
   type Work, type WorkInput, type World, type StudioStatus, type Action, type Reference, type WorldInput } from "@/lib/studio/api";
 import { WorkForm } from "./work-form";
+import { CreationGuard } from "./creation-access";
 import { Header } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "./navigation";
 import { ProjectShell, ProjectTitle, ProjectToolbar } from "./project-shell";
@@ -33,7 +34,11 @@ type Job = { id: string; status: string; completed: number; total: number; error
 const baseLabels = { premise: "故事设定", characters: "人物小传", outline: "大纲", chapter: "正文", world: "作品世界" };
 const active = activeGeneration;
 
-export function StudioEditor({ id, kind = "short_drama", mode, referenceId = "", sampleId, sampleInput }: {
+export function StudioEditor(props: Parameters<typeof AuthenticatedEditor>[0]) {
+  return <CreationGuard><AuthenticatedEditor {...props} /></CreationGuard>;
+}
+
+function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "", sampleId, sampleInput }: {
   id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string; sampleId?: string; sampleInput?: WorkInput;
 }) {
   const ui = useUI();

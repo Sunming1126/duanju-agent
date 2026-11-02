@@ -269,6 +269,8 @@ def test_market_input_and_model_guards_and_legacy_entry(setup, monkeypatch):
     legacy = TestClient(main.app)
     legacy.get("/api/studio/session", headers={"X-Duanju-Site": "china"})
     assert legacy.post("/api/studio/inspirations", json=body().model_dump(), headers={"Host": "juben.onesay.top", "X-Duanju-Site": "china"}).status_code == 403
+    from studio_test_scope import sign_in_browser
+    sign_in_browser(legacy)
     assert legacy.post("/api/studio/inspirations", json=body().model_dump(), headers={"X-Duanju-Site": "china"}).status_code == 202
     monkeypatch.setattr(api.llm, "API_KEY", "")
     assert client.post("/api/studio/inspirations", json=body().model_dump()).status_code == 503

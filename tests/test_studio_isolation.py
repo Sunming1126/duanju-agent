@@ -9,6 +9,7 @@ import studio_main
 from agent import studio_api as api
 from agent.studio_identity import COOKIE, SpaceStore
 from agent.studio_store import StudioStore
+from studio_test_scope import sign_in_browser
 
 
 @pytest.fixture
@@ -24,7 +25,7 @@ def browser():
     client = TestClient(studio_main.app, base_url="https://testserver")
     response = client.get("/api/studio/session")
     assert response.status_code == 200
-    return client, response.json(), response
+    return client, sign_in_browser(client), response
 
 
 def work(client, **changes):
@@ -120,6 +121,7 @@ def test_cross_site_writes_are_rejected_even_with_a_valid_cookie(space):
 def test_same_origin_writes_through_trusted_reverse_proxy(space):
     client = TestClient(studio_main.app, client=("127.0.0.1", 12345))
     assert client.get("/api/studio/session").status_code == 200
+    sign_in_browser(client)
     response = client.post("/api/studio/works", json={"title":"同源代理保存"}, headers={"Origin":"https://jubencn.onesay.top", "X-Forwarded-Host":"jubencn.onesay.top"})
     assert response.status_code == 200
     assert response.json()["title"] == "同源代理保存"
@@ -128,6 +130,7 @@ def test_same_origin_writes_through_trusted_reverse_proxy(space):
 def test_public_origin_survives_uvicorn_forwarded_client_address(space):
     client = TestClient(studio_main.app, base_url="http://127.0.0.1:8766", client=("203.0.113.8",12345))
     assert client.get("/api/studio/session").status_code == 200
+    sign_in_browser(client)
     headers = {"Origin":"https://jubencn.onesay.top", "X-Forwarded-Host":"jubencn.onesay.top"}
     assert client.post("/api/studio/works", json={"title":"公网同源保存"}, headers=headers).status_code == 200
     headers["Origin"] = "https://untrusted.example"

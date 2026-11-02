@@ -37,15 +37,17 @@ export function AccountMenu() {
   </>;
 }
 
-export function LoginDialog({ onClose }: { onClose: () => void }) {
+export function LoginDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess?: () => void }) {
   const ui = useUI();
   const lock = useRef(false);
-  return <Modal title={ui("登录 Plotloom")} onClose={() => { if (!lock.current) onClose(); }}><LoginForm onBusyChange={value => { lock.current = value; }} /></Modal>;
+  return <Modal title={ui("登录 Plotloom")} onClose={() => { if (!lock.current) onClose(); }}><LoginForm onSuccess={onSuccess} onBusyChange={value => { lock.current = value; }} /></Modal>;
 }
 
 export function disableGoogleAutoSelect() { googleId()?.disableAutoSelect(); }
 
-export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) {
+function reloadAfterLogin() { window.location.reload(); }
+
+export function LoginForm({ onBusyChange, onSuccess = reloadAfterLogin }: { onBusyChange?: (busy: boolean) => void; onSuccess?: () => void }) {
   const { locale } = usePreferences();
   const ui = useUI();
   const [config, setConfig] = useState<AuthConfig>();
@@ -82,7 +84,7 @@ export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => 
       google.initialize({ client_id: config.google_client_id, nonce, auto_select: false, callback: ({ credential }) => {
         if (!mounted.current || lock.current) return;
         lock.current = true; setBusy("login"); setError("");
-        void api("/studio/auth/google", { method: "POST", body: jsonBody({ credential }) }).then(() => window.location.reload()).catch(cause => {
+        void api("/studio/auth/google", { method: "POST", body: jsonBody({ credential }) }).then(onSuccess).catch(cause => {
           if (mounted.current) { setError(cause.message); setBusy(null); }
           lock.current = false;
         });
@@ -90,7 +92,7 @@ export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => 
       google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", locale: locale === "zh-CN" ? "zh_CN" : locale === "ja-JP" ? "ja" : locale, width: Math.max(200, Math.min(280, googleButton.current.clientWidth)) });
     }).catch(cause => { if (!disposed) setGoogleError(cause.message); });
     return () => { disposed = true; };
-  }, [config, googleReady, locale]);
+  }, [config, googleReady, locale, onSuccess]);
 
   async function sendCode() {
     if (lock.current || remaining || !emailInput.current?.reportValidity()) return;
@@ -106,7 +108,7 @@ export function LoginForm({ onBusyChange }: { onBusyChange?: (busy: boolean) => 
     <form className={styles.form} onSubmit={async event => {
       event.preventDefault(); if (lock.current) return;
       lock.current = true; setBusy("login"); setError("");
-      try { await api("/studio/auth/email-code/login", { method: "POST", body: jsonBody({ email: email.trim(), code }) }); window.location.reload(); }
+      try { await api("/studio/auth/email-code/login", { method: "POST", body: jsonBody({ email: email.trim(), code }) }); onSuccess(); }
       catch (cause) { setError(cause instanceof Error ? cause.message : "登录失败，请重试"); lock.current = false; setBusy(null); }
     }}>
       <label htmlFor="login-email">{ui("邮箱地址")}</label>

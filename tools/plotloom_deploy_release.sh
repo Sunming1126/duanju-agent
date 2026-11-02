@@ -144,7 +144,7 @@ async def check():
         assert (await client.get('/api/studio/works')).status_code == 401
         assert (await client.get('/api/studio/session')).json()['isolated']
         assert (await client.get('/api/studio/worlds')).json()['items'] == []
-        assert (await client.post('/api/studio/inspirations', json={})).status_code == 422
+        assert (await client.post('/api/studio/inspirations', json={})).status_code == 401
         response = await client.get('/api/studio/inspirations/deployment-check')
         assert response.status_code == 404 and response.json()['detail'] != 'Not Found'
 asyncio.run(check())
@@ -152,13 +152,13 @@ print('Isolated backend import and inspiration route checks passed; no model cal
 PY
 
 if [[ -f "$release/tests/test_studio_auth.py" ]]; then
-    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
 fi
 
 cd "$release/ai-website-cloner-template"
 runuser -u plotloom-cn -- env PATH="$PATH" npm ci --no-audit --no-fund
 runuser -u plotloom-cn -- env PATH="$PATH" npm run lint
-runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs scripts/space.test.mjs scripts/account.test.mjs scripts/i18n.test.mjs
+runuser -u plotloom-cn -- env PATH="$PATH" node --test scripts/samples.test.mjs scripts/workflow.test.mjs scripts/outline.test.mjs scripts/project.test.mjs scripts/space.test.mjs scripts/account.test.mjs scripts/i18n.test.mjs scripts/creation-access.test.mjs
 runuser -u plotloom-cn -- env PATH="$PATH" DUANJU_BACKEND_URL="$build_backend" NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=1024 npm run build -- --webpack
 grep -R -q 'inspiration-flow' .next/static/chunks
 test "$(readlink -f "$base/current")" = "$old"
@@ -275,7 +275,7 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
             assert '2026-10-27' in document and 'https://hongguoduanju.com/rank/hot-drama' in document
         with urlopen(base + '/studio/' + kind + '/new?sample=' + slug, timeout=30) as response:
             body = response.read().decode('utf-8')
-            assert response.status == 200 and '我的版本' in body and '已载入官方样例设定' in body
+            assert response.status == 200 and '请先登录后使用小说或剧本创作。' in body
     for path in ('/samples/not-a-sample/download', '/studio/novels/new?sample=temporary-parent', '/studio/scripts/new?sample=gate-name'):
         try:
             with urlopen(base + path, timeout=30) as response:
@@ -287,7 +287,7 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
             assert error.code == 404, (path, error.code)
     with urlopen(base + '/api/backend/studio/status', timeout=30) as response:
         assert json.load(response)['llm_ready']
-    for path, payload, expected in (('/api/backend/studio/inspirations', b'{}', (422,)), ('/api/backend/llm/config', b'{}', (403,404,405)), ('/api/llm/config', b'{}', (403,404,405))):
+    for path, payload, expected in (('/api/backend/studio/inspirations', b'{}', (401,)), ('/api/backend/llm/config', b'{}', (403,404,405)), ('/api/llm/config', b'{}', (403,404,405))):
         try:
             urlopen(Request(base + path, data=payload, headers={'Content-Type':'application/json'}), timeout=30)
             raise AssertionError('Unexpected route response: ' + path)
