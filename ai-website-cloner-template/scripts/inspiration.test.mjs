@@ -13,7 +13,7 @@ function load(name) {
   const exports = {};
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, path => {
     const localeDependency = legacyI18nDependency(path); if(localeDependency) return localeDependency;
-    if (path === "./writing") return load("writing");
+    if (["./writing", "./profiles"].includes(path)) return load(path.slice(2));
     throw new Error(`Unexpected dependency: ${path}`);
   });
   return exports;

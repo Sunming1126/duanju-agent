@@ -73,22 +73,32 @@ def test_explicit_flag_and_existing_report_prevent_any_network(tmp_path, monkeyp
     arguments(monkeypatch, tmp_path, "--real-model")
     with pytest.raises(SystemExit):
         runner.main()
-    assert json.loads((tmp_path / "report.json").read_text()) == {"interrupted": True}
+    assert json.loads((tmp_path / "report.json").read_text(encoding='utf-8')) == {"interrupted": True}
 
 
 def test_three_cases_use_six_jobs_and_archive_only_their_own_works(tmp_path, monkeypatch):
+    requested_modes = []
+    original_open = runner.os.open
+    def checked_open(path, flags, mode=0o777, *args, **kwargs):
+        if Path(path).name == "space-cookie.json":
+            requested_modes.append(mode)
+        return original_open(path, flags, mode, *args, **kwargs)
+    monkeypatch.setattr(runner.os, "open", checked_open)
     transport = Transport()
     monkeypatch.setattr(httpx, "Client", lambda **kwargs: transport)
     arguments(monkeypatch, tmp_path, "--real-model")
     runner.main()
-    report = json.loads((tmp_path / "report.json").read_text())
+    report = json.loads((tmp_path / "report.json").read_text(encoding='utf-8'))
     assert report["ok"] and report["submitted_calls"] == report["planned_calls"] == 6
     assert len(transport.jobs) == 6 and len(transport.works) == 3
     assert [path for method, path in transport.calls if method == "PATCH"] == [f"/works/{i}/archive" for i in (1, 2, 3)]
     assert all(len(case["chapters"]) == 2 and case["archived"] for case in report["results"])
     assert len(list(tmp_path.glob("*.txt"))) == 6
-    assert stat.S_IMODE((tmp_path / "space-cookie.json").stat().st_mode) == 0o600
-    assert "offline-qa-identity" not in (tmp_path / "report.json").read_text()
+    assert requested_modes == [0o600]
+    # Windows does not expose POSIX permission bits; keep the real assertion on Unix.
+    if runner.os.name != "nt":
+        assert stat.S_IMODE((tmp_path / "space-cookie.json").stat().st_mode) == 0o600
+    assert "offline-qa-identity" not in (tmp_path / "report.json").read_text(encoding='utf-8')
 
 
 def test_poll_failure_preserves_identity_and_job_id_without_resubmission(tmp_path, monkeypatch):
@@ -97,7 +107,7 @@ def test_poll_failure_preserves_identity_and_job_id_without_resubmission(tmp_pat
     arguments(monkeypatch, tmp_path, "--real-model")
     with pytest.raises(SystemExit, match="No automatic retry"):
         runner.main()
-    report = json.loads((tmp_path / "report.json").read_text())
+    report = json.loads((tmp_path / "report.json").read_text(encoding='utf-8'))
     assert not report["ok"] and report["submitted_calls"] == 1
     assert report["results"][0]["jobs"] == ["1"]
     assert len(transport.jobs) == 1 and (tmp_path / "space-cookie.json").exists()
@@ -122,12 +132,12 @@ def test_isolated_runner_uses_temporary_database_and_single_calls(tmp_path, monk
     monkeypatch.setattr(sys, "argv", ["quality", "--transport", "isolated", "--label", "offline-test",
                         "--output", str(output), "--config-file", str(config), "--case", "well", "--real-model"])
     runner.main()
-    report = json.loads((output / "report.json").read_text())
+    report = json.loads((output / "report.json").read_text(encoding='utf-8'))
     assert report["ok"] and report["config_unchanged"] and report["submitted_calls"] == 2
     assert len(calls) == 2 and all(call["retries"] == 1 for call in calls)
     assert (output / "studio.sqlite3").exists()
     assert not (tmp_path / "before.sqlite3").exists()
-    assert "offline-only" not in (output / "report.json").read_text()
+    assert "offline-only" not in (output / "report.json").read_text(encoding='utf-8')
 
 
 @pytest.mark.parametrize("thinking", ["provider-default", "disabled"])
@@ -153,8 +163,8 @@ def test_thinking_experiment_is_explicit_and_records_only_usage(tmp_path, monkey
     monkeypatch.setattr(sys, "argv", ["quality", "--transport", "isolated", "--label", "offline-test", "--output", str(output),
                         "--config-file", str(config), "--case", "well", "--real-model", "--thinking", thinking])
     runner.main()
-    report = json.loads((output / "report.json").read_text())
+    report = json.loads((output / "report.json").read_text(encoding='utf-8'))
     assert report["ok"] and len(payloads) == len(report["provider_calls"]) == 2
     assert all((payload.get("thinking") == {"type": "disabled"}) == (thinking == "disabled") for payload in payloads)
     assert all(call["reasoning_tokens"] == 0 and call["tokens"] == {"total_tokens": 80} for call in report["provider_calls"])
-    assert "private-offline-key" not in (output / "report.json").read_text()
+    assert "private-offline-key" not in (output / "report.json").read_text(encoding='utf-8')

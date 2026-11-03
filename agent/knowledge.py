@@ -9,6 +9,7 @@ from .market import normalize_item, market_matches
 _DATA = Path(__file__).resolve().parent.parent / "data" / "corpus.json"
 _LIVE_DATA = Path(__file__).resolve().parent.parent / "data" / "corpus_live.json"
 _MANUAL_DATA = Path(__file__).resolve().parent.parent / "data" / "corpus_manual.json"
+_TAIWAN_DATA = Path(__file__).resolve().parent / "content" / "taiwan_references.json"
 _k1, _b = 1.5, 0.75
 JP_TERMS = ("悪役令嬢", "契約結婚", "人生やり直し", "異世界", "人生再生", "地下城",
             "溺愛", "復讐", "ざまぁ", "転生", "令嬢", "恋愛")
@@ -69,7 +70,11 @@ def _tokenize(text):
     if not text:
         return []
     tokens = []
-    for seg in re.findall(r"[a-zA-Z0-9]+|[぀-ヿ㐀-鿿]+", text):
+    text = re.sub(r"[\u0640\u064b-\u065f\u0670]", "", text)
+    for seg in re.findall(r"[a-zA-Z0-9]+|[぀-ヿ㐀-鿿]+|[\u0621-\u064a\u0671-\u06d3]+", text):
+        if re.fullmatch(r"[\u0621-\u064a\u0671-\u06d3]+", seg):
+            tokens.append(seg)
+            continue
         if seg.isdigit() or seg.isascii():
             w = seg.lower()
             tokens.append(w)
@@ -92,7 +97,7 @@ class KnowledgeBase:
         # 合并实时采集语料（多源）+ 人工导入语料，按 id 去重
         self.live_meta = None
         have = {it["id"] for it in self.items}
-        for path in (_LIVE_DATA, _MANUAL_DATA):
+        for path in (_LIVE_DATA, _MANUAL_DATA, _TAIWAN_DATA):
             if not path.exists():
                 continue
             try:
@@ -110,7 +115,7 @@ class KnowledgeBase:
                 pass
         for it in self.items:
             normalize_item(it)
-            it.setdefault("tags_text", " ".join(it.get("tags", [])))
+            it.setdefault("tags_text", " ".join(it.get("tags", []) + list(it.get("title_localized", {}).values()) + it.get("search_terms", [])))
         self._build()
 
     def _build(self):

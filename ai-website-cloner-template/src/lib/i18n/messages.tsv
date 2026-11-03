@@ -885,3 +885,111 @@ PLOTLOOM ORIGINAL CONCEPTS	Original story concepts	オリジナルの物語企�
 生成进度	Generation progress	生成の進捗	تقدم الإنشاء
 生成完成	Generation complete	生成完了	اكتمل الإنشاء
 正在核对生成状态	Checking generation status	生成状態を確認中	جارٍ التحقق من حالة الإنشاء
+中国内地	Mainland China	中国本土	البر الرئيسي الصيني
+台湾	Taiwan	台湾	تايوان
+新作品输出语言	New work output language	新規作品の出力言語	لغة إخراج الأعمال الجديدة
+切换地区会采用当地默认语言，之后可分别调整界面和输出语言。新作品采用此偏好，已有作品保留原设置。	Changing region applies its default language. You can then change interface and output languages separately. New works use these preferences; existing works keep their settings.	地域を変えると既定の言語を適用します。その後、画面と出力の言語は個別に変更できます。新規作品に適用し、既存作品の設定は保持します。	يطبق تغيير المنطقة لغتها الافتراضية، ثم يمكنك ضبط لغة الواجهة والإخراج بشكل منفصل. تستخدم الأعمال الجديدة هذه التفضيلات وتحتفظ الأعمال السابقة بإعداداتها.
+都会爱情	Metropolitan romance	都会の恋愛	رومانسية حضرية
+婚姻家庭	Marriage and family	結婚と家族	الزواج والعائلة
+职场成长	Workplace growth	仕事と成長	النمو المهني
+社会写实	Social realism	社会リアリズム	واقعية اجتماعية
+犯罪推理	Crime and investigation	犯罪・推理	جريمة وتحقيق
+心理悬疑	Psychological suspense	心理サスペンス	تشويق نفسي
+民俗灵异	Folk supernatural	民俗・怪異	خوارق وموروث شعبي
+都市奇幻	Urban fantasy	都市ファンタジー	فانتازيا حضرية
+东方奇幻	Eastern fantasy	東洋ファンタジー	فانتازيا شرقية
+BL	BL	BL	رومانسية بين رجال
+GL	GL	GL	رومانسية بين نساء
+校园青春	Campus youth	青春・学園	شباب ومدرسة
+社会悬疑	Social suspense	社会サスペンス	تشويق اجتماعي
+民俗奇幻	Folk fantasy	民俗ファンタジー	فانتازيا شعبية
+古装奇幻	Historical fantasy	時代ファンタジー	فانتازيا تاريخية
+久别重逢	Reunion after years apart	久しぶりの再会	لقاء بعد غياب
+返乡重启	A fresh start back home	帰郷して再出発	بداية جديدة بعد العودة
+家庭秘密	Family secrets	家族の秘密	أسرار عائلية
+身份错位	Mistaken roles	立場のすれ違い	التباس الأدوار
+重生改命	Rebirth and changed fate	生まれ直して運命を変える	ولادة جديدة وتغيير المصير
+跨代关系	Intergenerational relationships	世代を越えた関係	علاقات بين الأجيال
+生活感	Everyday texture	暮らしの手触り	تفاصيل الحياة اليومية
+温暖疗愈	Warm and healing	温かな癒やし	دفء وتعاف
+悬疑紧张	Suspense and tension	謎と緊張感	غموض وتوتر
+节奏明快	Brisk pacing	軽快な展開	إيقاع نشط
+群像叙事	Ensemble storytelling	群像の物語	سرد جماعي
+青春成长	Youth and growth	青春と成長	شباب ونضج
+证据反转／关系秘密	Evidence reversal / relationship secret	証拠の逆転／関係の秘密	تحول الأدلة / سر في العلاقة
+关系抉择／行动代价	Relationship choice / cost of action	関係の選択／行動の代償	اختيار العلاقة / تكلفة الفعل
+创作地区已切换，原地区参考已取消；已写内容保留。请检查原有设定后继续生成。	The region has changed and previous regional references were cleared. Existing writing is preserved. Review the settings before generating.	地域を変更し、以前の地域の参考資料を解除しました。既存の文章は保持しています。設定を確認してから生成してください。	تغيرت المنطقة وألغيت المراجع السابقة. بقي النص المكتوب محفوظاً. راجع الإعدادات قبل التوليد.
+影视结构参考，非短剧成稿。	Screen storytelling reference, not a finished short-drama script.	映像作品の構成資料であり、短編脚本の完成稿ではありません。	مرجع لبنية العمل المرئي، وليس نص مسلسل قصير جاهزاً.
+资料核验日期	Source checked	資料確認日	تاريخ التحقق من المصدر
+台湾雨后骑楼，年轻写作者与早餐店店主交谈	A young writer talks with a breakfast-shop owner beneath a Taiwanese arcade after rain	雨上がりの台湾の騎楼で、若い書き手が朝食店の店主と話す	كاتبة شابة تتحدث مع صاحبة متجر إفطار تحت رواق تايواني بعد المطر
+从雨后骑楼到返乡餐桌，让关系与选择开启故事。	From a rain-washed arcade to a family table, begin with relationships and choices.	雨上がりの騎楼から帰郷の食卓へ。関係と選択から物語を始めよう。	من رواق بعد المطر إلى مائدة العائلة، ابدأ القصة بعلاقة واختيار.
+骑楼下的未完稿	An Unfinished Story Under the Arcade	騎楼の書きかけ	حكاية غير مكتملة تحت الرواق
+家庭现实	Family realism	家族のリアリズム	واقعية عائلية
+返乡写作者想替母亲记录早餐店的最后一天，却发现自己从未问过她是否真的想关店。	A returning writer plans to record her mother's last day at the breakfast shop, then realizes she never asked whether her mother wants to close.	帰郷した書き手が母の朝食店の最終日を記録しようとするが、本当に閉店したいのか聞いていなかったと気づく。	تعود كاتبة لتوثيق آخر يوم في متجر إفطار أمها، ثم تدرك أنها لم تسألها إن كانت تريد إغلاقه فعلاً.
+以下是編輯的創作分析，不是原作摘錄。	The following is editorial craft analysis, not an excerpt from the work.	以下は編集者による創作分析であり、原作の引用ではありません。	ما يلي تحليل تحريري للكتابة، وليس مقتطفاً من العمل.
+影視結構參考，非短劇成稿。	Screen storytelling reference, not a finished short-drama script.	映像作品の構成資料であり、短編脚本の完成稿ではありません。	مرجع لبنية العمل المرئي، وليس نص مسلسل قصير جاهزاً.
+蓋亞文化	Gaea Books	蓋亞文化	غايا للكتب
+鏡文學	Mirror Fiction	鏡文学	ميرور فيكشن
+城邦原創	Cite Original	城邦オリジナル	سيتي أوريجينال
+讀墨閱讀最前線	Readmoo Reading Frontline	Readmoo 読書最前線	ريد مو للقراءة
+博客來	Books.com.tw	博客来	بوكس دوت كوم تايوان
+公視新聞	PTS News	公共テレビニュース	أخبار بي تي إس
+特殊傳說	The Unique Legend	特殊伝説	الأسطورة الفريدة
+校園奇幻	Campus fantasy	学園ファンタジー	فانتازيا مدرسية
+以校園奇幻系列為研究對象，觀察角色群像、世界規則與長線成長如何支撐連載。	A campus-fantasy series offers a reference for ensemble characters, world rules and long-term growth.	学園ファンタジーのシリーズから、群像人物、世界の規則、長期的な成長の組み合わせを研究する。	سلسلة فانتازيا مدرسية لدراسة الشخصيات الجماعية وقواعد العالم والنمو الطويل.
+結構觀察：讓主角對日常規則的誤判，引出下一步必須親自確認的異常。	Craft observation: a mistaken everyday assumption leads to an anomaly the protagonist must investigate.	構成の観察：日常の思い違いから、主役が確かめるべき異変を生む。	ملاحظة بنيوية: يقود افتراض يومي خاطئ إلى ظاهرة يجب على البطل فحصها.
+每次新增能力都要同時帶來限制，讓人物關係參與解題。	Give new abilities limits and let relationships participate in solving problems.	新しい能力には制約を与え、人間関係も問題解決に参加させる。	امنح القدرات الجديدة حدوداً واجعل العلاقات تشارك في الحل.
+八尺門的辯護人	Port of Lies	八尺門の弁護人	محامي باتشيمن
+法律懸疑	Legal suspense	法廷サスペンス	تشويق قانوني
+法律工作者面對案件與人的處境，適合研究調查線和社會關係如何交織。	Legal work and human circumstances intersect, offering a reference for combining investigation with social relationships.	法律の仕事と人々の事情を重ね、調査と社会関係の交わりを研究する。	يلتقي العمل القانوني بظروف الناس لدراسة تداخل التحقيق والعلاقات الاجتماعية.
+結構觀察：新證據改變人物對案件的理解，也讓其承擔新的選擇。	Craft observation: new evidence changes a character's reading of the case and forces another choice.	構成の観察：新証拠が事件の理解を変え、次の選択を迫る。	ملاحظة بنيوية: يغير دليل جديد فهم القضية ويفرض اختياراً آخر.
+把制度壓力落在角色能做或不能做的具體行動上。	Express institutional pressure through concrete actions a character can or cannot take.	制度の圧力を、人物ができる行動とできない行動で示す。	جسد ضغط المؤسسات في أفعال تستطيع الشخصية فعلها أو تعجز عنها.
+鬼地方	Ghost Town	鬼地方	بلدة الأشباح
+家族文學	Family literary fiction	家族文学	أدب عائلي
+返鄉人物與家族記憶交會，地方生活和不同成員的視角共同揭露關係裂縫。	A return home and differing family memories offer a reference for local life and multiple viewpoints.	帰郷と家族それぞれの記憶から、地方の暮らしと複数視点を研究する。	توفر العودة وذكريات العائلة المختلفة مدخلاً لدراسة الحياة المحلية وتعدد المنظور.
+結構觀察：同一段家庭往事，在另一位成員眼中呈現不同意義。	Craft observation: another family member gives the same past event a different meaning.	構成の観察：同じ過去が、別の家族の目で違う意味を持つ。	ملاحظة بنيوية: يعطي فرد آخر من العائلة معنى مختلفاً للماضي نفسه.
+切換視角應補上新的資訊與立場，而非重講同一件事。	A viewpoint change should add information and a position rather than repeat the same account.	視点の変更では同じ話を繰り返さず、新しい情報と立場を加える。	أضف معلومة وموقفاً عند تغيير المنظور، ولا تكرر الرواية نفسها.
+夏日的檸檬草	Summer Lemon Grass	夏のレモングラス	عشب الليمون في الصيف
+青春愛情	Youth romance	青春恋愛	رومانسية شبابية
+城邦原創列出的影視授權作品，可作為研究青春愛情小說與影視開發連結的入口。	A youth-romance title licensed for screen adaptation provides an entry into studying cross-media development.	映像化権の授権が公表された青春恋愛作品を、媒体を越える開発の入口とする。	عمل رومانسي شبابي مرخص للاقتباس المرئي يتيح دراسة التطوير عبر الوسائط.
+結構觀察：把無法說出口的喜歡，轉成一次會被對方誤解的行動。	Craft observation: an unspoken affection becomes an action the other person can misunderstand.	構成の観察：言えない好意を、相手が誤解しうる行動に変える。	ملاحظة بنيوية: تتحول عاطفة غير منطوقة إلى فعل يمكن أن يساء فهمه.
+使用獨立原創人物與事件，不複製原作的戀愛關係配置。	Create new people and events rather than copying the original romantic configuration.	原作の恋愛配置を複製せず、独自の人物と出来事を作る。	ابتكر شخصيات وأحداثاً مستقلة ولا تنسخ ترتيب علاقات الأصل.
+青春副作用	The Side Effects of Youth	青春の副作用	آثار الشباب الجانبية
+青春成長	Coming-of-age	青春と成長	بلوغ ونضج
+城邦原創列出的青春類影視授權作品，提供觀察成長題材跨媒體發展的線索。	A youth title listed for screen licensing offers a reference for development across narrative media.	映像化権の授権作品として紹介された青春小説から、媒体を越える展開を考える。	رواية شبابية مدرجة للترخيص المرئي تساعد في دراسة الانتقال بين الوسائط.
+結構觀察：讓角色為維持關係做的決定，成為下一階段必須面對的代價。	Craft observation: a decision intended to preserve a relationship becomes its next cost.	構成の観察：関係を守るための決断が、次に向き合う代償となる。	ملاحظة بنيوية: يصير قرار لحماية العلاقة تكلفة يجب مواجهتها لاحقاً.
+情緒變化需有行動與後果承接，不能只靠內心宣告。	Carry emotional change through actions and consequences, not declarations alone.	感情の変化を宣言だけにせず、行動と結果でつなぐ。	اجعل تغير العاطفة محمولاً بالفعل والنتيجة لا بالتصريح وحده.
+臺灣漫遊錄	Taiwan Travelogue	台湾漫遊鉄道のふたり	رحلة في تايوان
+歷史文學	Historical literary fiction	歴史文学	أدب تاريخي
+以歷史、旅行與飲食交織的小說為研究對象，觀察感官經驗如何承載人物關係。	History, travel and food provide a reference for carrying relationships through sensory experience.	歴史、旅、食を結ぶ小説から、感覚の経験に関係を託す方法を研究する。	التاريخ والسفر والطعام مدخل لدراسة حمل العلاقات عبر التجربة الحسية.
+結構觀察：一句看似日常的翻譯或點餐選擇，顯出人物之間未說明的距離。	Craft observation: an ordinary translation or food order reveals an unspoken distance.	構成の観察：日常的な通訳や注文が、口にされない距離を示す。	ملاحظة بنيوية: تكشف ترجمة أو طلب طعام عادي مسافة غير معلنة.
+時代背景需要查證，食物與地景細節應改變人物感知或選擇。	Verify period details and make food and place affect perception or choice.	時代背景を確認し、食と土地を人物の感覚や選択に結びつける。	تحقق من تفاصيل العصر واجعل الطعام والمكان يؤثران في الإدراك أو الاختيار.
+童話故事下集	I Am Married...But!	結婚してるけど、なにか？	متزوجة ولكن!
+婚姻喜劇	Marriage comedy	結婚コメディ	كوميديا الزواج
+以婚後生活與同住家庭的矛盾，觀察愛情理想如何受到日常選擇考驗。	Marriage and shared-family living offer a reference for testing romantic ideals through everyday choices.	結婚生活と家族との同居から、恋愛の理想が日常で試される構造を研究する。	الزواج والسكن العائلي المشترك مدخل لاختبار المثال الرومانسي بالاختيارات اليومية.
+結構觀察：一個生活安排同時牽動伴侶與家人的不同期待。	Craft observation: one domestic arrangement activates incompatible expectations.	構成の観察：一つの生活上の段取りが、両立しない期待を動かす。	ملاحظة بنيوية: يحرك ترتيب منزلي واحد توقعات متعارضة.
+借鑑具體日常矛盾，重新依短劇時長設計場景與單集任務。	Use concrete domestic conflict, then redesign scenes and unit goals for short-drama duration.	具体的な生活の衝突を学び、短編の尺に合わせて場面と各話の課題を作り直す。	استفد من نزاع منزلي محدد ثم أعد تصميم المشاهد والأهداف لمدة الحلقة القصيرة.
+影后	Born for the Spotlight	女優：ボーン・フォー・ザ・スポットライト	مولودات للأضواء
+女性職場	Women at work	女性と仕事	نساء في العمل
+以女性演員的工作與人生為切入點，觀察職業追求和私人關係之間的牽動。	Women actors' work and private lives offer a reference for career choices and personal relationships.	女性俳優の仕事と人生から、職業上の追求と私的関係の作用を研究する。	عمل الممثلات وحياتهن يتيحان دراسة تفاعل المسار المهني والعلاقات الخاصة.
+結構觀察：一次公開的職業選擇，讓私下維持的關係失去原有平衡。	Craft observation: a public career decision destabilizes a private relationship.	構成の観察：公の仕事の選択が、私的な関係の均衡を崩す。	ملاحظة بنيوية: يزعزع قرار مهني علني علاقة خاصة.
+群像人物應有各自的欲望與工作方法，不能只是主角的陪襯。	Give ensemble characters their own desires and working methods.	群像の人物それぞれに、自分の願いと仕事の方法を与える。	امنح كل شخصية جماعية رغبتها وطريقة عملها.
+有生之年	Living	生きているうちに	ما دمنا أحياء
+家庭寫實	Family realism	家族リアリズム	واقعية عائلية
+成年子女返家改變家庭原有節奏，可研究生活勞動如何承載親密關係。	An adult child's return changes a family routine, showing how everyday labor can carry intimacy.	成人した子の帰宅が家族の習慣を変える構造から、生活の労働と親密さを研究する。	عودة ابن بالغ تغير إيقاع العائلة وتكشف كيف يحمل العمل اليومي الألفة.
+結構觀察：一項沒人願意接手的家務，暴露成員對彼此的不同理解。	Craft observation: a chore nobody accepts reveals incompatible understandings.	構成の観察：誰も引き受けない家事が、互いの理解の違いを示す。	ملاحظة بنيوية: تكشف مهمة منزلية يرفضها الجميع اختلاف فهمهم لبعضهم.
+讓生活細節形成戲劇行動，不用長篇台詞代替關係變化。	Make daily details become action instead of replacing relationship change with speeches.	生活の細部を行動に変え、関係の変化を長い説明で代用しない。	حول التفاصيل اليومية إلى فعل، ولا تستبدل تغير العلاقة بخطاب طويل.
+犯罪司法	Crime and justice	犯罪と司法	جريمة وعدالة
+案件中的調查與辯護，可研究專業限制如何使人物決策產生重量。	Investigation and defense offer a reference for giving professional decisions credible limits.	調査と弁護から、専門職の制約が決断に重みを与える構造を研究する。	التحقيق والدفاع مدخل لمنح القرارات المهنية حدوداً ذات وزن.
+結構觀察：證詞的細節差異讓原先方便的解釋無法成立。	Craft observation: a detail in testimony makes an easy explanation untenable.	構成の観察：証言の細部により、都合のよい説明が成り立たなくなる。	ملاحظة بنيوية: يجعل تفصيل في الشهادة تفسيراً سهلاً غير قابل للاستمرار.
+不要把司法程序簡化成主角靠一句話翻案，制度與證據需合理。	Keep legal procedures and evidence credible; one speech cannot resolve everything.	司法手続きと証拠を自然に保ち、一言の演説で全てを覆さない。	حافظ على معقولية الإجراءات والأدلة؛ لا تحل كل شيء بخطاب واحد.
+俗女養成記	The Making of an Ordinary Woman	俗女養成記	صناعة امرأة عادية
+女性成長	Women and growth	女性と成長	نساء ونضج
+個人的生活選擇與家庭期待碰撞，適合研究幽默和自我認同的結合。	Personal choices and family expectations offer a reference for combining humor with self-recognition.	個人の選択と家族の期待から、ユーモアと自己認識の組み合わせを研究する。	اختيارات الفرد وتوقعات العائلة مدخل للجمع بين الفكاهة والتعرف إلى الذات.
+結構觀察：人物第一次拒絕一項習以為常的安排，關係因此必須重新協商。	Craft observation: refusing a familiar arrangement forces a relationship to be renegotiated.	構成の観察：当たり前の段取りを断ることで、関係の交渉が始まる。	ملاحظة بنيوية: يؤدي رفض ترتيب مألوف إلى إعادة تفاوض على العلاقة.
+喜劇來自人物真正在意的事，而非單純嘲笑年齡或外貌。	Build comedy from genuine concerns, not mockery of age or appearance.	笑いは年齢や外見への嘲笑でなく、人物が本当に気にする事柄から作る。	ابن الكوميديا على ما يهم الشخصية لا على السخرية من العمر أو المظهر.
+我們與惡的距離	The World Between Us	悪との距離	العالم بيننا
+社會群像	Social ensemble drama	社会群像	دراما اجتماعية جماعية
+重大事件下不同家庭與專業角色的處境，提供多立場敘事的研究方向。	Different families and professions affected by one event provide a reference for multiple positions.	一つの重大事件に関わる家庭や職業の違いから、多立場の語りを研究する。	تأثر عائلات ومهن مختلفة بحدث واحد يتيح دراسة السرد متعدد المواقف.
+結構觀察：一次看似正當的公開發言，對另一位當事人造成未預期的後果。	Craft observation: an apparently justified public statement has unintended effects on someone else.	構成の観察：正当と思える公の発言が、別の当事者に想定外の結果をもたらす。	ملاحظة بنيوية: يترك تصريح علني يبدو مبرراً نتيجة غير متوقعة لدى طرف آخر.
+區分角色相信的事與已查證事實，讓不同立場各有具體動機。	Separate belief from verified fact and give each position a concrete motive.	信念と確認済みの事実を分け、それぞれの立場に具体的な動機を与える。	افصل الاعتقاد عن الحقيقة المحققة وامنح كل موقف دافعاً محدداً.

@@ -1,0 +1,431 @@
+{
+  "description": "Taiwan curated craft references; independently written editorial analysis, not manuscripts or live rankings.",
+  "items": [
+    {
+      "id": "tw-ref-special-legend",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "novel",
+      "source_type": "curated",
+      "source_form": "novel",
+      "title": "特殊傳說",
+      "author": "護玄",
+      "source_platform": "蓋亞文化",
+      "source_url": "https://www.gaeabooks.com.tw/events/2024_TIBE/signature/signature_01.html",
+      "collected_at": "2026-11-03",
+      "genre": "校園奇幻",
+      "tags": [
+        "校園",
+        "奇幻",
+        "成長",
+        "系列小說"
+      ],
+      "logline": "以校園奇幻系列為研究對象，觀察角色群像、世界規則與長線成長如何支撐連載。",
+      "hook": "結構觀察：讓主角對日常規則的誤判，引出下一步必須親自確認的異常。",
+      "lessons": [
+        "以下是編輯的創作分析，不是原作摘錄。",
+        "每次新增能力都要同時帶來限制，讓人物關係參與解題。"
+      ],
+      "title_localized": {
+        "en": "The Unique Legend",
+        "ja-JP": "特殊伝説",
+        "ar": "الأسطورة الفريدة"
+      },
+      "search_terms": [
+        "Campus fantasy",
+        "学園ファンタジー",
+        "فانتازيا مدرسية"
+      ]
+    },
+    {
+      "id": "tw-ref-port-novel",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "novel",
+      "source_type": "curated",
+      "source_form": "novel",
+      "title": "八尺門的辯護人",
+      "author": "唐福睿",
+      "source_platform": "讀墨閱讀最前線",
+      "source_url": "https://news.readmoo.com/2022/01/27/220127-interview-with-tang/",
+      "collected_at": "2026-11-03",
+      "genre": "法律懸疑",
+      "tags": [
+        "犯罪",
+        "法律",
+        "移工",
+        "社會寫實"
+      ],
+      "logline": "法律工作者面對案件與人的處境，適合研究調查線和社會關係如何交織。",
+      "hook": "結構觀察：新證據改變人物對案件的理解，也讓其承擔新的選擇。",
+      "lessons": [
+        "以下是編輯的創作分析，不是原作摘錄。",
+        "把制度壓力落在角色能做或不能做的具體行動上。"
+      ],
+      "title_localized": {
+        "en": "Port of Lies",
+        "ja-JP": "八尺門の弁護人",
+        "ar": "محامي باتشيمن"
+      },
+      "search_terms": [
+        "Legal suspense",
+        "法廷サスペンス",
+        "تشويق قانوني"
+      ]
+    },
+    {
+      "id": "tw-ref-ghost-town",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "novel",
+      "source_type": "curated",
+      "source_form": "novel",
+      "title": "鬼地方",
+      "author": "陳思宏",
+      "source_platform": "鏡文學",
+      "source_url": "https://www.mirrorfiction.com/news/295",
+      "collected_at": "2026-11-03",
+      "genre": "家族文學",
+      "tags": [
+        "返鄉",
+        "家族",
+        "地方",
+        "多視角"
+      ],
+      "logline": "返鄉人物與家族記憶交會，地方生活和不同成員的視角共同揭露關係裂縫。",
+      "hook": "結構觀察：同一段家庭往事，在另一位成員眼中呈現不同意義。",
+      "lessons": [
+        "以下是編輯的創作分析，不是原作摘錄。",
+        "切換視角應補上新的資訊與立場，而非重講同一件事。"
+      ],
+      "title_localized": {
+        "en": "Ghost Town",
+        "ja-JP": "鬼地方",
+        "ar": "بلدة الأشباح"
+      },
+      "search_terms": [
+        "Family literary fiction",
+        "家族文学",
+        "أدب عائلي"
+      ]
+    },
+    {
+      "id": "tw-ref-summer-lemon",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "novel",
+      "source_type": "curated",
+      "source_form": "novel",
+      "title": "夏日的檸檬草",
+      "author": "Misa",
+      "source_platform": "城邦原創",
+      "source_url": "https://www.cite.com.tw/publisher/about/300",
+      "collected_at": "2026-11-03",
+      "genre": "青春愛情",
+      "tags": [
+        "青春",
+        "校園",
+        "愛情",
+        "影視改編"
+      ],
+      "logline": "城邦原創列出的影視授權作品，可作為研究青春愛情小說與影視開發連結的入口。",
+      "hook": "結構觀察：把無法說出口的喜歡，轉成一次會被對方誤解的行動。",
+      "lessons": [
+        "以下是編輯的創作分析，不是原作摘錄。",
+        "使用獨立原創人物與事件，不複製原作的戀愛關係配置。"
+      ],
+      "title_localized": {
+        "en": "Summer Lemon Grass",
+        "ja-JP": "夏のレモングラス",
+        "ar": "عشب الليمون في الصيف"
+      },
+      "search_terms": [
+        "Youth romance",
+        "青春恋愛",
+        "رومانسية شبابية"
+      ]
+    },
+    {
+      "id": "tw-ref-youth-side-effect",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "novel",
+      "source_type": "curated",
+      "source_form": "novel",
+      "title": "青春副作用",
+      "author": "Misa",
+      "source_platform": "城邦原創",
+      "source_url": "https://www.cite.com.tw/publisher/about/300",
+      "collected_at": "2026-11-03",
+      "genre": "青春成長",
+      "tags": [
+        "青春",
+        "成長",
+        "關係",
+        "影視改編"
+      ],
+      "logline": "城邦原創列出的青春類影視授權作品，提供觀察成長題材跨媒體發展的線索。",
+      "hook": "結構觀察：讓角色為維持關係做的決定，成為下一階段必須面對的代價。",
+      "lessons": [
+        "以下是編輯的創作分析，不是原作摘錄。",
+        "情緒變化需有行動與後果承接，不能只靠內心宣告。"
+      ],
+      "title_localized": {
+        "en": "The Side Effects of Youth",
+        "ja-JP": "青春の副作用",
+        "ar": "آثار الشباب الجانبية"
+      },
+      "search_terms": [
+        "Coming-of-age",
+        "青春と成長",
+        "بلوغ ونضج"
+      ]
+    },
+    {
+      "id": "tw-ref-taiwan-travelogue",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "novel",
+      "source_type": "curated",
+      "source_form": "novel",
+      "title": "臺灣漫遊錄",
+      "author": "楊双子",
+      "source_platform": "博客來",
+      "source_url": "https://www.books.com.tw/products/0010852315",
+      "collected_at": "2026-11-03",
+      "genre": "歷史文學",
+      "tags": [
+        "歷史",
+        "女性",
+        "飲食",
+        "關係"
+      ],
+      "logline": "以歷史、旅行與飲食交織的小說為研究對象，觀察感官經驗如何承載人物關係。",
+      "hook": "結構觀察：一句看似日常的翻譯或點餐選擇，顯出人物之間未說明的距離。",
+      "lessons": [
+        "以下是編輯的創作分析，不是原作摘錄。",
+        "時代背景需要查證，食物與地景細節應改變人物感知或選擇。"
+      ],
+      "title_localized": {
+        "en": "Taiwan Travelogue",
+        "ja-JP": "台湾漫遊鉄道のふたり",
+        "ar": "رحلة في تايوان"
+      },
+      "search_terms": [
+        "Historical literary fiction",
+        "歴史文学",
+        "أدب تاريخي"
+      ]
+    },
+    {
+      "id": "tw-ref-married",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "short_drama",
+      "source_type": "curated",
+      "source_form": "tv_series",
+      "title": "童話故事下集",
+      "source_platform": "Netflix",
+      "source_url": "https://about.netflix.com/zh_tw/news/i-am-married-but-press-conference",
+      "collected_at": "2026-11-03",
+      "genre": "婚姻喜劇",
+      "tags": [
+        "婚姻",
+        "家庭",
+        "喜劇",
+        "關係"
+      ],
+      "logline": "以婚後生活與同住家庭的矛盾，觀察愛情理想如何受到日常選擇考驗。",
+      "hook": "結構觀察：一個生活安排同時牽動伴侶與家人的不同期待。",
+      "lessons": [
+        "影視結構參考，非短劇成稿。",
+        "借鑑具體日常矛盾，重新依短劇時長設計場景與單集任務。"
+      ],
+      "title_localized": {
+        "en": "I Am Married...But!",
+        "ja-JP": "結婚してるけど、なにか？",
+        "ar": "متزوجة ولكن!"
+      },
+      "search_terms": [
+        "Marriage comedy",
+        "結婚コメディ",
+        "كوميديا الزواج"
+      ]
+    },
+    {
+      "id": "tw-ref-spotlight",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "short_drama",
+      "source_type": "curated",
+      "source_form": "tv_series",
+      "title": "影后",
+      "source_platform": "Netflix",
+      "source_url": "https://www.netflix.com/tw/title/81746667",
+      "collected_at": "2026-11-03",
+      "genre": "女性職場",
+      "tags": [
+        "女性",
+        "職場",
+        "群像",
+        "演藝圈"
+      ],
+      "logline": "以女性演員的工作與人生為切入點，觀察職業追求和私人關係之間的牽動。",
+      "hook": "結構觀察：一次公開的職業選擇，讓私下維持的關係失去原有平衡。",
+      "lessons": [
+        "影視結構參考，非短劇成稿。",
+        "群像人物應有各自的欲望與工作方法，不能只是主角的陪襯。"
+      ],
+      "title_localized": {
+        "en": "Born for the Spotlight",
+        "ja-JP": "女優：ボーン・フォー・ザ・スポットライト",
+        "ar": "مولودات للأضواء"
+      },
+      "search_terms": [
+        "Women at work",
+        "女性と仕事",
+        "نساء في العمل"
+      ]
+    },
+    {
+      "id": "tw-ref-living",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "short_drama",
+      "source_type": "curated",
+      "source_form": "tv_series",
+      "title": "有生之年",
+      "source_platform": "Netflix",
+      "source_url": "https://www.youtube.com/watch?v=GIsbiu5JpNU",
+      "collected_at": "2026-11-03",
+      "genre": "家庭寫實",
+      "tags": [
+        "家庭",
+        "返鄉",
+        "生活",
+        "兄弟"
+      ],
+      "logline": "成年子女返家改變家庭原有節奏，可研究生活勞動如何承載親密關係。",
+      "hook": "結構觀察：一項沒人願意接手的家務，暴露成員對彼此的不同理解。",
+      "lessons": [
+        "影視結構參考，非短劇成稿。",
+        "讓生活細節形成戲劇行動，不用長篇台詞代替關係變化。"
+      ],
+      "title_localized": {
+        "en": "Living",
+        "ja-JP": "生きているうちに",
+        "ar": "ما دمنا أحياء"
+      },
+      "search_terms": [
+        "Family realism",
+        "家族リアリズム",
+        "واقعية عائلية"
+      ]
+    },
+    {
+      "id": "tw-ref-port-series",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "short_drama",
+      "source_type": "curated",
+      "source_form": "tv_series",
+      "title": "八尺門的辯護人",
+      "source_platform": "Netflix",
+      "source_url": "https://www.netflix.com/tw/title/81679219",
+      "collected_at": "2026-11-03",
+      "genre": "犯罪司法",
+      "tags": [
+        "犯罪",
+        "司法",
+        "懸疑",
+        "社會"
+      ],
+      "logline": "案件中的調查與辯護，可研究專業限制如何使人物決策產生重量。",
+      "hook": "結構觀察：證詞的細節差異讓原先方便的解釋無法成立。",
+      "lessons": [
+        "影視結構參考，非短劇成稿。",
+        "不要把司法程序簡化成主角靠一句話翻案，制度與證據需合理。"
+      ],
+      "title_localized": {
+        "en": "Port of Lies",
+        "ja-JP": "八尺門の弁護人",
+        "ar": "محامي باتشيمن"
+      },
+      "search_terms": [
+        "Crime and justice",
+        "犯罪と司法",
+        "جريمة وعدالة"
+      ]
+    },
+    {
+      "id": "tw-ref-making-woman",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "short_drama",
+      "source_type": "curated",
+      "source_form": "tv_series",
+      "title": "俗女養成記",
+      "source_platform": "Netflix",
+      "source_url": "https://www.netflix.com/tw/title/81219182",
+      "collected_at": "2026-11-03",
+      "genre": "女性成長",
+      "tags": [
+        "女性",
+        "成長",
+        "家庭",
+        "喜劇"
+      ],
+      "logline": "個人的生活選擇與家庭期待碰撞，適合研究幽默和自我認同的結合。",
+      "hook": "結構觀察：人物第一次拒絕一項習以為常的安排，關係因此必須重新協商。",
+      "lessons": [
+        "影視結構參考，非短劇成稿。",
+        "喜劇來自人物真正在意的事，而非單純嘲笑年齡或外貌。"
+      ],
+      "title_localized": {
+        "en": "The Making of an Ordinary Woman",
+        "ja-JP": "俗女養成記",
+        "ar": "صناعة امرأة عادية"
+      },
+      "search_terms": [
+        "Women and growth",
+        "女性と成長",
+        "نساء ونضج"
+      ]
+    },
+    {
+      "id": "tw-ref-world-between",
+      "market": "taiwan",
+      "locale": "zh-TW",
+      "content_type": "short_drama",
+      "source_type": "curated",
+      "source_form": "tv_series",
+      "title": "我們與惡的距離",
+      "source_platform": "公視新聞",
+      "source_url": "https://news.pts.org.tw/article/426379",
+      "collected_at": "2026-11-03",
+      "genre": "社會群像",
+      "tags": [
+        "社會",
+        "媒體",
+        "家庭",
+        "群像"
+      ],
+      "logline": "重大事件下不同家庭與專業角色的處境，提供多立場敘事的研究方向。",
+      "hook": "結構觀察：一次看似正當的公開發言，對另一位當事人造成未預期的後果。",
+      "lessons": [
+        "影視結構參考，非短劇成稿。",
+        "區分角色相信的事與已查證事實，讓不同立場各有具體動機。"
+      ],
+      "title_localized": {
+        "en": "The World Between Us",
+        "ja-JP": "悪との距離",
+        "ar": "العالم بيننا"
+      },
+      "search_terms": [
+        "Social ensemble drama",
+        "社会群像",
+        "دراما اجتماعية جماعية"
+      ]
+    }
+  ]
+}

@@ -115,6 +115,8 @@ with zipfile.ZipFile(sys.argv[1]) as archive:
 PY
 test -f "$release/agent/studio_inspiration.py"
 test -f "$release/agent/studio_writing.py"
+test -f "$release/agent/content/taiwan_references.json"
+test -f "$release/ai-website-cloner-template/public/images/regions/taiwan.png"
 test -f "$release/ai-website-cloner-template/src/components/studio/inspiration.tsx"
 mv "$release/data" "$release/seed-data"
 ln -s "$base/shared/data" "$release/data"
@@ -145,6 +147,14 @@ async def check():
         assert (await client.get('/api/studio/session')).json()['isolated']
         assert (await client.get('/api/studio/worlds')).json()['items'] == []
         assert (await client.post('/api/studio/inspirations', json={})).status_code == 401
+        for kind in ('novel', 'short_drama'):
+            references = await client.get('/api/studio/references', params={'market':'taiwan', 'output_locale':'zh-TW', 'content_type':kind})
+            assert references.status_code == 200 and len(references.json()['items']) == 6
+            first = references.json()['items'][0]
+            assert first['market'] == 'taiwan' and first['content_type'] == kind
+            detail = await client.get('/api/studio/references/' + first['id'], params={'market':'taiwan','output_locale':'en'})
+            assert detail.status_code == 200 and detail.json()['source_url']
+            assert (await client.get('/api/studio/references/' + first['id'], params={'market':'china'})).status_code == 404
         response = await client.get('/api/studio/inspirations/deployment-check')
         assert response.status_code == 404 and response.json()['detail'] != 'Not Found'
 asyncio.run(check())
@@ -152,7 +162,7 @@ print('Isolated backend import and inspiration route checks passed; no model cal
 PY
 
 if [[ -f "$release/tests/test_studio_auth.py" ]]; then
-    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_taiwan_creation.py" "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
 fi
 
 cd "$release/ai-website-cloner-template"
@@ -276,6 +286,22 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
         with urlopen(base + '/studio/' + kind + '/new?sample=' + slug, timeout=30) as response:
             body = response.read().decode('utf-8')
             assert response.status == 200 and 'aria-busy="true"' in body and 'id="plotloom-create-form"' not in body
+    for locale in ('zh-CN', 'zh-TW', 'en', 'ja-JP', 'ar'):
+        headers = {'Cookie': 'plotloom-preferences=' + locale + '~taiwan~' + locale}
+        with anonymous_open(Request(base + '/samples', headers=headers), timeout=30) as response:
+            listing = response.read().decode('utf-8')
+            assert response.status == 200 and 'data-market="taiwan"' in listing
+            assert listing.count('class="sample-card ') == 12
+        with anonymous_open(Request(base + '/', headers=headers), timeout=30) as response:
+            assert 'taiwan.png' in response.read().decode('utf-8')
+        suffix = '' if locale == 'zh-TW' else '-' + locale
+        for stem in ('tw-borrowed-summer', 'tw-midnight-number'):
+            slug = stem + suffix
+            with anonymous_open(Request(base + '/samples/' + slug, headers=headers), timeout=30) as response:
+                assert 'id="chapter-3"' in response.read().decode('utf-8')
+            with anonymous_open(Request(base + '/samples/' + slug + '/download', headers=headers), timeout=30) as response:
+                assert response.status == 200 and len(response.read()) > 300
+                assert 'no-store' in response.headers.get('Cache-Control', '')
     for path in ('/samples/not-a-sample/download', '/studio/novels/new?sample=temporary-parent', '/studio/scripts/new?sample=gate-name'):
         try:
             with urlopen(base + path, timeout=30) as response:

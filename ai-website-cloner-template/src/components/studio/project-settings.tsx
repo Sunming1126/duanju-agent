@@ -5,13 +5,11 @@ import { useUI } from "@/lib/i18n/provider";
 import { Check, ChevronDown, Mars, Venus, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { ContentType, WorkInput } from "@/lib/studio/api";
-import { dramaGenres, novelGenres } from "@/lib/studio/writing";
+import { creativeProfile } from "@/lib/studio/profiles";
 import styles from "./project.module.css";
 
-export type ProjectSettingsValue = Pick<WorkInput, "audience" | "genre" | "creative" | "premise" | "novel_settings" | "drama_settings" | "world_snapshot"> & { units: number | string; words_per_chapter: number | string };
+export type ProjectSettingsValue = Pick<WorkInput, "audience" | "genre" | "creative" | "premise" | "novel_settings" | "drama_settings" | "world_snapshot"> & Partial<Pick<WorkInput, "market" | "output_locale">> & { units: number | string; words_per_chapter: number | string };
 
-const coreOptions = ["重生逆袭", "穿越", "先婚后爱", "双向救赎", "身份反转", "时间循环", "异能觉醒", "成长冒险"];
-const styleOptions = ["轻松幽默", "情感细腻", "悬疑烧脑", "节奏紧凑", "温暖治愈", "热血", "现实质感", "浪漫"];
 const anchors = ["目标受众", "题材类型", "核心设定", "风格元素", "核心亮点", "核心梗概"];
 
 export function ProjectSettings({ type, value, disabled = false, onChange, children }: {
@@ -20,7 +18,7 @@ export function ProjectSettings({ type, value, disabled = false, onChange, child
   const ui = useUI();
   const prefix = useId();
   const [activeAnchor, setActiveAnchor] = useState(0);
-  const genres = type === "novel" ? novelGenres : dramaGenres;
+  const { genres, core: coreOptions, styles: styleOptions } = creativeProfile(value.market, type);
   const creative = value.creative || {};
   function change(patch: Partial<ProjectSettingsValue>) { if (!disabled) onChange(patch); }
   function updateCreative(patch: NonNullable<WorkInput["creative"]>) { change({ creative: { ...creative, ...patch } }); }
@@ -28,8 +26,8 @@ export function ProjectSettings({ type, value, disabled = false, onChange, child
     <section className={styles.settings} aria-label={ui("故事设定")}><h2>{ui("故事设定")}</h2>
       <div className={styles.settingGrid}>
         <div id={`${prefix}-setting-0`} className={styles.field}><span id={`${prefix}-audience`}>{ui("目标受众 ")}<b>{ui("*")}</b></span><div className={styles.audience} role="group" aria-labelledby={`${prefix}-audience`}>
-          <button type="button" disabled={disabled} aria-pressed={value.audience === "male"} className={`${styles.male} ${value.audience === "male" ? styles.chosen : ""}`} onClick={() => change({ audience: "male" })}><Mars size={20} />{ui("男频")}</button>
-          <button type="button" disabled={disabled} aria-pressed={value.audience === "female"} className={`${styles.female} ${value.audience === "female" ? styles.chosen : ""}`} onClick={() => change({ audience: "female" })}><Venus size={20} />{ui("女频")}</button>
+          <button type="button" disabled={disabled} aria-pressed={value.audience === "male"} className={`${styles.male} ${value.audience === "male" ? styles.chosen : ""}`} onClick={() => change({ audience: "male" })}><Mars size={20} />{ui(value.market === "taiwan" ? "男性向" : "男频")}</button>
+          <button type="button" disabled={disabled} aria-pressed={value.audience === "female"} className={`${styles.female} ${value.audience === "female" ? styles.chosen : ""}`} onClick={() => change({ audience: "female" })}><Venus size={20} />{ui(value.market === "taiwan" ? "女性向" : "女频")}</button>
           <button type="button" disabled={disabled} aria-pressed={value.audience === "general"} className={`${styles.general} ${value.audience === "general" ? styles.chosen : ""}`} onClick={() => change({ audience: "general" })}>{ui("不限")}</button>
         </div></div>
         <div id={`${prefix}-setting-1`}><ProjectTagPicker label={ui("题材类型")} max={3} placeholder={ui("选择或自定义输入背景")} options={genres} value={creative.genres || []} disabled={disabled} onChange={tags => updateCreative({ genres: tags })} /></div>

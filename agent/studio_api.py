@@ -114,6 +114,8 @@ class WorkInput(BaseModel):
     def normalize_mode(cls, value):
         if isinstance(value, dict):
             value = dict(value)
+            if value.get("market") == "taiwan" and "output_locale" not in value:
+                value["output_locale"] = "zh-TW"
             kind = value.get("content_type", "short_drama")
             value["mode"] = canonical_mode(kind, value.get("mode", ""))
             if kind == "novel" and "words_per_chapter" not in value:
@@ -235,7 +237,7 @@ def works(view: Literal["full", "summary"] = "full"):
 @router.post("/works")
 def create_work(body: WorkInput):
     for ident in body.reference_ids:
-        if get_reference(ident)["content_type"] != body.content_type:
+        if get_reference(ident, body.market, body.output_locale)["content_type"] != body.content_type:
             raise HTTPException(422, "参考素材类型与创作入口不一致，请从对应入口创建作品")
     return store.create_work(body.model_dump())
 
@@ -280,24 +282,26 @@ def project_reference(item):
             "source_url": str(item.get("source_url", "")), "source": str(item.get("source_platform") or item.get("platform") or "本机语料库"),
             "genre": str(item.get("genre", "")), "logline": str(item.get("logline", "")),
             "hook": str(item.get("hook", "")), "beats": item.get("beats") or [],
-            "content_type": item.get("content_type", "short_drama")}
+            "content_type": item.get("content_type", "short_drama"), "market": item.get("market", "china"),
+            "locale": item.get("locale", "zh-CN"), "source_form": item.get("source_form", ""),
+            "collected_at": item.get("collected_at", ""), "lessons": item.get("lessons") or []}
 
 
 def reference_items(content_type, market="china", locale="zh-CN"):
     from .market import market_matches
-    return [item for item in get_kb().items if market_matches(item, market, locale, content_type)]
+    return [item for item in get_kb().items if market_matches(item, market, "" if market == "taiwan" else locale, content_type)]
 
 
 @router.get("/references")
 def references(query: str = Query(default="", max_length=500), content_type: Literal["short_drama", "novel"] = "short_drama", limit: int = Query(default=20, ge=1, le=50), market: Market = "china", output_locale: Locale = "zh-CN"):
-    rows = get_kb().search(query, top_k=limit, market=market, locale=output_locale, content_type=content_type) if query.strip() else reference_items(content_type, market, output_locale)[:limit]
+    rows = get_kb().search(query, top_k=limit, market=market, locale="" if market == "taiwan" else output_locale, content_type=content_type) if query.strip() else reference_items(content_type, market, output_locale)[:limit]
     return {"items": [project_reference(item) for item in rows]}
 
 
 @router.get("/references/{ident}")
-def get_reference(ident: str):
+def get_reference(ident: str, market: Market = "china", output_locale: Locale = "zh-CN"):
     for content_type in ("short_drama", "novel"):
-        for item in reference_items(content_type):
+        for item in reference_items(content_type, market, output_locale):
             if str(item.get("id")) == ident:
                 return project_reference(item)
     raise HTTPException(404, "参考语料不存在")
@@ -313,7 +317,7 @@ def reference_context(work):
             raise ValueError("选中的参考素材与作品类型不一致，请调整后再生成。")
         selected.append(item)
     hits = get_kb().search(work["genre"] + " " + work["premise"], top_k=3,
-                           market=work.get("market", "china"), locale=work.get("output_locale", "zh-CN"), content_type=work["content_type"])
+                           market=work.get("market", "china"), locale="" if work.get("market") == "taiwan" else work.get("output_locale", "zh-CN"), content_type=work["content_type"])
     seen = {item["id"] for item in selected}
     return selected + [project_reference(hit) for hit in hits if str(hit.get("id")) not in seen]
 

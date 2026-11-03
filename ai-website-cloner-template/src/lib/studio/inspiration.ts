@@ -3,6 +3,7 @@ import { createTranslator } from "@/lib/i18n/translate";
 import type { Chapter, ContentType, Reference, WorkInput, WorldInput, NovelSettings, DramaSettings } from "./api";
 import type { EditorStep } from "./workflow";
 import { creationMode, defaultNovelSettings, defaultDramaSettings } from "./writing";
+import { creativeProfile } from "./profiles";
 
 export type InspirationPlan = { id: string; title: string; summary: string; story: string };
 export type InspirationSession = {
@@ -58,8 +59,8 @@ export type CreationDraft = {
 export function initialCreationDraft(type: ContentType, reference?: Reference, preferences = browserPreferences()): CreationDraft {
   const ui = createTranslator(preferences.locale);
   return {
-    market: preferences.market, output_locale: preferences.locale,
-    title: "", content_type: type, genre: reference?.genre || (type === "novel" ? "都市日常" : "都市"), units: "12",
+    market: preferences.market, output_locale: preferences.output_locale || preferences.locale,
+    title: "", content_type: type, genre: reference?.genre || createTranslator(preferences.output_locale || preferences.locale)(creativeProfile(preferences.market, type).genres[0]), units: "12",
     words: type === "novel" ? "2000" : "800", audience: "general", genres: "", core: "", styles: "",
     highlights: "", premise: reference ? `${ui("参考素材：")}${reference.title}\n${reference.logline}\n${reference.hook}\n\n${ui("我的创作方向：")}` : "", source_text: "",
     characters: "", outline: "", chapters: [],
@@ -121,7 +122,7 @@ export function creationPayload(draft: CreationDraft, mode: string, generate: bo
     units, words_per_chapter: words, audience: draft.audience, premise: draft.premise.trim(), characters: draft.characters || "", outline: draft.outline || "", chapters: chapters.map(c => ({ ...c })),
     // An edited/generated snapshot is already an independent copy, never re-copy a library world over it.
     world_id: draft.world_snapshot ? null : draft.world_id || null, world_snapshot: draft.world_snapshot,
-    market: draft.market || "china", output_locale: draft.output_locale || "zh-CN", reference_ids: reference ? [reference.id] : [],
+    market: draft.market || "china", output_locale: draft.output_locale || "zh-CN", reference_ids: reference && (reference.market || "china") === (draft.market || "china") ? [reference.id] : [],
     creative: { genres: tags(draft.genres || draft.genre, 3, "自定义题材", "genres"), core: tags(draft.core, 3, "核心设定", "core"), styles: tags(draft.styles, 5, "风格", "styles"),
       highlights: draft.highlights, source_text: ["小说改编", "剧本改写"].includes(mode) ? draft.source_text || draft.premise : "" },
   };

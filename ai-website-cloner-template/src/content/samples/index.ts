@@ -1,7 +1,9 @@
 import { regionalSamples } from "./regional";
+import { taiwanSamples } from "./taiwan";
+import { taiwanLocalizedSamples } from "./taiwan-localized";
 import { createTranslator } from "@/lib/i18n/translate";
-import { toTraditional } from "@/lib/i18n/traditional";
-import type { Locale } from "@/lib/i18n/config";
+import { toTraditional, toSimplified } from "@/lib/i18n/traditional";
+import type { Locale, Market } from "@/lib/i18n/config";
 import type { ContentType, WorkInput } from "@/lib/studio/api";
 import { lastLight } from "./last-light";
 import { platformSeven } from "./platform-seven";
@@ -39,11 +41,26 @@ function traditionalSample(sample: OfficialSample): OfficialSample {
 export const traditionalSamples: readonly OfficialSample[] = [...officialSamples, ...archivedSamples].map(traditionalSample);
 
 export function getOfficialSample(slug: string, kind?: ContentType, locale?: Locale) {
-  const sample = [...officialSamples, ...archivedSamples, ...regionalSamples, ...traditionalSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
+  const sample = [...officialSamples, ...archivedSamples, ...regionalSamples, ...traditionalSamples, ...taiwanSamples, ...taiwanSimplifiedSamples, ...taiwanLocalizedSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
+  if (sample?.work.market === "taiwan") return taiwanSampleForLocale(sample, locale || "zh-TW");
   return locale === "zh-TW" && sample?.work.output_locale === "zh-CN" ? traditionalSamples.find(item => item.slug === `zh-TW-${sample.slug}`) : sample;
 }
 
-export function samplesForLocale(locale: Locale) { return locale === "zh-CN" ? officialSamples : locale === "zh-TW" ? traditionalSamples.slice(0, officialSamples.length) : regionalSamples.filter(sample => sample.work.output_locale === locale); }
+function taiwanSampleForLocale(sample: OfficialSample, locale: Locale): OfficialSample {
+  if (sample.work.output_locale !== "zh-TW") return sample;
+  if (["en", "ja-JP", "ar"].includes(locale)) return taiwanLocalizedSamples.find(item => item.slug === `${sample.slug}-${locale}`)!;
+  if (locale !== "zh-CN") return sample;
+  const convert = (value: unknown): unknown => typeof value === "string" ? toSimplified(value) : Array.isArray(value) ? value.map(convert) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, convert(item)])) : value;
+  const result = convert(sample) as OfficialSample;
+  result.slug = `${sample.slug}-zh-CN`;
+  result.work.output_locale = "zh-CN";
+  return result;
+}
+export const taiwanSimplifiedSamples = taiwanSamples.map(sample => taiwanSampleForLocale(sample, "zh-CN"));
+export function samplesForLocale(locale: Locale, market?: Market) {
+  if (market === "taiwan") return taiwanSamples.map(sample => taiwanSampleForLocale(sample, locale));
+  return locale === "zh-CN" ? officialSamples : locale === "zh-TW" ? traditionalSamples.slice(0, officialSamples.length) : regionalSamples.filter(sample => sample.work.output_locale === locale);
+}
 
 export function sampleCreationInput(sample: OfficialSample): WorkInput {
   const work = sample.work;
@@ -75,7 +92,11 @@ export function sampleDocument(sample: OfficialSample): string {
   const novel = work.content_type === "novel";
   if (work.output_locale !== "zh-CN") {
     const ui = createTranslator(work.output_locale);
-    return [work.title, ui("官方样例"), ui("AI辅助创作"), sample.logline, "", ui("故事设定"), work.premise, "", ui("世界设定"), work.world_snapshot?.description || "", "", ui("人物"), work.characters, "", ui("大纲"), work.outline, "", ui("正文"), ...work.chapters.flatMap(c => ["", `${c.number}. ${c.title}`, c.content]), "", ...sample.lessons.map(lesson => `${lesson.title}\n${lesson.text}`)].join("\n");
+    return [work.title, ui("官方样例"), ui("AI辅助创作"), sample.logline, "", ui("故事设定"), work.premise,
+      "", ui("题材类型"), work.creative?.genres?.join(" / ") || work.genre, "", ui("核心设定"), work.creative?.core?.join(" / ") || "",
+      "", ui("风格元素"), work.creative?.styles?.join(" / ") || "", "", ui("核心亮点"), work.creative?.highlights || "",
+      "", ui("世界设定"), work.world_snapshot?.description || "", ...Object.entries(work.world_snapshot?.sections || {}).map(([key, value]) => `${ui(worldLabels[key] || key)}\n${value}`),
+      "", ui("人物"), work.characters, "", ui("大纲"), work.outline, "", ui("正文"), ...work.chapters.flatMap(c => ["", `${c.number}. ${c.title}`, c.content]), "", ...sample.lessons.map(lesson => `${lesson.title}\n${lesson.text}`)].join("\n");
   }
   const perspective = { first_person: "第一人称", third_limited: "第三人称有限视角", omniscient: "全知视角", multiple: "多视角" };
   const settings = novel

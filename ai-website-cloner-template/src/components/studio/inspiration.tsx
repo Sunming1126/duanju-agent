@@ -2,6 +2,7 @@
 import type { Market, Locale } from "@/lib/i18n/config";
 import { usePreferences } from "@/lib/i18n/provider";
 import { useUI } from "@/lib/i18n/provider";
+import { creativeProfile } from "@/lib/studio/profiles";
 
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -37,7 +38,8 @@ export function Inspiration({ type, initialPrompt, onApply, onClose, market, out
   const flowRef = useRef<HTMLDivElement>(null);
   const analysisRef = useRef<HTMLElement>(null);
   const region = market || preferences.market;
-  const language = outputLocale || preferences.locale;
+  const language = outputLocale || preferences.output_locale || preferences.locale;
+  const profile = creativeProfile(region, type);
   const baseStorageKey = `plotloom-inspiration-${type}${region === "china" && language === "zh-CN" ? "" : `-${region}-${language}`}`;
   const storageKey = scopedDraftKey(baseStorageKey);
   const inputKey = `${storageKey}-input`;
@@ -152,11 +154,11 @@ export function Inspiration({ type, initialPrompt, onApply, onClose, market, out
         <textarea dir="auto" id="inspiration-prompt" value={prompt} disabled={waiting} maxLength={12000} rows={5} onChange={e => setPrompt(e.target.value)} placeholder={ui(`比如：我想写一个${type === "novel" ? "带悬疑感的都市小说" : "关于小人物逆袭的短剧"}，主角意外收到十年后自己的来信，但每次改变未来都要失去一段记忆……`)} />
         <details className="inspiration-preferences"><summary>{ui("添加偏好 · 目标受众 / 题材类型 / 核心设定 / 风格元素")}</summary><div className="inspiration-preference-grid">
           <label>{ui("目标受众")}<select value={audience} disabled={waiting} onChange={e => setAudience(e.target.value)}><option value="general">{ui("不限")}</option><option value="female">{ui("女性向")}</option><option value="male">{ui("男性向")}</option></select></label>
-          <label>{ui("题材类型")}<input value={genres} maxLength={240} disabled={waiting} onChange={e => setGenres(e.target.value)} placeholder={ui("都市，悬疑")} /></label>
-          <label>{ui("核心设定")}<input value={core} maxLength={240} disabled={waiting} onChange={e => setCore(e.target.value)} placeholder={ui("时间循环，身份错位")} /></label>
-          <label>{ui("风格元素")}<input value={styles} maxLength={400} disabled={waiting} onChange={e => setStyles(e.target.value)} placeholder={ui("温暖，反转，黑色幽默")} /></label>
+          <label>{ui("题材类型")}<input value={genres} maxLength={240} disabled={waiting} onChange={e => setGenres(e.target.value)} placeholder={profile.genres.slice(0, 3).map(text => ui(text)).join(" / ")} /></label>
+          <label>{ui("核心设定")}<input value={core} maxLength={240} disabled={waiting} onChange={e => setCore(e.target.value)} placeholder={profile.core.slice(0, 3).map(text => ui(text)).join(" / ")} /></label>
+          <label>{ui("风格元素")}<input value={styles} maxLength={400} disabled={waiting} onChange={e => setStyles(e.target.value)} placeholder={profile.styles.slice(0, 3).map(text => ui(text)).join(" / ")} /></label>
         </div></details>
-        <div className="inspiration-compose-actions"><span>{ui(prompt.length)}{ui("/12,000")}{ui(prompt.length > 12000 ? " · 请精简想法后生成" : "")}</span><button className="inspiration-primary" type="button" disabled={waiting || !prompt.trim() || prompt.length > 12000} onClick={() => void run("/studio/inspirations", { market: market || preferences.market, output_locale: outputLocale || preferences.locale, content_type: type, prompt: prompt.trim(), audience, genres, core, styles })}><Sparkles size={16} />{ui(waiting ? "正在策划…" : "生成三个参考方案")}</button></div>
+        <div className="inspiration-compose-actions"><span>{ui(prompt.length)}{ui("/12,000")}{ui(prompt.length > 12000 ? " · 请精简想法后生成" : "")}</span><button className="inspiration-primary" type="button" disabled={waiting || !prompt.trim() || prompt.length > 12000} onClick={() => void run("/studio/inspirations", { market: region, output_locale: language, content_type: type, prompt: prompt.trim(), audience, genres, core, styles })}><Sparkles size={16} />{ui(waiting ? "正在策划…" : "生成三个参考方案")}</button></div>
       </div>}
       {session && <>
         {(pending(session) || submittingAnalysis) && <div className="inspiration-progress" role="status"><LoaderCircle size={18} className="inspiration-spinner" /><div>{ui(submittingAnalysis && !pending(session) ? "正在提交解析任务…" : session.job.status === "queued" ? "已排队，正在等待创作服务" : analyzing ? "正在解析选定方案的题材、设定和世界观…" : session.job.action === "revise" ? "正在按你的要求打磨方案…" : "正在构思三个不同的故事方向…")}<p>{ui("可以先关闭窗口，稍后重新打开查看结果。")}</p></div></div>}

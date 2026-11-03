@@ -1,5 +1,5 @@
 "use client";
-import { useUI } from "@/lib/i18n/provider";
+import { useUI, usePreferences } from "@/lib/i18n/provider";
 
 
 import { useRouter } from "next/navigation";
@@ -44,6 +44,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
   id?: string; kind?: "short_drama" | "novel"; mode?: string; referenceId?: string; sampleId?: string; sampleInput?: WorkInput;
 }) {
   const ui = useUI();
+  const preferences = usePreferences();
   const router = useRouter();
   const history = useEditHistory<WorkInput>();
   const recordSnapshot = useRef(history.record);
@@ -92,7 +93,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
     void api<{ items: World[] }>("/studio/worlds", { signal }).then(value => {
       if (!signal.aborted) setWorlds(value.items.filter(world => !world.archived));
     }).catch(auxiliaryError);
-    if (referenceId) void api<Reference>(`/studio/references/${encodeURIComponent(referenceId)}`, { signal }).then(value => {
+    if (referenceId) void api<Reference>(`/studio/references/${encodeURIComponent(referenceId)}?market=${preferences.market}&output_locale=${preferences.output_locale || preferences.locale}`, { signal }).then(value => {
       if (!signal.aborted) { setReference(value); setReferenceReady(true); }
     }).catch(cause => { if (!signal.aborted) setError(cause.message); });
     if (id) void api<Work>(`/studio/works/${id}`, { signal }).then(value => {
@@ -116,7 +117,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
       } catch { setNotice("浏览器草稿备份不可用，已读取服务器作品。"); }
     }).catch(e => { if (!signal.aborted) setError(e.message); }).finally(() => { if (!signal.aborted) setVerifying(false); });
     return () => controller.abort();
-  }, [id, referenceId]);
+  }, [id, referenceId, preferences.market, preferences.locale, preferences.output_locale]);
 
   const update = (patch: Partial<Work>, record = true) => {
     if (!work || mutating.current) return;
@@ -290,6 +291,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
     const raw = { ...numericInput, ...(units !== undefined ? {units:String(units)} : {}), ...(words_per_chapter !== undefined ? {words_per_chapter:String(words_per_chapter)} : {}) };
     if (units !== undefined || words_per_chapter !== undefined) setNumericInput(raw);
     const next: Partial<Work> = { ...other };
+    if (patch.market && patch.market !== work.market) { next.reference_ids = []; setNotice("创作地区已切换，原地区参考已取消；已写内容保留。请检查原有设定后继续生成。"); }
     try { const numbers = projectNumbers(work,raw); Object.assign(next,numbers); if (units !== undefined) setNumber(current => Math.min(current,numbers.units)); }
     catch (cause) { setNotice(cause instanceof Error ? cause.message : "参数无效"); if (!Object.keys(other).length) return; }
     if (patch.creative?.genres?.length) next.genre = patch.creative.genres.join(" / ").slice(0,80);

@@ -79,6 +79,11 @@ export type WorkSummary = Pick<Work, "id" | "title" | "content_type" | "genre" |
 };
 export type Action = "premise" | "characters" | "outline" | "chapter";
 export type Reference = {
+  market?: Market;
+  locale?: Locale;
+  source_form?: string;
+  collected_at?: string;
+  lessons?: string[];
   id: string;
   title: string;
   genre: string;

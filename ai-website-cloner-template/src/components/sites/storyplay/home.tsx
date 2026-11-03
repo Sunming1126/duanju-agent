@@ -20,7 +20,7 @@ import { Header, SectionHeading } from "./shared";
 export function StoryplayHome() {
   const ui = useUI();
   const { market } = usePreferences();
-  const regional = market === "china" || market === "arab";
+  const regional = market === "china" || market === "taiwan" || market === "arab";
   const gallery = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   useEffect(() => {
@@ -69,7 +69,7 @@ export function StoryplayHome() {
           <header className="lapian-intro">
             <SectionHeading>{ui("故事灵感")}</SectionHeading>
             <p id="lapian-heading">
-              {ui(" 从星空铁路到雨夜街角，让每一个世界都有自己的故事。 ")}<br className="desktop-break" />
+              {ui(market === "taiwan" ? "从雨后骑楼到返乡餐桌，让关系与选择开启故事。" : " 从星空铁路到雨夜街角，让每一个世界都有自己的故事。 ")}<br className="desktop-break" />
               {ui(" 探索 Plotloom 的原创动漫视觉概念，开启下一段创作。 ")}</p>
             <Link className="gold-button" href="/corpus">
               {ui(" 查看语料参考 ")}</Link>

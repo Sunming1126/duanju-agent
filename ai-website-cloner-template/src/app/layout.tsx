@@ -19,5 +19,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { preferences } = await serverI18n();
-  return <html lang={preferences.locale} dir={preferences.locale === "ar" ? "rtl" : "ltr"} data-market={preferences.market}><body><LocaleProvider preferences={preferences}><CreationAccess />{children}</LocaleProvider></body></html>;
+  return <html lang={preferences.locale} dir={preferences.locale === "ar" ? "rtl" : "ltr"} data-market={preferences.market} data-output-locale={preferences.output_locale || preferences.locale}><body><LocaleProvider preferences={preferences}><CreationAccess />{children}</LocaleProvider></body></html>;
 }

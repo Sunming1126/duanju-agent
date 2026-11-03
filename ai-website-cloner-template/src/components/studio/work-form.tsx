@@ -15,7 +15,7 @@ import { ProjectParameters } from "./project-parameters";
 import { OutlineEditor } from "./outline-editor";
 import { ManuscriptEditor } from "./manuscript-editor";
 import { useEditHistory } from "./edit-history";
-import { applyProjectSettings, projectSettingsFromDraft } from "@/lib/studio/project";
+import { applyProjectSettings, projectSettingsFromDraft, type ProjectSettingsValue } from "@/lib/studio/project";
 import { exportWord } from "@/lib/studio/word-export";
 import { creationDraftKeys } from "@/lib/studio/writing";
 import { editorLabels, editorSteps, nextEditorStep, type CreationIntent } from "@/lib/studio/workflow";
@@ -53,10 +53,15 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   const lock = useRef(false);
   const created = useRef<Work | null>(null);
   const snapshotRef = useRef(draft);
+  function changeProjectSettings(patch: Partial<ProjectSettingsValue>) {
+    if (patch.market && patch.market !== draft.market) setNotice("创作地区已切换，原地区参考已取消；已写内容保留。请检查原有设定后继续生成。");
+    update(applyProjectSettings(draft, patch));
+  }
   const restoredKey = useRef("");
   const draftSourceId = sampleId ? `official-${sampleId}` : reference?.id;
-  const defaultRegion = preferences.market === "china" && preferences.locale === "zh-CN";
-  const baseStorageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}${defaultRegion ? "" : `-${preferences.market}-${preferences.locale}`}`;
+  const outputLocale = preferences.output_locale || preferences.locale;
+  const defaultRegion = preferences.market === "china" && outputLocale === "zh-CN";
+  const baseStorageKey = `plotloom-new-${initialType}-${mode}-${draftSourceId || "original"}${defaultRegion ? "" : `-${preferences.market}-${outputLocale}`}`;
   const storageKey = `${baseStorageKey}:space:${scope}`;
 
   useEffect(() => {
@@ -155,7 +160,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       {notice && <p className={styles.inlineMessage} role="status">{ui(notice, true)}</p>}
       {otherTypeDraft && <button type="button" className="outline-button" onClick={() => downloadText("旧类型创作草稿.json", otherTypeDraft, "application/json")}>{ui("导出旧类型草稿备份")}</button>}
       <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${step}`} className={styles.stage}>
-        {step === "premise" && <ProjectSettings type={type} value={projectSettingsFromDraft(draft)} disabled={disabled} onChange={patch => update(applyProjectSettings(draft,patch))}>
+        {step === "premise" && <ProjectSettings type={type} value={projectSettingsFromDraft(draft)} disabled={disabled} onChange={changeProjectSettings}>
           <div className={styles.worldArea}>
             {draft.source_text && ["小说改编", "剧本改写"].includes(mode) && <details><summary>{ui("回填前的原始素材（创建作品时一并保留）")}</summary><pre className="plotloom-pre">{draft.source_text}</pre></details>}
             <label>{ui("导入 TXT 素材（最多2 MB / 50,000字符）")}<input type="file" accept=".txt,text/plain" disabled={disabled} onChange={async e => {
@@ -166,7 +171,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
             }} /></label>
           </div>
         </ProjectSettings>}
-        {step === "settings" && <ProjectParameters type={type} value={projectSettingsFromDraft(draft)} worlds={worlds} sections={sections} worldId={draft.world_id} disabled={disabled} onChange={patch => update(applyProjectSettings(draft, patch))} onWorldChange={(world, sourceId) => update({ world_snapshot: world, world_id: sourceId || "" })} />}
+        {step === "settings" && <ProjectParameters type={type} value={projectSettingsFromDraft(draft)} worlds={worlds} sections={sections} worldId={draft.world_id} disabled={disabled} onChange={changeProjectSettings} onWorldChange={(world, sourceId) => update({ world_snapshot: world, world_id: sourceId || "" })} />}
         {step === "characters" && <CharacterEditor value={draft.characters} disabled={disabled} onChange={characters => update({ characters })} onGenerate={generateCurrent} />}
         {step === "outline" && <OutlineEditor value={draft.outline} type={type} units={safeUnits} disabled={disabled} onChange={outline => update({ outline })} />}
         {step === "chapter" && <ManuscriptEditor type={type} chapters={draft.chapters} units={safeUnits} number={number} disabled={disabled} onNumber={number => update({ chapter_number: number })} onChange={chapters => update({ chapters })} onGenerate={generateCurrent} />}
@@ -175,6 +180,6 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
       {created.current && <a className="text-button" href={`/studio/works/${created.current.id}`}>{ui("草稿已创建，打开作品 →")}</a>}
       <div className={styles.bottom}><div>{nextStep && <button type="button" className={styles.tool} disabled={disabled} onClick={() => selectStep(nextStep)}>{ui("继续：")}{ui(labels[nextStep])} {ui(" →")}</button>}<button type="submit" name="intent" value="draft" className={styles.primary} disabled={disabled}>{ui(busy ? "正在保存…" : "保存全部内容，创建作品")}</button><button type="button" className="text-button" disabled={busy} onClick={onClose}>{ui("返回作品库")}</button></div></div>
     </form></div>
-    {inspiration && <Inspiration key={type} type={type} initialPrompt={draft.premise} onApply={apply} onClose={() => setInspiration(false)} />}
+    {inspiration && <Inspiration key={`${type}-${draft.market}-${draft.output_locale}`} market={draft.market} outputLocale={draft.output_locale} type={type} initialPrompt={draft.premise} onApply={apply} onClose={() => setInspiration(false)} />}
   </>;
 }

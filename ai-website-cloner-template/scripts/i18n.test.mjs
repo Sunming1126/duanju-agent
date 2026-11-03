@@ -19,7 +19,7 @@ function loader(locale='en', market='global', hookHarness=false) {
     const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
     vm.runInThisContext(`(function(exports,require){${code}\n})`)(exports,name=>{
       if(hookHarness && name==='@/lib/i18n/provider')return {useUI:()=>createTranslator(locale),usePreferences:()=>({locale,market})};
-      if(['react','react/jsx-runtime','lucide-react','next/server','geoip-country','node:net','opencc-js/cn2t'].includes(name)) return require(name);
+      if(['react','react/jsx-runtime','lucide-react','next/server','geoip-country','node:net','opencc-js/cn2t','opencc-js/t2cn'].includes(name)) return require(name);
       if(name.endsWith('.css')) return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};
       if(name==='next/headers') return {headers:async()=>new Headers({'x-plotloom-preferences':`${locale}~${market}`})};
       if(name==='next/dynamic') return {__esModule:true,default:()=>()=>null};
@@ -43,7 +43,8 @@ test('country routing covers China, Japan, all 22 Arab countries and English fal
   for(const country of ['US','GB','FR','KR','IN','','XX'])assert.equal(marketForCountry(country),'global');
   assert.deepEqual(parsePreferences('ja-JP~arab'),{locale:'ja-JP',market:'arab'});
   assert.deepEqual(parsePreferences('zh-TW~china'),{locale:'zh-TW',market:'china'});
-  for(const country of ['HK','MO','TW']) assert.deepEqual(preferencesForCountry(country),{locale:'zh-TW',market:'china'});
+  for(const country of ['HK','MO']) assert.deepEqual(preferencesForCountry(country),{locale:'zh-TW',market:'china'});
+  assert.deepEqual(preferencesForCountry('TW'),{locale:'zh-TW',market:'taiwan'});
   assert.deepEqual(preferencesForCountry('CN'),{locale:'zh-CN',market:'china'});
   for(const value of ['fr~japan','en~unknown','<script>','ar','en~global~extra'])assert.equal(parsePreferences(value),undefined);
 });
@@ -152,7 +153,7 @@ test('quick Traditional switch saves a valid independent preference cookie and r
   try {
     const {load}=loader('en','global',true);
     load('components/studio/language-settings.tsx').LanguageSwitcher().props.onChange({target:{value:'zh-TW'}});
-    assert.match(globalThis.document.cookie,/plotloom-preferences=zh-TW~china;/);
+    assert.match(globalThis.document.cookie,/plotloom-preferences=zh-TW~global~en;/);
     assert.match(globalThis.document.cookie,/Secure/);assert.equal(reloads,1);
   }finally{Object.assign(globalThis,saved);}
 });
@@ -194,7 +195,7 @@ test('per-work region and output-language controls change independently without 
   const selects=nodes(tree).filter(node=>node.type==='select');
   selects[0].props.onChange({target:{value:'japan'}});
   selects[1].props.onChange({target:{value:'ar'}});
-  assert.deepEqual(changes,[{market:'japan',output_locale:'en'},{market:'arab',output_locale:'ar'}]);
+  assert.deepEqual(changes,[{market:'japan',output_locale:'ja-JP'},{market:'arab',output_locale:'ar'}]);
 });
 test('all literal UI messages and world-field labels have complete translations',()=>{
   const catalogue=JSON.parse(readFileSync(new URL('../src/lib/i18n/messages.json',import.meta.url),'utf8'));
@@ -206,6 +207,98 @@ test('all literal UI messages and world-field labels have complete translations'
       if(/[\u3400-\u9fff]/.test(key))assert.ok(catalogue[key],`${file}: ${key}`);
     }ts.forEachChild(node,visit);}visit(source);
   }
+});
+
+test('Taiwan preferences accept an independent output language and preserve legacy cookies',()=>{
+  const {serializePreferences}=loadI18n('config');
+  const value={locale:'en',market:'taiwan',output_locale:'zh-TW'};
+  assert.deepEqual(parsePreferences(serializePreferences(value)),value);
+  assert.deepEqual(parsePreferences('zh-TW~china'),{locale:'zh-TW',market:'china'});
+  assert.deepEqual(preferencesForCountry('TW'),{locale:'zh-TW',market:'taiwan'});
+  assert.equal(parsePreferences('en~taiwan~invalid'),undefined);
+  const {load}=loader('en','taiwan');
+  const {initialCreationDraft}=load('lib/studio/inspiration.ts');
+  const draft=initialCreationDraft('novel',undefined,value);
+  assert.equal(draft.output_locale,'zh-TW');assert.equal(draft.market,'taiwan');
+});
+
+for(const locale of ['zh-CN','zh-TW','en','ja-JP','ar']) {
+  test(`${locale}: Taiwan pages, independent catalogue and complete sample downloads`,async()=>{
+    const {load,render}=loader(locale,'taiwan');
+    const catalogue=load('content/samples/index.ts');
+    const samples=catalogue.samplesForLocale(locale,'taiwan');
+    assert.equal(samples.length,12);
+    assert.equal(samples.filter(s=>s.work.content_type==='novel').length,6);
+    for(const sample of samples) {
+      assert.equal(sample.work.market,'taiwan');assert.equal(sample.work.output_locale,locale);
+      assert.equal(sample.work.chapters.length,3);
+      assert.ok(sample.work.chapters.every(c=>c.content.length>100));
+      const document=catalogue.sampleDocument(sample);
+      for(const chapter of sample.work.chapters)assert.ok(document.includes(chapter.content));
+      const html=render(load('components/studio/sample-reader.tsx').SampleReader,{sample});
+      if(['en','ar'].includes(locale))assert.doesNotMatch(visible(html),/[\u3400-\u9fff\u3040-\u30ff]/);
+      const request=new Request(`https://example.test/samples/${sample.slug}/download`);
+      const response=await load('app/samples/[slug]/download/route.ts').GET(request,{params:Promise.resolve({slug:sample.slug})});
+      assert.equal((await response.text()).replace(/^\uFEFF/,''),document);
+      const draft=catalogue.sampleCreationInput(sample);
+      assert.equal(draft.market,'taiwan');assert.equal(draft.output_locale,locale);
+      assert.equal(draft.chapters.length,0);
+      assert.ok(draft.world_snapshot?.sections.world_rules);
+      assert.ok(draft.world_snapshot?.sections.locations);
+      if(['en','ja-JP','ar'].includes(locale)) {
+        assert.equal(draft.world_snapshot.sections.world_rules,draft.world_snapshot.description);
+        if(sample.slug.startsWith('tw-tide-register')) {
+          assert.match(draft.world_snapshot.sections.world_rules,/low tide|干潮|الجزر/);
+          assert.match(draft.world_snapshot.sections.world_rules,/record|録音|تسجيل/);
+        }
+        if(sample.slug.startsWith('tw-midnight-number'))assert.match(draft.world_snapshot.sections.world_rules,/forgiveness|許し|المغفرة/);
+        assert.notEqual(sample.work.outline,sample.work.chapters.map(c=>`${c.number}. ${c.title}\n${c.content}`).join('\n'));
+        assert.equal(catalogue.getOfficialSample(sample.slug,undefined,'zh-TW').work.output_locale,locale);
+      }
+    }
+    const {creativeProfile}=load('lib/studio/profiles.ts');
+    for(const kind of ['novel','short_drama']) {
+      assert.notDeepEqual(creativeProfile('taiwan',kind),creativeProfile('china',kind));
+      const draft=load('lib/studio/inspiration.ts').initialCreationDraft(kind,undefined,{locale,market:'taiwan'});
+      const value=load('lib/studio/project.ts').projectSettingsFromDraft(draft);
+      for(const [file,name,props] of [
+        ['components/studio/project-settings.tsx','ProjectSettings',{type:kind,value,onChange(){}}],
+        ['components/studio/project-parameters.tsx','ProjectParameters',{type:kind,value,worlds:[],onChange(){},onWorldChange(){}}],
+        ['components/studio/inspiration.tsx','Inspiration',{type:kind,market:'taiwan',outputLocale:locale,initialPrompt:'',onApply(){},onClose(){}}],
+      ]) {
+        const html=render(load(file)[name],props);
+        if(['en','ar'].includes(locale))assert.doesNotMatch(visible(html),/[\u3400-\u9fff\u3040-\u30ff]/,file);
+      }
+    }
+    const html=render(load('components/sites/storyplay/home.tsx').StoryplayHome);
+    assert.match(html,/images\/regions\/taiwan.png/);
+    assert.doesNotMatch(html,/images\/regions\/china.png/);
+    assert.equal(load('components/sites/storyplay/story-concepts.ts').conceptsForMarket('taiwan')[0].slug,'tw-rainy-arcade');
+  });
+}
+
+test('curated Taiwan cards have translations for all editorial text, separate from source data',()=>{
+  const source=JSON.parse(readFileSync(new URL('../../agent/content/taiwan_references.json',import.meta.url),'utf8'));
+  for(const locale of ['en','ja-JP','ar']) {
+    const ui=createTranslator(locale);
+    for(const item of source.items)for(const text of [item.title,item.genre,item.logline,item.hook,item.source_platform,...item.lessons]) {
+      if(locale!=='ja-JP')assert.doesNotMatch(ui(text),/[\u3400-\u9fff\u3040-\u30ff]/,`${locale}: ${text}`);
+      else assert.ok(ui(text).length>0);
+    }
+  }
+});
+
+test('Taiwan work selector applies its language default and custom output can be chosen afterwards',()=>{
+  const {load}=loader('en','global',true);
+  const changes=[];
+  const tree=load('components/studio/language-settings.tsx').WorkLanguageSettings({market:'china',locale:'en',onChange:value=>changes.push(value)});
+  function nodes(node){return !node||typeof node!=='object'?[]:[node,...React.Children.toArray(node.props?.children).flatMap(nodes)];}
+  const selects=nodes(tree).filter(node=>node.type==='select');
+  selects[0].props.onChange({target:{value:'taiwan'}});
+  assert.deepEqual(changes[0],{market:'taiwan',output_locale:'zh-TW'});
+  const next=load('components/studio/language-settings.tsx').WorkLanguageSettings({...changes[0],locale:'zh-TW',onChange:value=>changes.push(value)});
+  nodes(next).filter(node=>node.type==='select')[1].props.onChange({target:{value:'en'}});
+  assert.deepEqual(changes[1],{market:'taiwan',output_locale:'en'});
 });
 
 test('generation feedback localizes five languages and exposes real progress with stopped motion states',()=>{

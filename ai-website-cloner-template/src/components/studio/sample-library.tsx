@@ -12,8 +12,8 @@ import "./samples.css";
 
 export function SampleLibrary({ kind }: { kind?: ContentType }) {
   const ui = useUI();
-  const { locale } = usePreferences();
-  const officialSamples = samplesForLocale(locale);
+  const { locale, market } = usePreferences();
+  const officialSamples = samplesForLocale(locale, market);
   const samples = officialSamples.filter(sample => !kind || sample.work.content_type === kind);
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav selected="官方样例" /><main className="plotloom-main sample-library">
     <h1 className="sr-only">{ui("官方小说与剧本样例")}</h1>

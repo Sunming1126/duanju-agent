@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import geoip from "geoip-country";
 import { isIP } from "node:net";
-import { preferencesForCountry, parsePreferences } from "./lib/i18n/config";
+import { preferencesForCountry, parsePreferences, serializePreferences } from "./lib/i18n/config";
 
 export function proxy(request: NextRequest) {
   let preferences = parsePreferences(request.cookies.get("plotloom-preferences")?.value);
@@ -11,7 +11,7 @@ export function proxy(request: NextRequest) {
     const country = isIP(ip) ? geoip.lookup(ip)?.country || "" : "";
     preferences = preferencesForCountry(country);
   }
-  const value = `${preferences.locale}~${preferences.market}`;
+  const value = serializePreferences(preferences);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-plotloom-preferences", value);
   const response = NextResponse.next({ request: { headers: requestHeaders } });

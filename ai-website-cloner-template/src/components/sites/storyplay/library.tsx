@@ -1,5 +1,5 @@
 "use client";
-import { useUI } from "@/lib/i18n/provider";
+import { useUI, usePreferences } from "@/lib/i18n/provider";
 
 
 import { useMemo, useState } from "react";
@@ -13,11 +13,13 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { storyConcepts, conceptImage } from "./story-concepts";
+import { conceptsForMarket, conceptImage } from "./story-concepts";
 import { Header, Modal } from "./shared";
 
 export function DramaLibrary() {
   const ui = useUI();
+  const { market } = usePreferences();
+  const storyConcepts = conceptsForMarket(market);
   const params = useSearchParams();
   const [selected, setSelected] = useState<string | null>(() =>
     storyConcepts.some((item) => item.slug === params.get("concept"))
@@ -33,7 +35,7 @@ export function DramaLibrary() {
           `${ui(item.title)} ${ui(item.description)}`.toLowerCase().includes(query.trim().toLowerCase()) &&
           (genre === "全部" || item.genre === genre),
       ),
-    [query, genre, ui],
+    [query, genre, ui, storyConcepts],
   );
   const current = storyConcepts.find((item) => item.slug === selected);
   return (

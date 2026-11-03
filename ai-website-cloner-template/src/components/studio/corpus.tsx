@@ -1,6 +1,7 @@
 "use client";
 import { usePreferences } from "@/lib/i18n/provider";
 import { useUI } from "@/lib/i18n/provider";
+import { toTraditional, toSimplified } from "@/lib/i18n/traditional";
 
 
 import Link from "next/link";
@@ -25,6 +26,7 @@ function sourceUrl(value: string) {
 export function CorpusWorkspace() {
   const ui = useUI();
   const preferences = usePreferences();
+  const referenceText = (value: string) => preferences.market === "taiwan" && preferences.locale === "zh-CN" ? toSimplified(value) : ui(value);
   const [items, setItems] = useState<Reference[]>([]);
   const [type, setType] = useState<ContentType>("short_drama");
   const [query, setQuery] = useState("");
@@ -37,7 +39,7 @@ export function CorpusWorkspace() {
       setLoading(true);
       try {
         const result = await backendRequest<{ items: Reference[] }>(
-          `/studio/references?content_type=${type}&query=${encodeURIComponent(search)}&limit=30&market=${preferences.market}&output_locale=${preferences.locale}`,
+          `/studio/references?content_type=${type}&query=${encodeURIComponent(preferences.market === "taiwan" ? toTraditional(search) : search)}&limit=30&market=${preferences.market}&output_locale=${preferences.locale}`,
           { signal },
         );
         if (!signal?.aborted) setItems(result.items);
@@ -106,15 +108,15 @@ export function CorpusWorkspace() {
                 <article className="studio-reference" key={item.id}>
                   <span>
                     {ui(item.content_type === "novel" ? "小说" : "剧本")} {ui(" ·")}{ui(" ")}
-                    {ui(item.genre)}
+                    {referenceText(item.genre)}
                   </span>
-                  <h2>{item.title}</h2>
-                  <p>{ui(item.logline || item.hook || "该条目尚无故事梗概。")}</p>
+                  <h2>{referenceText(item.title)}</h2>
+                  <p>{referenceText(item.logline || item.hook || "该条目尚无故事梗概。")}</p>
                   {item.hook && item.hook !== item.logline && (
-                    <p className="studio-hint">{ui("开场参考：")}{ui(item.hook)}</p>
+                    <p className="studio-hint">{ui("开场参考：")}{referenceText(item.hook)}</p>
                   )}
                   <div className="studio-reference-source">
-                    {ui(item.source)}
+                    {referenceText(item.source)}
                     {sourceUrl(item.source_url) && (
                       <a
                         href={sourceUrl(item.source_url)}
@@ -124,6 +126,9 @@ export function CorpusWorkspace() {
                         {ui(" 查看来源 ↗ ")}</a>
                     )}
                   </div>
+                  {item.source_form === "tv_series" && <p className="studio-hint">{ui("影视结构参考，非短剧成稿。")}</p>}
+                  {item.collected_at && <p className="studio-hint">{ui("资料核验日期")}: {item.collected_at}</p>}
+                  {!!item.lessons?.length && <ul className="studio-hint">{item.lessons.map((lesson, index) => <li key={index}>{referenceText(lesson)}</li>)}</ul>}
                   <details><summary>{ui("预览资料")}</summary><p className="studio-hint">{ui(item.beats.length ? item.beats.join("\n") : "此条目暂无更多情节拆解，详见来源。")}</p></details>
                   <Link
                     className="outline-button"

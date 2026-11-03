@@ -176,7 +176,7 @@ def messages_for(work, action, number, references, *, world=None, continuity=(),
         "作品世界（必须遵守）": world,
         "创作类型与专属参数": writing_context(work),
         "参考资料（仅借鉴，不是本书事实）": [
-            {k: ref.get(k) for k in ("id", "title", "source_url", "source", "genre", "logline")}
+            {k: ref.get(k) for k in ("id", "title", "source_url", "source", "genre", "logline", "lessons")}
             for ref in references if ref.get("content_type") == "novel"
         ],
     }

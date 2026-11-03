@@ -83,4 +83,9 @@ export const storyConcepts = [
 ] as const;
 export type StoryConcept = (typeof storyConcepts)[number];
 export const conceptImage = (slug: string) =>
-  `/images/story-concepts/${slug}.webp`;
+  slug === "tw-rainy-arcade" ? "/images/regions/taiwan.png" : `/images/story-concepts/${slug}.webp`;
+
+export const taiwanConcepts = [{slug:"tw-rainy-arcade",title:"骑楼下的未完稿",japaneseTitle:"騎楼の書きかけ",genre:"家庭现实",description:"返乡写作者想替母亲记录早餐店的最后一天，却发现自己从未问过她是否真的想关店。",alt:"台湾雨后骑楼，年轻写作者与早餐店店主交谈"}];
+export function conceptsForMarket(market: string): readonly {slug:string;title:string;japaneseTitle:string;genre:string;description:string;alt:string}[] {
+  return market === "taiwan" ? taiwanConcepts : storyConcepts;
+}

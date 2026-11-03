@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ChevronDown, Download, Plus, Save } from "lucide-react";
 import type { ContentType, Section, World, WorldInput } from "@/lib/studio/api";
 import type { ProjectSettingsValue } from "@/lib/studio/project";
-import { dramaGenres, novelGenres } from "@/lib/studio/writing";
+import { creativeProfile } from "@/lib/studio/profiles";
 import { WritingOptions } from "./writing-options";
 import styles from "./parameters.module.css";
 
@@ -19,7 +19,7 @@ export function ProjectParameters({ type, value, worlds, sections = [], worldId,
 }) {
   const ui = useUI();
   const world = value.world_snapshot;
-  const genres = type === "novel" ? novelGenres : dramaGenres;
+  const { genres } = creativeProfile(value.market, type);
   function editWorld(patch: Partial<WorldInput>) {
     if (!disabled) onWorldChange({ name: world?.name || ui("作品专属世界"), description: world?.description || "", sections: world?.sections || {}, ...patch });
   }
@@ -32,7 +32,7 @@ export function ProjectParameters({ type, value, worlds, sections = [], worldId,
         <label>{ui(type === "novel" ? "每章目标字数" : "每集剧本字数")}<input name="words" type="number" min={300} max={type === "novel" ? 6000 : 3000} required disabled={disabled} value={value.words_per_chapter} onChange={event => onChange({ words_per_chapter: event.target.value })} /></label>
         <label className={styles.wide}>{ui(type === "novel" ? "小说主分类" : "短剧题材")}<select name="genre" disabled={disabled} value={value.genre} onChange={event => onChange({ genre: event.target.value })}>{[...new Set([value.genre, ...genres])].map(genre => <option key={genre} value={genre}>{ui(genre || "请选择")}</option>)}</select></label>
       </div>
-      <div className={styles.writing}><WritingOptions kind={type} novel={value.novel_settings} drama={value.drama_settings} disabled={disabled} onChange={onChange} /></div>
+      <div className={styles.writing}><WritingOptions market={value.market} kind={type} novel={value.novel_settings} drama={value.drama_settings} disabled={disabled} onChange={onChange} /></div>
     </section>
     <section className={styles.card} aria-label={ui("作品世界")}>
       <header className={styles.heading}><h2>{ui("作品世界")}</h2><div className={styles.actions}>
