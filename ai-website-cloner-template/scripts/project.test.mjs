@@ -169,3 +169,35 @@ test('streamed rough outline is temporary and cannot cover manual or newer-versi
   const html=renderToStaticMarkup(React.createElement(OutlineEditor,{value:'原有大纲',type:'novel',units:2,roughPreview:'流式粗纲',onChange(){assert.fail('preview must not write');}}));
   assert.match(html,/生成中/);assert.match(html,/<textarea[^>]*disabled=""[^>]*>流式粗纲<\/textarea>/);
 });
+
+test('generation progress follows server results and never invents completion or activity',()=>{
+  const {generationFeedback}=load('lib/studio/generation-feedback.ts');
+  const job={id:'all',mode:'all',status:'running',base_revision:1,current:{action:'chapter',number:2},completed:4,total:7,results:[{action:'premise',text:'story'},{action:'characters',text:'roles'},{action:'outline',text:'plan'},{action:'chapter',number:1,text:'chapter'}]};
+  const state=generationFeedback(job);
+  assert.equal(state.progress,4/7);assert.equal(state.running,true);
+  assert.deepEqual(state.stages.map(stage=>stage.done),[true,true,true,false]);
+  for(const status of ['failed','stopped','interrupted','completed']) assert.equal(generationFeedback({...job,status}).running,false);
+  assert.equal(generationFeedback({...job,total:0}).progress,undefined);
+  assert.equal(generationFeedback({...job,completed:90}).progress,1);
+  assert.equal(generationFeedback({...job,completed:-1}).progress,0);
+});
+test('generation handoff is private to the current space and work, expires, and can be cleared',async()=>{
+  const api=load('lib/studio/api.ts'), handoff=load('lib/studio/generation-feedback.ts');
+  const original=globalThis.fetch, now=Date.now;
+  try {
+    globalThis.fetch=async()=>new Response(JSON.stringify({space_id:'motion-space',isolated:true,user:{id:'account'}}),{headers:{'content-type':'application/json'}});
+    await api.ensureStudioSpace();
+    const work={id:'motion-work',title:'story'};
+    handoff.rememberGeneration(work);
+    assert.equal(handoff.generationHandoff('other'),undefined);
+    assert.equal(handoff.generationHandoff(work.id).work,work);
+    Date.now=()=>now()+61000;
+    assert.equal(handoff.generationHandoff(work.id),undefined);
+    Date.now=now;handoff.rememberGeneration(work);handoff.clearGenerationHandoff(work.id);
+    assert.equal(handoff.generationHandoff(work.id),undefined);
+    handoff.rememberGeneration(work);
+    globalThis.fetch=async()=>new Response(JSON.stringify({detail:'expired'}),{status:401,headers:{'content-type':'application/json'}});
+    await assert.rejects(api.backendRequest('/studio/works'));
+    assert.equal(handoff.generationHandoff(work.id),undefined);
+  } finally {globalThis.fetch=original;Date.now=now;}
+});

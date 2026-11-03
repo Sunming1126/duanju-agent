@@ -21,6 +21,8 @@ import { creationDraftKeys } from "@/lib/studio/writing";
 import { editorLabels, editorSteps, nextEditorStep, type CreationIntent } from "@/lib/studio/workflow";
 import { revealWritingStage } from "./workflow-nav";
 import { CharacterEditor } from "./character-editor";
+import { SubmissionLabel } from "./generation-feedback";
+import { rememberGeneration, type SubmissionPhase } from "@/lib/studio/generation-feedback";
 import styles from "./integration.module.css";
 
 export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleId, sampleInput, onCreated, onClose }: {
@@ -41,6 +43,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   const [inspiration, setInspiration] = useState(mode === "灵感策划" || mode === "灵感创作");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [allPhase, setAllPhase] = useState<SubmissionPhase>("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [scope, setScope] = useState("");
@@ -110,18 +113,20 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
     const all = submitter instanceof HTMLButtonElement && submitter.value === "all";
     const generate = all || submitter instanceof HTMLButtonElement && submitter.value === "generate";
-    lock.current = true; setError(""); setBusy(true);
+    lock.current = true; setError(""); setBusy(true); if (all) setAllPhase("saving");
     try {
       const payload = creationPayload(draft, mode, generate, reference, initialType);
       if (generate && !all && step === "chapter" && number > payload.units) throw new Error("当前正文编号超出计划，请先调整计划集／章数或选择范围内的正文。");
       const intent: CreationIntent = { generate, step: all ? "premise" : step, number: all ? 1 : number, all };
-      const { work, warning } = await createWorkForStep(payload, intent, saved => {
+      const { work, warning, job } = await createWorkForStep(payload, intent, saved => {
         created.current = saved;
         try { localStorage.removeItem(storageKey); if (restoredKey.current && restoredKey.current !== storageKey) localStorage.removeItem(restoredKey.current); } catch { /* A saved work must still open if browser storage is blocked. */ }
-      });
+      }, () => { if (all) setAllPhase("submitting"); });
+      rememberGeneration(work, job);
+      if (all) setAllPhase("opening");
       await onCreated(work, intent, warning);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "创建失败"); if (!draft.title.trim() || !draft.premise.trim() && generate) update({ step: "premise" }); }
-    finally { lock.current = false; setBusy(false); }
+    } catch (cause) { setAllPhase(""); setError(cause instanceof Error ? cause.message : "创建失败"); if (!draft.title.trim() || !draft.premise.trim() && generate) update({ step: "premise" }); }
+    finally { lock.current = false; setBusy(false); if (!created.current) setAllPhase(""); }
   }
 
   const type = initialType;
@@ -137,7 +142,7 @@ export function WorkForm({ mode, kind, worlds, reference, sections = [], sampleI
   return <>
     <ProjectTitle type={type} title={draft.title} disabled={disabled} onChange={title => update({ title })} />
     <ProjectToolbar type={type} current={step} disabled={disabled} value={{ ...draft, units: safeUnits }} onSelect={next => setDraft(current => ({ ...current, step: next }))} actions={<>
-      <button form="plotloom-create-form" type="submit" name="intent" value="all" className={styles.tool} disabled={disabled} title={ui(`生成故事梗概、人物、大纲及全部 ${safeUnits}${type === "novel" ? "章" : "集"}正文`)}><Sparkles size={17} />{ui("一键生成全部")}</button>
+      <button form="plotloom-create-form" type="submit" name="intent" value="all" className={styles.tool} disabled={disabled} title={ui(`生成故事梗概、人物、大纲及全部 ${safeUnits}${type === "novel" ? "章" : "集"}正文`)} aria-busy={!!allPhase}>{allPhase ? <SubmissionLabel phase={allPhase} /> : <><Sparkles size={17} />{ui("一键生成全部")}</>}</button>
       {step === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={disabled} onClick={() => setInspiration(true)}><Sparkles size={17} />{ui("灵感创作")}</button>}
       <>
         {step === "chapter" && <button type="button" className={styles.tool} onClick={() => exportWord(draft.title,draft.chapters)}><Download size={17} />{ui("导出为Word")}</button>}

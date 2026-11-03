@@ -9,7 +9,7 @@ function load(path, dependencies) {
   const source = readFileSync(new URL('../src/'+path, import.meta.url), 'utf8');
   const code = ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const exports = {};
-  new Function('exports','require',code)(exports,name => dependencies[name] || require(name));
+  new Function('exports','require',code)(exports,name => name === './generation-feedback' ? {EditorSkeleton:()=>React.createElement('p',null,'正在加载…')} : dependencies[name] || require(name));
   return exports;
 }
 const config=load('lib/studio/creation-access.ts',{});

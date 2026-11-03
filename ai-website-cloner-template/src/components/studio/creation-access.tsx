@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/sites/storyplay/shared";
 import { StudioNav } from "./navigation";
 
+import { EditorSkeleton } from "./generation-feedback";
+
 async function verifiedSession() {
   // Share the initial cookie bootstrap with the header and all other panels.
   await ensureStudioSpace();
@@ -68,7 +70,7 @@ export function CreationGuard({ children }: { children: ReactNode }) {
   }, []);
   if (allowed) return children;
   return <div className="workspace-page"><Header workspace /><div className="plotloom-shell"><StudioNav /><main className="studio-main" aria-busy={!checked}>
-    <p role="status">{ui(!checked ? "正在加载…" : error ? "无法建立独立创作空间，请检查连接并刷新；请求不会自动重试。" : "请先登录后使用小说或剧本创作。")}</p>
+    {!checked ? <EditorSkeleton /> : <p role="status">{ui(error ? "无法建立独立创作空间，请检查连接并刷新；请求不会自动重试。" : "请先登录后使用小说或剧本创作。")}</p>}
     {checked && <button type="button" className="pill" onClick={() => window.dispatchEvent(new CustomEvent(loginRequiredEvent, { detail: window.location.href }))}>{ui("登录")}</button>}
   </main></div></div>;
 }

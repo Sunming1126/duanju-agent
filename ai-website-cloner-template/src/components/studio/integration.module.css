@@ -8,3 +8,5 @@
 @container plotloom-editor (max-width:950px){.stage{scroll-margin-top:calc(var(--project-header-offset, 0px) + 165px)}}
 
 .inlineMessage{margin:12px 0;color:#a89db5;font-size:12px;line-height:1.9;overflow-wrap:anywhere}.inlineMessage>button{margin-inline-start:12px;color:#d2b8ef}.bottom{justify-content:flex-end}
+
+.tool[aria-busy=true]{opacity:.85;cursor:wait}

@@ -207,3 +207,24 @@ test('all literal UI messages and world-field labels have complete translations'
     }ts.forEachChild(node,visit);}visit(source);
   }
 });
+
+test('generation feedback localizes five languages and exposes real progress with stopped motion states',()=>{
+  for(const locale of ['zh-CN','zh-TW','en','ja-JP','ar']) {
+    const h=loader(locale,locale==='ar'?'arab':'china');
+    const {GenerationProgress,SubmissionLabel,EditorSkeleton}=h.load('components/studio/generation-feedback.tsx');
+    const ui=createTranslator(locale);
+    const base={id:'feedback',status:'running',mode:'all',completed:4,total:8,base_revision:1,current:{action:'chapter',number:2},results:[{action:'premise',text:'story'}]};
+    const html=h.render(GenerationProgress,{job:base});
+    assert.match(html,/aria-valuenow="50"/);assert.match(html,/4\/8/);
+    assert.ok(visible(html).includes(ui('生成中')));
+    for(const phase of ['saving','submitting','opening'])assert.ok(h.render(SubmissionLabel,{phase}).includes('svg'));
+    assert.ok(h.render(EditorSkeleton).includes('aria-busy="true"'));
+    for(const status of ['failed','stopped','interrupted']) {
+      const stopped=h.render(GenerationProgress,{job:{...base,status}});
+      assert.doesNotMatch(stopped,/data-current="true"/);
+      assert.doesNotMatch(stopped,/class="spinner"/);
+    }
+    const unknown=h.render(GenerationProgress,{job:{...base,total:0}});
+    assert.doesNotMatch(unknown,/aria-valuenow/);
+  }
+});

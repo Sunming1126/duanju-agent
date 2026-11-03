@@ -28,6 +28,8 @@ import { writingDestination, writingLabels, editorLabels, nextEditorStep, workEd
 import { activeGeneration, canFillGeneration, generationSignature, latestGeneration, pendingResults, previewGeneration, outlineStreamPreview, type GenerationResult } from "@/lib/studio/inline-generation";
 import styles from "./integration.module.css";
 
+import { GenerationProgress, EditorSkeleton, LoadingIcon, SubmissionLabel } from "./generation-feedback";
+import { generationHandoff, clearGenerationHandoff, type SubmissionPhase } from "@/lib/studio/generation-feedback";
 type Result = { action: Action | "world"; number: number; text: string; adopted: boolean; references: Reference[]; world?: WorldInput };
 type Job = { id: string; status: string; completed: number; total: number; error: string;
   current: { action: string; number: number }; results?: Result[]; partial_outline?: string; base_revision: number; adoption_revision?: number; mode: "single" | "all" };
@@ -48,7 +50,10 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
   const [inspiration, setInspiration] = useState(false);
   const [numericInput, setNumericInput] = useState<{units?: string; words_per_chapter?: string}>({});
   const [wordOpen, setWordOpen] = useState(false);
-  const [work, setWork] = useState<Work | null>(null);
+  const [work, setWork] = useState<Work | null>(() => generationHandoff(id)?.work || null);
+  const [allPhase, setAllPhase] = useState<SubmissionPhase>("");
+  const submissionLock = useRef(false);
+  const [verifying, setVerifying] = useState(!!id);
   const [worlds, setWorlds] = useState<World[]>([]);
   const [status, setStatus] = useState<StudioStatus>();
   const [reference, setReference] = useState<Reference>();
@@ -60,8 +65,8 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<EditorStep>("premise");
   const [number, setNumber] = useState(1);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job>();
+  const [jobs, setJobs] = useState<Job[]>(() => generationHandoff(id)?.job ? [generationHandoff(id)!.job as Job] : []);
+  const [selectedJob, setSelectedJob] = useState<Job | undefined>(() => generationHandoff(id)?.job as Job | undefined);
   const [recovery, setRecovery] = useState("");
   const mutating = useRef(false);
   const requestKey = useRef("");
@@ -92,6 +97,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
     }).catch(cause => { if (!signal.aborted) setError(cause.message); });
     if (id) void api<Work>(`/studio/works/${id}`, { signal }).then(value => {
       if (signal.aborted) return;
+      clearGenerationHandoff(id);
       setWork(value);
       const destination = writingDestination(window.location.search);
       setTab(destination.step); setNumber(Math.min(destination.number, value.units));
@@ -108,7 +114,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
         const warning = localStorage.getItem(`plotloom-create-warning-${id}`);
         if (warning) { setNotice(warning); localStorage.removeItem(`plotloom-create-warning-${id}`); }
       } catch { setNotice("浏览器草稿备份不可用，已读取服务器作品。"); }
-    }).catch(e => { if (!signal.aborted) setError(e.message); });
+    }).catch(e => { if (!signal.aborted) setError(e.message); }).finally(() => { if (!signal.aborted) setVerifying(false); });
     return () => controller.abort();
   }, [id, referenceId]);
 
@@ -211,11 +217,13 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
   }, [work, busy, selectedJob, dirty, history]);
 
   async function generate(action: Action | "world", all = false, continuation = false) {
-    if (!work || mutating.current) return;
+    if (!work || mutating.current || submissionLock.current) return;
+    submissionLock.current = true;
+    if (all) setAllPhase("saving");
     const saved = await persist();
-    if (!saved) return;
-    if (!saved.premise.trim()) { setNotice("请先填写故事想法或梗概。"); return; }
-    if (action === "chapter" && (!Number.isInteger(number) || number < 1 || number > saved.units)) { setNotice("请选择计划范围内的正文编号后再生成。"); return; }
+    if (!saved) { submissionLock.current = false; setAllPhase(""); return; }
+    if (!saved.premise.trim()) { submissionLock.current = false; setAllPhase(""); setNotice("请先填写故事想法或梗概。"); return; }
+    if (action === "chapter" && (!Number.isInteger(number) || number < 1 || number > saved.units)) { submissionLock.current = false; setAllPhase(""); setNotice("请选择计划范围内的正文编号后再生成。"); return; }
     mutating.current = true; setBusy(true);
     try {
       // Keep the same key after an uncertain network response. Editing the work
@@ -223,13 +231,15 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
       const targetNumber = action === "chapter" ? number : 1;
       const signature = `${saved.id}:${saved.revision}:${action}:${targetNumber}:${all}:${continuation}`;
       if (!requestKey.current.startsWith(signature + ":")) requestKey.current = `${signature}:${crypto.randomUUID()}`;
+      if (all) setAllPhase("submitting");
       const job = await api<Job>(`/studio/works/${saved.id}/jobs`, { method: "POST", body: jsonBody({ revision: saved.revision, action, number: targetNumber, mode: all ? "all" : "single", request_key: requestKey.current, continuation }) });
+      setSelectedJob(job); setJobs(items => [job, ...items.filter(item => item.id !== job.id)]);
       setSelectedJob(await api<Job>(`/studio/jobs/${job.id}`));
       setNotice(""); setPreview(undefined); setGenerationError(undefined);
       setJobs((await api<{ items: Job[] }>(`/studio/works/${saved.id}/jobs`)).items);
       requestKey.current = "";
     } catch (e) { setNotice(e instanceof Error ? e.message : "提交未确认，请刷新当前步骤核对。"); }
-    finally { mutating.current = false; setBusy(false); }
+    finally { mutating.current = false; submissionLock.current = false; setAllPhase(""); setBusy(false); }
   }
 
   async function control(job: Job, action: "stop" | "resume") {
@@ -263,7 +273,7 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
   const conflict = ready.length > 0 && (!!fillError || !!work && !canFillGeneration(selectedJob, work, dirty));
   const previewResult = preview && ready.find(result => result.action === preview.action && result.number === preview.number && result.text === preview.text);
   const shownWork = work && previewResult ? previewGeneration(work, previewResult) : work;
-  const editingDisabled = busy || !!previewResult;
+  const editingDisabled = busy || verifying || !!previewResult;
 
   function showGenerated() {
     const result = ready.find(item => item.action === (tab === "settings" ? "world" : tab) && (tab !== "chapter" || item.number === number)) || ready[0];
@@ -304,25 +314,25 @@ function AuthenticatedEditor({ id, kind = "short_drama", mode, referenceId = "",
         {!id && !referenceReady ? <p className={styles.workspace} role="status">{ui(error ? "参考资料读取失败，请重新加载。" : "正在读取参考资料…")}</p> : !id ? <WorkForm key={`${kind}:${creation}:${reference?.id}:${sampleId || ""}`} kind={kind} mode={creation} worlds={worlds} sections={status?.world_sections} reference={reference} sampleId={sampleId} sampleInput={sampleInput} onClose={() => router.push("/workspace")} onCreated={(value, intent, warning) => {
           if (warning) try { localStorage.setItem(`plotloom-create-warning-${value.id}`, warning); } catch { /* Saved work remains available. */ }
           router.push(`${workEditorUrl(value.id, intent)}${warning ? "&notice=generation-unconfirmed" : ""}`);
-        }} /> : !work || !shownWork ? <p className={styles.workspace}>{ui("正在读取作品…")}</p> : <>
+        }} /> : !work || !shownWork ? <EditorSkeleton /> : <>
           <ProjectTitle type={work.content_type} title={work.title} disabled={editingDisabled} onChange={title => update({ title })} actions={<div className={styles.utility}>
             <span className={styles.saveState}>{ui(busy ? "处理中…" : blocked ? "保存失败" : dirty ? "等待自动保存" : "已保存")}</span>
             <button type="button" onClick={() => downloadText(`${work.title}.txt`, localExport(work))}>{ui("导出 TXT")}</button>
             <button type="button" onClick={() => downloadText(`${work.title}.json`, jsonBody({ schema: "plotloom.work", version: 1, work: workPayload(work) }), "application/json")}>{ui("完整备份")}</button>
             <button type="button" disabled={editingDisabled} onClick={() => void persist()}>{ui("保存")}</button>
           </div>} />
-          <ProjectToolbar type={work.content_type} current={tab} value={work} disabled={busy} onSelect={step => { setPreview(undefined); setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); }} actions={<>
-            <button type="button" className={styles.tool} disabled={editingDisabled || pending} onClick={() => void generate("premise", true)} title={ui(`生成故事梗概、人物、大纲及全部 ${work.units}${unit}正文`)}><Sparkles size={17} />{ui("一键生成全部")}</button>
+          <ProjectToolbar type={work.content_type} current={tab} value={work} disabled={busy || verifying} onSelect={step => { setPreview(undefined); setTab(step); window.history.replaceState(null, "", workEditorUrl(work.id, { step, number })); }} actions={<>
+            <button type="button" className={styles.tool} aria-busy={!!allPhase || pending && selectedJob?.mode === "all"} disabled={editingDisabled || pending || !!allPhase} onClick={() => void generate("premise", true)} title={ui(`生成故事梗概、人物、大纲及全部 ${work.units}${unit}正文`)}>{allPhase ? <SubmissionLabel phase={allPhase} /> : pending && selectedJob?.mode === "all" ? <><LoadingIcon />{ui("生成中")}</> : <><Sparkles size={17} />{ui("一键生成全部")}</>}</button>
             {tab === "premise" && <button type="button" className={`${styles.primary} ${styles.inspiration}`} disabled={editingDisabled || pending} onClick={() => setInspiration(true)}><Sparkles size={17} />{ui("灵感创作")}</button>}
             {tab === "chapter" && <><button type="button" className={styles.tool} onClick={() => exportWord(work.title, shownWork.chapters)}><Download size={17} />{ui("导出为Word")}</button><button type="button" className={styles.tool} onClick={() => setWordOpen(!wordOpen)}><Settings size={17} />{ui("正文字数")}</button></>}
             <button type="button" className={styles.primary} disabled={editingDisabled || pending} onClick={() => void generate(tab === "settings" ? "world" : tab)}><Sparkles size={17} />{ui(tab === "settings" ? "AI 完善世界" : `AI 生成${tab === "premise" ? "故事梗概" : labels[tab]}`)}</button>
           </>} />
           <main className={styles.workspace}>
-            {notice && notice !== "已保存" && <p className={styles.inlineMessage} role="status">{ui(notice, true)}</p>}
-            {selectedJob && (active.includes(selectedJob.status) || ["failed", "stopped", "interrupted"].includes(selectedJob.status) || conflict) && <div className={styles.generationStatus} role="status">
-              {active.includes(selectedJob.status) ? <><span>{ui(selectedJob.mode === "all" ? `全部生成 ${selectedJob.completed}/${selectedJob.total} · ` : "")}{ui(labels[selectedJob.current.action as keyof typeof labels])}{ui(selectedJob.current.action === "chapter" ? ` · 第${selectedJob.current.number}${unit}` : "")} {ui(" · ")}{ui(selectedJob.status === "queued" ? "排队中" : selectedJob.status === "stopping" ? "正在停止" : "生成中")}</span><button type="button" onClick={() => void control(selectedJob, "stop")}>{ui("停止")}</button></> : ["failed", "stopped", "interrupted"].includes(selectedJob.status) ? <><span>{ui(selectedJob.error || "生成已停止，已完成内容保留。")}</span><button type="button" onClick={() => void control(selectedJob, "resume")}>{ui("继续生成")}</button></> : null}
+            {notice && notice !== "已保存" && <p className={styles.inlineMessage} role="status">{!selectedJob && notice.includes("生成请求") && <>{ui("正在核对生成状态")} · </>}{ui(notice, true)}</p>}
+            {selectedJob && (active.includes(selectedJob.status) || ["failed", "stopped", "interrupted", "completed"].includes(selectedJob.status) || conflict) && <GenerationProgress job={selectedJob} conflict={conflict || ready.length > 0} unit={unit}>
+              {active.includes(selectedJob.status) ? <button type="button" onClick={() => void control(selectedJob, "stop")}>{ui("停止")}</button> : ["failed", "stopped", "interrupted"].includes(selectedJob.status) ? <button type="button" onClick={() => void control(selectedJob, "resume")}>{ui("继续生成")}</button> : null}
               {conflict && <><span>{ui(fillError || "生成期间内容有修改，当前编辑已保留。")}</span><button type="button" onClick={() => previewResult ? setPreview(undefined) : showGenerated()}>{ui(previewResult ? "返回当前内容" : "查看生成稿")}</button><button type="button" onClick={() => downloadText(`${work.title}-生成稿.txt`, ready.map(result => result.text).join("\n\n"))}>{ui("导出生成稿")}</button>{fillError && <button type="button" onClick={() => window.location.reload()}>{ui("刷新核对")}</button>}</>}
-            </div>}
+            </GenerationProgress>}
             {wordOpen && tab === "chapter" && <div className={styles.wordControls}><NumberSetting key={`${work.id}:${work.words_per_chapter}`} label={ui(`每${unit}目标字数`)} value={work.words_per_chapter} min={300} max={isNovel ? 6000 : 3000} disabled={editingDisabled} onChange={value => { setNumericInput(current => ({ ...current, words_per_chapter: String(value) })); update({ words_per_chapter: value }); }} /></div>}
             <div id="writing-stage-panel" role="tabpanel" aria-labelledby={`writing-tab-${tab}`} className={styles.stage}>
               {tab === "premise" && <ProjectSettings type={work.content_type} value={shownWork} disabled={editingDisabled} onChange={changeSettings}>{work.creative?.source_text && <details><summary>{ui("改编／改写原始素材")}</summary><pre className="plotloom-pre">{work.creative.source_text}</pre></details>}</ProjectSettings>}

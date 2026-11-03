@@ -163,7 +163,7 @@ test('failed new-world enqueue keeps the saved work and never retries creation o
   try{
     globalThis.fetch=async url=>{if(url.endsWith('/session'))return Response.json({space_id:'world-failure',isolated:true});calls++;return url.endsWith('/jobs')?Response.json({detail:'请求未确认'},{status:503}):Response.json({id:'saved-world',revision:1});};
     const result=await creation.createWorkForStep({}, {generate:true,step:'settings',number:1},work=>{saved=work;});
-    assert.equal(calls,2);assert.equal(saved.id,'saved-world');assert.equal(result.work.id,'saved-world');assert.match(result.warning,/已保存/);
+    assert.equal(calls,2);assert.equal(saved.id,'saved-world');assert.equal(result.work.id,'saved-world');assert.match(result.warning,/已保存/);assert.equal(result.job,undefined);
   }finally{globalThis.fetch=previous;}
 });
 
@@ -176,8 +176,9 @@ test("first AI request saves every stage first and uses saved id, revision and s
       return Response.json(url.endsWith("/jobs") ? { id: "job-1" } : { id: "work-1", revision: 3, ...JSON.parse(options.body) });
     };
     const draft = inspiration.initialCreationDraft("novel"); Object.assign(draft, { title: "新书", premise: "故事", characters: "人物", outline: "大纲", chapters: [{ number: 2, title: "章名", content: "正文" }] });
-    let saved;
-    const result = await creation.createWorkForStep(inspiration.creationPayload(draft, "小说创作", true), { generate: true, step: "chapter", number: 2 }, work => { saved = work; assert.equal(calls.length, 1); });
+    let saved; const phases=[];
+    const result = await creation.createWorkForStep(inspiration.creationPayload(draft, "小说创作", true), { generate: true, step: "chapter", number: 2 }, work => { saved = work; phases.push("saved"); assert.equal(calls.length, 1); }, () => { phases.push("submitting"); assert.equal(calls.length,1); });
+    assert.deepEqual(phases,["saved","submitting"]); assert.equal(result.job.id,"job-1");
     assert.equal(result.warning, ""); assert.equal(saved.id, "work-1"); assert.equal(calls.length, 2);
     assert.equal(calls[0].body.chapters[0].content, "正文"); assert.equal(calls[1].body.revision, 3); assert.equal(calls[1].body.action, "chapter"); assert.equal(calls[1].body.number, 2);
   } finally { globalThis.fetch = previous; }
