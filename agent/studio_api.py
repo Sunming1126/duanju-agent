@@ -409,7 +409,7 @@ def import_work(body: dict):
 def duplicate_work(ident: str):
     work = store.get("works", ident)
     payload = {k: v for k, v in work.items() if k in WorkInput.model_fields}
-    suffix = {"zh-CN": " · 副本", "en": " · Copy", "ja-JP": " · コピー", "ar": " · نسخة"}[work.get("output_locale", "zh-CN")]
+    suffix = {"zh-CN": " · 副本", "zh-TW": " · 副本", "en": " · Copy", "ja-JP": " · コピー", "ar": " · نسخة"}[work.get("output_locale", "zh-CN")]
     payload.update(title=(work["title"][:80 - len(suffix)] + suffix), legacy_id=None, world_id=None, archived=False)
     return store.create_work(WorkInput.model_validate(payload).model_dump())
 

@@ -7,7 +7,7 @@ export function loadI18n(name) {
   if (cache.has(name)) return cache.get(name);
   const exports = {};
   const code = ts.transpileModule(readFileSync(new URL(`../src/lib/i18n/${name}.ts`, import.meta.url),'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
-  vm.runInThisContext(`(function(exports,require){${code}\n})`)(exports, specifier => specifier === './messages.json' ? require('../src/lib/i18n/messages.json') : loadI18n(specifier.replace('./','')));
+  vm.runInThisContext(`(function(exports,require){${code}\n})`)(exports, specifier => specifier === './messages.json' ? require('../src/lib/i18n/messages.json') : specifier.startsWith('opencc-js') ? require(specifier) : loadI18n(specifier.replace('./','')));
   cache.set(name,exports);return exports;
 }
 // Existing interaction harnesses intentionally call components without a React

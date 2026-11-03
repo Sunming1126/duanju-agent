@@ -8,14 +8,15 @@ export function generateStaticParams() { return officialSamples.map(sample => ({
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const sample = getOfficialSample(slug);
-  const { ui } = await serverI18n();
+  const { ui, preferences } = await serverI18n();
+  const sample = getOfficialSample(slug, undefined, preferences.locale);
   return sample ? { title: `${sample.work.title} · ${ui("官方样例")}`, description: sample.logline } : { title: ui("未找到样例") };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const sample = getOfficialSample(slug);
+  const { preferences } = await serverI18n();
+  const sample = getOfficialSample(slug, undefined, preferences.locale);
   if (!sample) notFound();
   return <SampleReader sample={sample} />;
 }

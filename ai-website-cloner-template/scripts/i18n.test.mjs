@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import { loadI18n } from './i18n-test-support.mjs';
 const require = createRequire(import.meta.url), ts = require('typescript'), React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
-const { marketForCountry, parsePreferences } = loadI18n('config');
+const { marketForCountry, parsePreferences, preferencesForCountry } = loadI18n('config');
 const { createTranslator } = loadI18n('translate');
 function loader(locale='en', market='global', hookHarness=false) {
   const cache = new Map();
@@ -19,7 +19,7 @@ function loader(locale='en', market='global', hookHarness=false) {
     const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
     vm.runInThisContext(`(function(exports,require){${code}\n})`)(exports,name=>{
       if(hookHarness && name==='@/lib/i18n/provider')return {useUI:()=>createTranslator(locale),usePreferences:()=>({locale,market})};
-      if(['react','react/jsx-runtime','lucide-react','next/server','geoip-country','node:net'].includes(name)) return require(name);
+      if(['react','react/jsx-runtime','lucide-react','next/server','geoip-country','node:net','opencc-js/cn2t'].includes(name)) return require(name);
       if(name.endsWith('.css')) return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};
       if(name==='next/headers') return {headers:async()=>new Headers({'x-plotloom-preferences':`${locale}~${market}`})};
       if(name==='next/dynamic') return {__esModule:true,default:()=>()=>null};
@@ -42,6 +42,9 @@ test('country routing covers China, Japan, all 22 Arab countries and English fal
   for(const country of ['AE','SA','BH','KW','QA','OM','YE','IQ','JO','LB','PS','SY','EG','SD','LY','TN','DZ','MA','MR','SO','DJ','KM'])assert.equal(marketForCountry(country),'arab');
   for(const country of ['US','GB','FR','KR','IN','','XX'])assert.equal(marketForCountry(country),'global');
   assert.deepEqual(parsePreferences('ja-JP~arab'),{locale:'ja-JP',market:'arab'});
+  assert.deepEqual(parsePreferences('zh-TW~china'),{locale:'zh-TW',market:'china'});
+  for(const country of ['HK','MO','TW']) assert.deepEqual(preferencesForCountry(country),{locale:'zh-TW',market:'china'});
+  assert.deepEqual(preferencesForCountry('CN'),{locale:'zh-CN',market:'china'});
   for(const value of ['fr~japan','en~unknown','<script>','ar','en~global~extra'])assert.equal(parsePreferences(value),undefined);
 });
 test('proxy resolves IP country locally, overrides spoofed internal headers, honors preferences and disables shared caching',()=>{
@@ -56,7 +59,7 @@ test('proxy resolves IP country locally, overrides spoofed internal headers, hon
   const response=proxy(new NextRequest('https://example.test/',{headers:{'x-real-ip':'114.114.114.114',cookie:'plotloom-preferences=ja-JP~arab'}}));
   assert.equal(response.headers.get('x-middleware-request-x-plotloom-preferences'),'ja-JP~arab');
 });
-for(const [locale,market] of [['zh-CN','china'],['en','global'],['ja-JP','japan'],['ar','arab']]) {
+for(const [locale,market] of [['zh-CN','china'],['zh-TW','china'],['en','global'],['ja-JP','japan'],['ar','arab']]) {
   test(`${locale}: actual React rendering localizes home, account, all editor stages, references, worlds and samples`,()=>{
     const {load,render}=loader(locale,market);
     const helpers=load('lib/studio/inspiration.ts');
@@ -72,6 +75,7 @@ for(const [locale,market] of [['zh-CN','china'],['en','global'],['ja-JP','japan'
       const html=render(load(file)[name],props);
       assert.ok(html.length>50,file);
       if(['en','ar'].includes(locale)) assert.doesNotMatch(visible(html),/[\u3400-\u9fff\u3040-\u30ff]/,`${locale}: ${file}`);
+      if(locale==='zh-TW')assert.equal(visible(html),loadI18n('traditional').toTraditional(visible(html)),file);
       assert.doesNotMatch(html,/lang="ja"/,file);
     }
     assert.equal(helpers.creationPayload({...draft,title:'Untouched user title'},'小说创作',false).output_locale,locale);
@@ -112,12 +116,59 @@ test('translation formats nested unit labels and native errors without changing 
 test('full-text editors localize protocol labels reversibly while retaining all prose and whitespace',()=>{
   const {structuredText}=loadI18n('structured-text');
   const raw='【人物：Mara】\n定位：\n  Repairer\n年龄：\n  32\n性格：\n  - Patient\n背景：\n  Literal 背景： stays here.\n人物关系：\n  Eli\n【人物结束】\n\n【Plotloom 大纲 v1】\n粗纲：\n    A key is found.\n【单元 1 阶段 0】\n    Neighbors meet.\n【大纲结束】';
-  for(const locale of ['en','ja-JP','ar']){
+  for(const locale of ['en','ja-JP','ar','zh-TW']){
     const shown=structuredText(raw,locale);
     assert.equal(structuredText(shown,locale,true),raw);
     assert.ok(shown.includes('  Literal 背景： stays here.'));
     assert.doesNotMatch(shown,/^【单元|^定位：|^【大纲结束】/m);
   }
+});
+
+test('Traditional Chinese keeps literal user values, converts unknown UI/errors and preserves built-in samples',()=>{
+  const {toTraditional}=loadI18n('traditional');
+  const ui=createTranslator('zh-TW');
+  assert.equal(ui('模型未返回有效的正文与事实摘要JSON（第2行，第1列）'),toTraditional('模型未返回有效的正文与事实摘要JSON（第2行，第1列）'));
+  assert.equal(ui('删除《我的简体测试》'),'刪除《我的简体测试》');
+  assert.equal(loadI18n('translate').localizedError('String should have at least 1 character','zh-TW',422),ui('输入不符合要求，请检查必填项、数量和长度。'));
+  const {load}=loader('zh-TW','china');
+  const library=load('content/samples/index.ts');
+  const original=JSON.stringify(library.officialSamples);
+  for(const sample of library.samplesForLocale('zh-TW')) {
+    assert.equal(sample.work.output_locale,'zh-TW');
+    const slug=sample.slug.replace('zh-TW-','');
+    const source=library.getOfficialSample(slug);
+    assert.equal(library.sampleDocument(sample),toTraditional(library.sampleDocument(source)));
+    assert.equal(sample.work.premise,toTraditional(source.work.premise));
+    assert.equal(library.getOfficialSample(slug,undefined,'zh-TW').slug,sample.slug);
+    assert.equal(library.sampleCreationInput(sample).output_locale,'zh-TW');
+  }
+  assert.equal(JSON.stringify(library.officialSamples),original);
+});
+
+test('quick Traditional switch saves a valid independent preference cookie and reloads once',()=>{
+  const saved={document:globalThis.document,window:globalThis.window,location:globalThis.location};
+  let reloads=0;
+  globalThis.document={cookie:''};globalThis.location={protocol:'https:'};globalThis.window={location:{reload(){reloads++;}}};
+  try {
+    const {load}=loader('en','global',true);
+    load('components/studio/language-settings.tsx').LanguageSwitcher().props.onChange({target:{value:'zh-TW'}});
+    assert.match(globalThis.document.cookie,/plotloom-preferences=zh-TW~china;/);
+    assert.match(globalThis.document.cookie,/Secure/);assert.equal(reloads,1);
+  }finally{Object.assign(globalThis,saved);}
+});
+
+test('Traditional sample old URLs, metadata and downloads use the same complete Traditional content without shared caching',async()=>{
+  const {load}=loader('zh-TW','china');
+  const library=load('content/samples/index.ts');
+  const slug=library.officialSamples[0].slug;
+  const traditional=library.getOfficialSample(slug,undefined,'zh-TW');
+  const metadata=await load('app/samples/[slug]/page.tsx').generateMetadata({params:Promise.resolve({slug})});
+  assert.ok(metadata.title.startsWith(traditional.work.title));
+  const {GET}=load('app/samples/[slug]/download/route.ts');
+  const response=await GET(new Request('https://example.test/samples/'+slug+'/download'),{params:Promise.resolve({slug})});
+  assert.equal((await response.text()).replace(/^\uFEFF/,''),library.sampleDocument(traditional));
+  assert.match(response.headers.get('cache-control'),/private.*no-store/);
+  assert.match(response.headers.get('vary'),/Cookie/);
 });
 test('Arabic toolbar follows visual arrow direction and keeps focus without scrolling',()=>{
   const {load}=loader('ar','arab',true);

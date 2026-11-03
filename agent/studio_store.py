@@ -255,6 +255,7 @@ def export_work_text(work):
     if locale != "zh-CN":
         from .studio_region import display_protocol
         labels = {
+            "zh-TW": ["計畫", "故事設定", "人物", "大綱", "創作設定", "作品世界"],
             "en": ["Plan", "Premise", "Characters", "Outline", "Writing settings", "Story world"],
             "ja-JP": ["計画", "あらすじ", "登場人物", "構成", "執筆設定", "作品の世界設定"],
             "ar": ["الخطة", "ملخص القصة", "الشخصيات", "المخطط", "إعدادات الكتابة", "عالم العمل"],

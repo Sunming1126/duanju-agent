@@ -89,7 +89,7 @@ export function LoginForm({ onBusyChange, onSuccess = reloadAfterLogin }: { onBu
           lock.current = false;
         });
       } });
-      google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", locale: locale === "zh-CN" ? "zh_CN" : locale === "ja-JP" ? "ja" : locale, width: Math.max(200, Math.min(280, googleButton.current.clientWidth)) });
+      google.renderButton(googleButton.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", locale: locale === "zh-CN" ? "zh_CN" : locale === "zh-TW" ? "zh_TW" : locale === "ja-JP" ? "ja" : locale, width: Math.max(200, Math.min(280, googleButton.current.clientWidth)) });
     }).catch(cause => { if (!disposed) setGoogleError(cause.message); });
     return () => { disposed = true; };
   }, [config, googleReady, locale, onSuccess]);

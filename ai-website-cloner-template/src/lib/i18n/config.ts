@@ -1,9 +1,14 @@
-export const locales = ["zh-CN", "en", "ja-JP", "ar"] as const;
+export const locales = ["zh-CN", "zh-TW", "en", "ja-JP", "ar"] as const;
 export type Locale = typeof locales[number];
 export const markets = ["china", "global", "japan", "arab"] as const;
 export type Market = typeof markets[number];
 export type Preferences = { locale: Locale; market: Market };
 export const localeForMarket: Record<Market, Locale> = { china: "zh-CN", japan: "ja-JP", arab: "ar", global: "en" };
+export const marketForLocale: Record<Locale, Market> = { "zh-CN": "china", "zh-TW": "china", en: "global", "ja-JP": "japan", ar: "arab" };
+export function preferencesForCountry(country: string): Preferences {
+  const market = marketForCountry(country);
+  return { market, locale: ["HK", "MO", "TW"].includes(country.toUpperCase()) ? "zh-TW" : localeForMarket[market] };
+}
 export const arabCountries = new Set(["AE", "SA", "BH", "KW", "QA", "OM", "YE", "IQ", "JO", "LB", "PS", "SY", "EG", "SD", "LY", "TN", "DZ", "MA", "MR", "SO", "DJ", "KM"]);
 export function marketForCountry(country: string): Market {
   const code = country.toUpperCase();

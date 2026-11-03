@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import { usePreferences, useUI } from "@/lib/i18n/provider";
-import { locales, markets, localeForMarket, type Locale, type Market, type Preferences } from "@/lib/i18n/config";
+import { locales, markets, marketForLocale, type Locale, type Market, type Preferences } from "@/lib/i18n/config";
 import styles from "./space.module.css";
 
-export const languageLabels = { "zh-CN": "中文", en: "英语", "ja-JP": "日语", ar: "阿拉伯语" };
+export const languageLabels = { "zh-CN": "简体中文", "zh-TW": "繁体中文", en: "英语", "ja-JP": "日语", ar: "阿拉伯语" };
 export const marketLabels = { china: "中国", japan: "日本", arab: "阿拉伯地区", global: "国际／当前风格" };
 function save(value?: Preferences) {
   document.cookie = `plotloom-preferences=${value ? `${value.locale}~${value.market}` : ""}; Path=/; Max-Age=${value ? 31536000 : 0}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
@@ -27,7 +27,7 @@ export function LanguageSwitcher() {
   const { locale } = usePreferences();
   return <select className="language-switcher" aria-label={ui("界面语言")} value={locale} onChange={e => {
     const nextLocale = e.target.value as Locale;
-    save({ locale: nextLocale, market: markets.find(value => localeForMarket[value] === nextLocale)! });
+    save({ locale: nextLocale, market: marketForLocale[nextLocale] });
   }}>{locales.map(value => <option key={value} value={value}>{ui(languageLabels[value])}</option>)}</select>;
 }
 export function WorkLanguageSettings({ market, locale, disabled, onChange }: { market: Market; locale: Locale; disabled?: boolean; onChange: (value: { market: Market; output_locale: Locale }) => void }) {

@@ -18,6 +18,7 @@ function load(path) {
   const exports = {};
   cache.set(path, exports);
   vm.runInThisContext(`(function(exports,require){${compiled}\n})`)(exports, name => {
+    if(name==='@/lib/i18n/server')return {serverI18n:async()=>({preferences:{locale:'zh-CN',market:'china'},ui:value=>value})};
     const localeDependency = legacyI18nDependency(name); if(localeDependency) return localeDependency;
     if (["react", "react/jsx-runtime", "lucide-react"].includes(name)) return require(name);
     if (name.endsWith(".css")) return {};

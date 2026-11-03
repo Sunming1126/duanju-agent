@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import geoip from "geoip-country";
 import { isIP } from "node:net";
-import { marketForCountry, localeForMarket, parsePreferences } from "./lib/i18n/config";
+import { preferencesForCountry, parsePreferences } from "./lib/i18n/config";
 
 export function proxy(request: NextRequest) {
   let preferences = parsePreferences(request.cookies.get("plotloom-preferences")?.value);
@@ -9,8 +9,7 @@ export function proxy(request: NextRequest) {
     // The reverse proxy must overwrite X-Real-IP; never trust client country headers.
     const ip = request.headers.get("x-real-ip") || "";
     const country = isIP(ip) ? geoip.lookup(ip)?.country || "" : "";
-    const market = marketForCountry(country);
-    preferences = { market, locale: localeForMarket[market] };
+    preferences = preferencesForCountry(country);
   }
   const value = `${preferences.locale}~${preferences.market}`;
   const requestHeaders = new Headers(request.headers);

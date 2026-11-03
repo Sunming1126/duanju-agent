@@ -1,5 +1,6 @@
 import { regionalSamples } from "./regional";
 import { createTranslator } from "@/lib/i18n/translate";
+import { toTraditional } from "@/lib/i18n/traditional";
 import type { Locale } from "@/lib/i18n/config";
 import type { ContentType, WorkInput } from "@/lib/studio/api";
 import { lastLight } from "./last-light";
@@ -23,11 +24,26 @@ export const officialSamples: readonly OfficialSample[] = [gateName, doorCard, t
 // Preserve already-shared URLs without showing the previous batch in the list.
 export const archivedSamples: readonly OfficialSample[] = [lastLight, receipt, platformSeven, rainCheck];
 
-export function getOfficialSample(slug: string, kind?: ContentType) {
-  return [...officialSamples, ...archivedSamples, ...regionalSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
+function traditionalSample(sample: OfficialSample): OfficialSample {
+  const convert = (value: unknown, key = ""): unknown => {
+    if (typeof value === "string") return ["slug", "url", "mode"].includes(key) ? value : toTraditional(value);
+    if (Array.isArray(value)) return value.map(item => convert(item));
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, convert(item, name)]));
+    return value;
+  };
+  const result = convert(sample) as OfficialSample;
+  result.slug = `zh-TW-${sample.slug}`;
+  result.work.output_locale = "zh-TW";
+  return result;
+}
+export const traditionalSamples: readonly OfficialSample[] = [...officialSamples, ...archivedSamples].map(traditionalSample);
+
+export function getOfficialSample(slug: string, kind?: ContentType, locale?: Locale) {
+  const sample = [...officialSamples, ...archivedSamples, ...regionalSamples, ...traditionalSamples].find(sample => sample.slug === slug && (!kind || sample.work.content_type === kind));
+  return locale === "zh-TW" && sample?.work.output_locale === "zh-CN" ? traditionalSamples.find(item => item.slug === `zh-TW-${sample.slug}`) : sample;
 }
 
-export function samplesForLocale(locale: Locale) { return locale === "zh-CN" ? officialSamples : regionalSamples.filter(sample => sample.work.output_locale === locale); }
+export function samplesForLocale(locale: Locale) { return locale === "zh-CN" ? officialSamples : locale === "zh-TW" ? traditionalSamples.slice(0, officialSamples.length) : regionalSamples.filter(sample => sample.work.output_locale === locale); }
 
 export function sampleCreationInput(sample: OfficialSample): WorkInput {
   const work = sample.work;
@@ -50,7 +66,11 @@ export function sampleCharacterCount(sample: OfficialSample) {
 
 export const worldLabels: Record<string, string> = { world_rules: "世界规则", locations: "主要地点", relations: "人物关系" };
 
-export function sampleDocument(sample: OfficialSample) {
+export function sampleDocument(sample: OfficialSample): string {
+  if (sample.work.output_locale === "zh-TW") {
+    const source = [...officialSamples, ...archivedSamples].find(item => `zh-TW-${item.slug}` === sample.slug);
+    if (source) return toTraditional(sampleDocument(source));
+  }
   const work = sample.work;
   const novel = work.content_type === "novel";
   if (work.output_locale !== "zh-CN") {

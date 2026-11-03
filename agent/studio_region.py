@@ -3,9 +3,9 @@ from typing import Literal
 import re
 
 Market = Literal["china", "japan", "arab", "global"]
-Locale = Literal["zh-CN", "ja-JP", "ar", "en"]
-NATIVE_SCENE = re.compile(r"^\s*(?:(?:داخلي|خارجي)(?:\s|[-:：])|シーン\s*\d+(?:\s|[：:]))", re.M)
-LANGUAGES = {"zh-CN": "Simplified Chinese", "ja-JP": "natural Japanese", "ar": "Modern Standard Arabic", "en": "English"}
+Locale = Literal["zh-CN", "zh-TW", "ja-JP", "ar", "en"]
+NATIVE_SCENE = re.compile(r"^\s*(?:(?:داخلي|خارجي)(?:\s|[-:：])|シーン\s*\d+(?:\s|[：:])|(?:第[\d一二三四五六七八九十百]+場|場(?:景)?\s*[\d一二三四五六七八九十百]+|場景)(?:\s|[：:]))", re.M)
+LANGUAGES = {"zh-CN": "Simplified Chinese", "zh-TW": "Traditional Chinese (繁體中文); use traditional characters throughout, never simplified Chinese", "ja-JP": "natural Japanese", "ar": "Modern Standard Arabic", "en": "English"}
 REGIONS = {
     "china": "Chinese settings, credible Chinese names, local relationships, everyday details and storytelling conventions; distinguish contemporary life from historical or fantasy settings.",
     "japan": "Japanese settings, natural Japanese names and forms of address, credible everyday spaces, relationships and social context. Develop an original local story rather than translating a Chinese story.",
@@ -32,6 +32,7 @@ def display_protocol(text, locale):
     """Localize known storage delimiters for human-readable exports only."""
     import re
     words = {
+        "zh-TW": ["人物", "人物結束", "定位", "年齡", "性格", "背景", "人物關係", "大綱", "粗綱", "單元", "階段", "大綱結束"],
         "en": ["Character", "End character", "Role", "Age", "Traits", "Background", "Relationships", "Outline", "Synopsis", "Unit", "Phase", "End outline"],
         "ja-JP": ["人物", "人物終了", "役割", "年齢", "性格", "背景", "人物関係", "構成", "全体あらすじ", "単位", "段階", "構成終了"],
         "ar": ["شخصية", "نهاية الشخصية", "الدور", "العمر", "السمات", "الخلفية", "العلاقات", "مخطط", "الملخص العام", "وحدة", "مرحلة", "نهاية المخطط"],

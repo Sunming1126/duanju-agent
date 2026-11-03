@@ -51,7 +51,7 @@ def test_work_preferences_roundtrip_and_frozen_generation_messages(regional_stor
     assert regional_store.get("works", work["id"])["premise"] == data["premise"]
 
 
-@pytest.mark.parametrize("market,locale", [("global", "en"), ("japan", "ja-JP"), ("arab", "ar")])
+@pytest.mark.parametrize("market,locale", [("global", "en"), ("japan", "ja-JP"), ("arab", "ar"), ("china", "zh-TW")])
 def test_inspiration_preserves_region_and_output_language_during_analysis(market, locale):
     body = InspirationInput(market=market, output_locale=locale, content_type="novel", prompt="A key leads to a reading room.", request_key=str(uuid.uuid4()))
     snapshot = {"input": body.model_dump(), "plans": [{"id": "one", "title": "A key", "summary": "A choice", "story": "A repairer must choose the future of a neighborhood room."}]}
@@ -122,7 +122,7 @@ def test_unknown_preferences_rejected_and_legacy_defaults_preserved():
             api.WorkInput.model_validate({"title": "Original", field: "unsupported"})
 
 
-@pytest.mark.parametrize("text", ["داخلي - مكتبة - نهار\nتضع مريم المفتاح.", "シーン1：図書室\n澪が鍵を置く。"])
+@pytest.mark.parametrize("text", ["داخلي - مكتبة - نهار\nتضع مريم المفتاح.", "シーン1：図書室\n澪が鍵を置く。", "場1：書店 日 內\n阿明推門走進店裡。"])
 def test_native_screenplay_headings_are_accepted_for_drama_and_rejected_for_novels(text):
     from agent.studio_writing import validate_chapter_format
     validate_chapter_format("short_drama", text)
@@ -136,7 +136,7 @@ def test_arabic_speaker_lists_are_not_accepted_as_novel_prose():
         validate_chapter_format("novel", "مريم: أين المفتاح؟\nحسن: فوق الطاولة.\nسلمى: وجدته.")
 
 
-@pytest.mark.parametrize("locale", ["en", "ja-JP", "ar"])
+@pytest.mark.parametrize("locale", ["en", "ja-JP", "ar", "zh-TW"])
 def test_export_headings_and_generated_default_titles_follow_output_language(locale):
     from agent.studio_store import export_work_text
     from agent.studio_region import unit_title
@@ -147,7 +147,7 @@ def test_export_headings_and_generated_default_titles_follow_output_language(loc
     assert unit_title(work, 1) in text
 
 
-@pytest.mark.parametrize("locale", ["zh-CN", "en", "ja-JP", "ar"])
+@pytest.mark.parametrize("locale", ["zh-CN", "zh-TW", "en", "ja-JP", "ar"])
 def test_duplicate_preserves_output_preferences_and_bounds_native_title(regional_store, locale):
     work = regional_store.create_work(api.WorkInput(title="A" * 80, content_type="novel", output_locale=locale, market="global").model_dump())
     copy = api.duplicate_work(work["id"])
@@ -155,3 +155,11 @@ def test_duplicate_preserves_output_preferences_and_bounds_native_title(regional
     assert copy["output_locale"] == locale and copy["market"] == "global"
     assert copy["id"] != work["id"]
     assert regional_store.get("works", work["id"])["title"] == "A" * 80
+
+
+def test_traditional_reference_locale_is_not_silently_treated_as_simplified():
+    from agent.market import normalize_locale, market_matches
+    for value in ['zh-TW', 'zh-HK', 'zh-MO', 'zh-Hant', '繁體中文']:
+        assert normalize_locale(value) == 'zh-TW'
+    assert not market_matches({'market':'china','locale':'zh-CN','content_type':'novel'},'china','zh-TW','novel')
+    assert market_matches({'market':'china','locale':'zh-TW','content_type':'novel'},'china','zh-TW','novel')

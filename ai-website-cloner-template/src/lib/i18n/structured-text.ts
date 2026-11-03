@@ -2,6 +2,7 @@ import type { Locale } from "./config";
 // Only known storage delimiters change for full-text editing. Indented prose and
 // every unknown line remain byte-for-byte intact, including literal field names.
 const words = {
+  "zh-TW": ["人物", "人物結束", "定位", "年齡", "性格", "背景", "人物關係", "大綱", "粗綱", "單元", "階段", "大綱結束"],
   en: ["Character", "End character", "Role", "Age", "Traits", "Background", "Relationships", "Outline", "Synopsis", "Unit", "Phase", "End outline"],
   "ja-JP": ["人物", "人物終了", "役割", "年齢", "性格", "背景", "人物関係", "構成", "全体あらすじ", "単位", "段階", "構成終了"],
   ar: ["شخصية", "نهاية الشخصية", "الدور", "العمر", "السمات", "الخلفية", "العلاقات", "مخطط", "الملخص العام", "وحدة", "مرحلة", "نهاية المخطط"],
