@@ -1,5 +1,12 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-03 小说一键输出预算修复正式上线
+
+- 运行源码 `6e54a59d2f51a62fd0849baeefb4162f60bee0dd`，release `/opt/plotloom-cn/releases/20261103T050110Z-inspiration-6e54a59d`；previous `20261103T034335Z-inspiration-fcd483ad`，SQLite备份 `backups/studio-20261103T050110Z-inspiration.sqlite3`（0600），日志 `/tmp/plotloom-novel-budget-publish.log`。
+- 源码包SHA256 `32324aa9ea96ce825c80b1b3350b346eb8c90971b9aa96cc5bad1e6ba903c597`，runner `a9f01195fd51d785ec0cc021fae9d610a4cca9cf0a266ce6984ae774aa22c2d0`。服务器148后端／77前端、lint／类型／webpack通过；空闲队列、备份、原子切换和正式核验DEPLOYMENT_OK。发布后71项小说／MVP离线补验通过，无真实模型请求。
+- `backups/novel-budget-live-report.json`为ok：六表及账号全行保持21/15/48/0/18/34/2，头像补核保持；SQLite、私有配置指纹及正式5路并发保持，正文策略关闭额外思考且2000字预算12000／240秒。三服务active PID1480902/1480903/1480904，旧站1948834未变、日文及公网检查正常。用户第7章失败任务没有重发，刷新后可主动继续；真实长篇与文学质量尚未验收。
+- 磁盘初余980MB，为构建清理6份非当前版本构建缓存及专用npm下载缓存，清单 `backups/novel-budget-cache-cleanup.json`，保留源码、依赖、回滚、数据与备份；结束约761MB。没有改Nginx／systemd或启动本机服务／浏览器。回滚只切previous兼容程序并保留shared/data，不覆盖数据库。
+
 ## 2026-11-03 繁體中文正式上线
 
 - 用户明确部署。常规start／HTTP1.1重试连接重置后，通过既有内存凭据只读核对GitHub官方ref与本地fcd483ad相同，再继续；未覆盖远端。运行源码 `fcd483ad874746a3408551743c5924206a0b8196`，release `/opt/plotloom-cn/releases/20261103T034335Z-inspiration-fcd483ad`，previous `20261102T153618Z-inspiration-09c6eda5`。SQLite备份 `backups/studio-20261103T034335Z-inspiration.sqlite3`（0600），日志 `/tmp/plotloom-traditional-publish.log`。
