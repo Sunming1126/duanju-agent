@@ -1,5 +1,13 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-03 一键生成加载与阶段动画上线
+
+- 运行源码`f994b077f22b8df3db5093df9ad3b56567f7406e`，release`/opt/plotloom-cn/releases/20261103T070754Z-inspiration-f994b077`；previous`20261103T050110Z-inspiration-6e54a59d`，SQLite备份`backups/studio-20261103T070754Z-inspiration.sqlite3`（0600），日志`/tmp/plotloom-motion-publish.log`。
+- 包SHA256`50293b29633f309a23f67ce68095263a77fe2a7feb9e881e72840575c7065f4f`，runner`a9f01195fd51d785ec0cc021fae9d610a4cca9cf0a266ce6984ae774aa22c2d0`，双核验后148后端／80前端、lint／类型／webpack通过，空闲队列／备份／原子切换及正式检查DEPLOYMENT_OK，无回滚。发布连接断开后重连读取原日志确认，没有重复发布。
+- `backups/motion-live-report.json`为ok：五语言15页和24份资源逐份匹配，所有原记录保留21/15/48/0/18/34/2/0，账号／头像／世界等全行一致。备份后一份原作品的章节及关联旧任务更新，任务最终completed、已采纳结果9→15、采纳版本10→16；不声称作品与任务逐字未变，不输出用户正文。SQLite正常，正式5/10不变，中文三服务active，旧站PID1948834保持、日文200。
+- 仅清理非当前版本构建缓存与专用下载缓存，保留运行文件、源码、依赖、回滚、数据和备份，结束约338MB。部署核验零主动模型／邮件请求，未改配置、Nginx／systemd或用户资料。未启动浏览器，HTTP资源匹配不代替实际动画／黑屏／移动端验收。
+- 回滚仅切回上述6e54a59d并保留shared/data；不能恢复旧SQLite覆盖新任务及稿件。
+
 ## 2026-11-03 小说一键输出预算修复正式上线
 
 - 运行源码 `6e54a59d2f51a62fd0849baeefb4162f60bee0dd`，release `/opt/plotloom-cn/releases/20261103T050110Z-inspiration-6e54a59d`；previous `20261103T034335Z-inspiration-fcd483ad`，SQLite备份 `backups/studio-20261103T050110Z-inspiration.sqlite3`（0600），日志 `/tmp/plotloom-novel-budget-publish.log`。
