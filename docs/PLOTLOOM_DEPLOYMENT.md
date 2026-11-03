@@ -1,5 +1,12 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-03 历史发布目录清理完成
+
+- 用户明确批准清理盘点出的53份目录；原56个release现仅保留3份：`20261103T070754Z-inspiration-f994b077`（current）、`20261103T050110Z-inspiration-6e54a59d`（首选回滚）、`20261103T034335Z-inspiration-fcd483ad`（第二回滚）。没有发布最新Git中的台湾功能，也没有改动current。
+- 完整删除清单与核验：`/opt/plotloom-cn/backups/history-cleanup-20261103.json`，status=complete、53/53；清理前额外SQLite备份`backups/studio-before-history-cleanup-20261103.sqlite3`为0600；原有备份全部保留。部署锁、运行进程／配置引用及data链接检查通过，仅删除明确批准的release本身，不跟随共享链接。
+- 实际释放30,678,044,672字节，约28.57GiB；可用空间约287MiB→28.85GiB，df为59G总量／28G已用／29G可用／49%。原八表与清理前备份全行一致21/15/48/0/18/34/2/0，SQLite正常，私有配置与恢复码指纹不变，四服务PID保持，主要页面及日文站HTTPS200；未停服、重启、发模型或邮件。
+- **历史回滚记录的适用性更新**：下文历史章节的旧release路径多数已删除，其previous文本仍作为审计记录保留，不能据旧记录直接回滚。现在只可直接切换上述3个保留版本并保持shared/data；任何回滚仍须先重新确认current和数据兼容性，禁止旧SQLite覆盖新稿。
+
 ## 2026-11-03 一键生成加载与阶段动画上线
 
 - 运行源码`f994b077f22b8df3db5093df9ad3b56567f7406e`，release`/opt/plotloom-cn/releases/20261103T070754Z-inspiration-f994b077`；previous`20261103T050110Z-inspiration-6e54a59d`，SQLite备份`backups/studio-20261103T070754Z-inspiration.sqlite3`（0600），日志`/tmp/plotloom-motion-publish.log`。
