@@ -20,6 +20,7 @@ from .studio_writing import normalized_work, writing_context, system_prompt, ste
 from .studio_queue import records as queue_records, paused, pause_after_rate_limit, policy, capacity, reserve_dispatch
 from .studio_identity import require_identity, authorize, visible, owner, request_key as scoped_key, StudioJSONResponse
 from .studio_outline import combined_outline, rough_preview
+from .studio_generation import request_options, failure_details, failure_message
 
 ACTIVE = {"queued", "running", "stopping"}
 LABELS = {"premise": "故事设定", "characters": "人物小传", "outline": "大纲", "chapter": "正文", "world": "作品世界"}
@@ -160,7 +161,7 @@ class JobStore:
             self.write(db, job)
             return job
 
-    def finish_step(self, ident, result=None, error=""):
+    def finish_step(self, ident, result=None, error="", diagnostics=None):
         with self.transaction() as db:
             job = self.read(db, ident)
             if result:
@@ -175,6 +176,8 @@ class JobStore:
                     job["continuity"].append({"number": result["number"], "summary": result["summary"]})
             if error:
                 job.update(status="failed", error=error)
+                if diagnostics is not None:
+                    job["last_failure"] = diagnostics
             elif job["status"] == "stopping":
                 job["status"] = "stopped"
             elif len(job["results"]) == len(job["steps"]):
@@ -275,10 +278,11 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
         if jobs.get(job["id"])["status"] == "stopping":
             return jobs.finish_step(job["id"])
         step = job["steps"][len(job["results"])]
+        err, options = {}, {}
         try:
+            options = request_options(job["draft"], step, continuation=job["input"].get("continuation", False))
             refs = api.reference_context(job["snapshot"])
             messages = messages_for(job, step, refs)
-            err = {}
             if streaming and step["action"] == "outline" and job.get("outline_format") == "combined-v1":
                 import time
                 from .studio_stream import chat_outline
@@ -289,15 +293,14 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
                     if rough and rough != last_text and time.monotonic() - last_update >= 0.5:
                         jobs.partial_outline(job["id"], len(job["results"]), rough)
                         last_update, last_text = time.monotonic(), rough
-                raw = await chat_outline(messages, on_text=on_text, err_box=err)
+                raw = await chat_outline(messages, on_text=on_text, err_box=err, **options)
             else:
-                options = {"json_mode": True} if step["action"] in {"chapter", "world"} else {}
-                raw = await generate(messages, temperature=0.8, max_tokens=12000, timeout=240, retries=1, err_box=err, reject_truncated=True, **options)
+                json_options = {"json_mode": True} if step["action"] in {"chapter", "world"} else {}
+                raw = await generate(messages, temperature=0.8, retries=1, err_box=err, reject_truncated=True, **options, **json_options)
             if not raw or not raw.strip():
                 if err.get("kind") == "rate_limit":
                     pause_after_rate_limit(jobs.store, err)
-                reasons = {"rate_limit": "模型限流", "incomplete": "模型输出被截断或未正常结束", "http_error": "模型服务拒绝请求", "error": "模型连接失败", "empty_content": "模型正常结束但未返回正文"}
-                raise ValueError(reasons.get(err.get("kind"), "模型没有返回有效内容") + "。已完成结果保留，请检查服务后主动继续。")
+                raise ValueError(failure_message(err) + "。已完成结果保留，请检查服务后主动继续。")
             if len(raw) > 100000:
                 raise ValueError("模型输出超出单步保存容量")
             result = {**step, "text": raw.strip(), "references": refs}
@@ -340,7 +343,7 @@ async def execute(jobs, job, generate=None, *, max_steps=None):
             raise
         except Exception as exc:
             message = str(exc) if isinstance(exc, ValueError) and not isinstance(exc, json.JSONDecodeError) else "模型返回格式无效或执行失败；已完成部分保留，请核查后继续。"
-            return jobs.finish_step(job["id"], error=message[:500])
+            return jobs.finish_step(job["id"], error=message[:500], diagnostics={**step, **failure_details(err, options)})
     return job
 
 

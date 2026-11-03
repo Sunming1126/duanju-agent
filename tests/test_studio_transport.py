@@ -65,3 +65,57 @@ def test_worker_pool_is_reused_and_closed_and_does_not_escape_its_scope(monkeypa
         async with llm_transport.request_client(90) as standalone:assert standalone is not first
         assert standalone.closed and len(created)==2
     asyncio.run(check())
+
+
+def test_regular_timeout_has_distinct_kind_and_no_automatic_retry(monkeypatch):
+    calls = []
+    async def post(client, url, **kwargs):
+        calls.append(kwargs['json'])
+        raise httpx.ReadTimeout('PRIVATE UPSTREAM DETAIL')
+    monkeypatch.setattr(llm, '_refresh_config', lambda: None)
+    monkeypatch.setattr(llm, 'MODEL', 'deepseek-v4.1-flash')
+    monkeypatch.setattr(httpx.AsyncClient, 'post', post)
+    err = {}
+    assert asyncio.run(llm.chat([{'role':'user','content':'offline'}], retries=1, err_box=err)) is None
+    assert err == {'kind':'timeout', 'status':0, 'attempts':1} and len(calls) == 1
+    # Optional Studio thinking control does not alter legacy callers.
+    assert 'thinking' not in calls[0]
+
+
+def test_stream_truncation_retains_usage_not_reasoning_or_payload(monkeypatch):
+    import json
+    from agent.studio_generation import failure_details
+    packets = [
+        {'choices':[{'delta':{'reasoning_content':'PRIVATE REASONING'},'finish_reason':None}]},
+        {'choices':[{'delta':{'content':'【粗纲】\n尚未完成的全篇计划'},'finish_reason':None}]},
+        {'choices':[{'delta':{},'finish_reason':'length'}]},
+        {'choices':[], 'usage':{'prompt_tokens':100,'completion_tokens':24000,
+            'completion_tokens_details':{'reasoning_tokens':23500}, 'private':'SECRET'}},
+    ]
+    body = '\n\n'.join('data: '+json.dumps(p) for p in packets) + '\n\ndata: [DONE]\n\n'
+    calls = []; original = httpx.AsyncClient
+    def respond(request):
+        calls.append(request)
+        return httpx.Response(200, content=body.encode())
+    monkeypatch.setattr(httpx, 'AsyncClient', lambda **kw:original(transport=httpx.MockTransport(respond), **kw))
+    monkeypatch.setattr(llm, '_refresh_config', lambda:None)
+    previews = []
+    async def preview(text):previews.append(text)
+    err = {}
+    assert asyncio.run(studio_stream.chat_outline([{'role':'user','content':'offline'}], on_text=preview, err_box=err)) is None
+    assert len(calls) == 1 and err['finish_reason'] == 'length'
+    assert err['completion_tokens'] == 24000 and err['reasoning_tokens'] == 23500
+    assert len(previews) == 1 and 'PRIVATE' not in str(previews)
+    assert 'PRIVATE' not in str(err) and 'SECRET' not in str(err)
+    assert 'PRIVATE' not in str(failure_details({'kind':'PRIVATE', 'status':'SECRET'}, {}))
+
+
+def test_stream_timeout_is_not_reported_as_output_truncation(monkeypatch):
+    original = httpx.AsyncClient
+    def respond(request):raise httpx.ReadTimeout('private')
+    monkeypatch.setattr(httpx, 'AsyncClient', lambda **kw:original(transport=httpx.MockTransport(respond), **kw))
+    monkeypatch.setattr(llm, '_refresh_config', lambda:None)
+    async def preview(text):pytest.fail('No content arrived')
+    err = {}
+    assert asyncio.run(studio_stream.chat_outline([{'role':'user','content':'offline'}], on_text=preview, err_box=err)) is None
+    assert err == {'kind':'timeout', 'status':0, 'attempts':1}

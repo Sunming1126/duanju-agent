@@ -383,6 +383,110 @@ def test_truncated_provider_response_is_rejected_without_retry(setup, monkeypatc
     assert len(calls) == 1 and not result['results']
 
 
+def test_ark_novel_all_transport_reaches_all_twelve_chapters_without_thinking_budget_loss(setup, monkeypatch):
+    """The same missing switch that exhausted chapter 7 must fail this test."""
+    import httpx
+    store, jobs = setup
+    monkeypatch.setattr(api.llm, 'MODEL', 'deepseek-v4.1-flash')
+    monkeypatch.setattr(api.llm, 'API_BASE', 'https://ark.cn-beijing.volces.com/api/coding/v3')
+    calls = []
+    async def provider(client, url, **kwargs):
+        payload = kwargs['json']; calls.append(payload)
+        text = await fake(payload['messages'])
+        task = payload['messages'][-1]['content'].split('\n任务：')[-1]
+        chapter = '只返回JSON对象' in task and 'summary' in task
+        if chapter:
+            assert payload['response_format'] == {'type': 'json_object'}
+            assert payload['max_tokens'] >= 12000
+        # Offline provider models the observed shared reasoning/output budget.
+        reason = 'length' if chapter and payload.get('thinking') != {'type': 'disabled'} else 'stop'
+        return httpx.Response(200, request=httpx.Request('POST', url), json={
+            'choices':[{'finish_reason':reason,'message':{'content':text}}],
+            'usage':{'completion_tokens':12000 if reason == 'length' else 400}})
+    monkeypatch.setattr(api.llm.httpx.AsyncClient, 'post', provider)
+    saved = work(store, units=12, words_per_chapter=2000)
+    job = create(jobs, saved, mode='all')
+    # Use actual regular transport and the worker's one-step yield/adoption cycle.
+    for _ in range(15):
+        done = asyncio.run(execute(jobs, jobs.claim(job['id']), api.llm.chat, max_steps=1))
+        assert done['status'] in {'queued', 'completed'}, done['error']
+        jobs.adopt(job['id'], ready_only=True)
+    assert done['status'] == 'completed' and len(calls) == 15
+    assert len(store.get('works', saved['id'])['chapters']) == 12
+    assert all('thinking' not in payload for payload in calls[:3])
+    assert all(payload['thinking'] == {'type':'disabled'} for payload in calls[3:])
+
+
+def test_seventh_chapter_failure_saves_only_safe_diagnostics_and_resume_starts_at_seven(setup):
+    import copy
+    store, jobs = setup
+    saved = work(store, units=12, words_per_chapter=2000)
+    job = create(jobs, saved, mode='all')
+    calls = []
+    async def failing(messages, **kwargs):
+        calls.append(messages)
+        if len(calls) == 10:
+            kwargs['err_box'].update(kind='incomplete', finish_reason='length', status=200,
+                attempts=1, completion_tokens=12000, reasoning_tokens=11500,
+                provider_body='SECRET RESPONSE', reasoning_content='PRIVATE REASONING')
+            return None
+        return await fake(messages)
+    failed = run(jobs, failing)
+    assert failed['status'] == 'failed' and len(failed['results']) == 9
+    assert '额度' in failed['error'] and '截断' in failed['error']
+    assert failed['last_failure']['number'] == 7
+    assert failed['last_failure']['finish_reason'] == 'length'
+    assert failed['last_failure']['reasoning_tokens'] == 11500
+    assert 'SECRET' not in json.dumps(failed) and 'PRIVATE' not in json.dumps(failed)
+    jobs.adopt(job['id'], ready_only=True)
+    old = copy.deepcopy(jobs.get(job['id'])['results'])
+    # A recreated store models a refresh/restart; resume does not create a new all task.
+    jobs = JobStore(StudioStore(store.path))
+    jobs.control(job['id'], 'resume')
+    resumed = []
+    async def finish(messages, **kwargs):
+        resumed.append(messages)
+        return await fake(messages)
+    done = run(jobs, finish)
+    assert done['status'] == 'completed' and len(resumed) == 6
+    assert '写第7章正文' in resumed[0][-1]['content']
+    assert done['results'][:9] == old
+    assert len(jobs.adopt(job['id'])['chapters']) == 12
+
+
+@pytest.mark.parametrize('action,words,units,budget,thinking', [
+    ('chapter',2000,12,12000,False), ('chapter',6000,12,20048,False),
+    ('outline',2000,12,24000,None), ('outline',2000,200,64000,None),
+    ('premise',2000,12,24000,None), ('world',2000,12,24000,None),
+])
+def test_verified_model_budgets_scale_with_deliverable(setup, monkeypatch, action, words, units, budget, thinking):
+    from agent.studio_generation import request_options
+    monkeypatch.setattr(api.llm, 'MODEL', 'deepseek-v4.1-flash')
+    monkeypatch.setattr(api.llm, 'API_BASE', 'https://ark.cn-beijing.volces.com/api/v3')
+    saved = work(setup[0], units=units, words_per_chapter=words)
+    options = request_options(saved, {'action':action,'number':1})
+    assert options['max_tokens'] == budget and options.get('thinking') is thinking
+    assert 240 <= options['timeout'] <= 900
+
+
+def test_provider_options_are_scoped_and_continuation_accounts_for_returned_original(setup, monkeypatch):
+    from agent.studio_generation import request_options
+    monkeypatch.setattr(api.llm, 'MODEL', 'deepseek-v4.1-flash')
+    saved = work(setup[0], chapters=[{'number':1,'content':'原稿'*2500}])
+    step = {'action':'chapter','number':1}
+    for base in ['https://other.invalid/v1', 'https://volces.com.other.invalid/v1']:
+        monkeypatch.setattr(api.llm, 'API_BASE', base)
+        assert request_options(saved, step) == {'max_tokens':12000,'timeout':240}
+    monkeypatch.setattr(api.llm, 'API_BASE', 'https://ark.cn-beijing.volces.com/api/v3')
+    assert request_options(saved, step, continuation=True)['max_tokens'] == 23048
+    saved['chapters'][0]['content'] *= 3
+    with pytest.raises(ValueError, match='续写'):
+        request_options(saved, step, continuation=True)
+    # Changing Studio's defaults must not change direct/legacy LLM calls.
+    monkeypatch.setattr(api.llm, 'MODEL', 'unknown-endpoint')
+    assert request_options(saved, step) == {'max_tokens':12000,'timeout':240}
+
+
 def test_excess_context_keeps_canon_and_does_not_charge(setup):
     store, jobs = setup
     from agent.studio_store import WORLD_FIELDS

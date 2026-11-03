@@ -16,7 +16,7 @@ def test_dry_run_has_bounded_cost_and_creates_no_files(tmp_path):
     result=subprocess.run([sys.executable,str(SCRIPT),'--report-dir',str(target)],text=True,capture_output=True,check=True)
     plan=json.loads(result.stdout)
     assert plan['dry_run'] and plan['maximum_paid_jobs']==25 and plan['stages']==[5,10,10]
-    assert plan['max_tokens']==12000 and plan['thinking']=='provider-default'
+    assert plan['max_tokens']=='server-policy' and plan['thinking']=='server-policy'
     assert not target.exists()
 
 

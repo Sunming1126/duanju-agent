@@ -16,7 +16,7 @@ async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, 
         err_box.clear()
 
     async def request():
-        text, reason = "", None
+        text, reason, diagnostics = "", None, {}
         async with request_client(timeout) as client:
             async with client.stream("POST", f"{llm.API_BASE}/chat/completions", json=payload, timeout=timeout, headers={"Authorization": f"Bearer {llm.API_KEY}", "Content-Type": "application/json"}) as response:
                 if response.status_code >= 400:
@@ -31,6 +31,7 @@ async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, 
                     if not data:
                         continue
                     event = json.loads(data)
+                    diagnostics.update(llm.completion_diagnostics(event))
                     if event.get("error"):
                         raise ValueError("Provider stream failed")
                     for choice in event.get("choices", []):
@@ -44,7 +45,7 @@ async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, 
                             reason = choice["finish_reason"]
         if reason != "stop":
             if err_box is not None:
-                err_box.update(kind="incomplete", status=200, attempts=1)
+                err_box.update(kind="incomplete", status=200, attempts=1, **diagnostics)
             return None
         return text
 
@@ -55,7 +56,7 @@ async def chat_outline(messages, *, on_text, temperature=0.8, max_tokens=12000, 
         if err_box is not None:
             from .studio_rate_limits import throttle_info
             err_box.update(throttle_info(error.response), attempts=1)
-    except (httpx.HTTPError, ValueError, asyncio.TimeoutError):
+    except (httpx.HTTPError, ValueError, asyncio.TimeoutError) as error:
         if err_box is not None:
-            err_box.update(kind="error", status=0, attempts=1)
+            err_box.update(kind="timeout" if isinstance(error, (httpx.TimeoutException, asyncio.TimeoutError)) else "error", status=0, attempts=1)
     return None

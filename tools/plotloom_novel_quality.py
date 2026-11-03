@@ -114,6 +114,9 @@ def main():
                 save(f"{case['id']} chapter {number} submitted")
                 start = time.monotonic()
                 async def traced_generate(messages, **kwargs):
+                    # This isolated comparison explicitly chooses thinking mode;
+                    # do not inherit Studio's manuscript-only default override.
+                    kwargs["thinking"] = False if args.thinking == "disabled" else None
                     # Capture only this experiment's prompts/prose, never headers,
                     # configuration or raw transport exceptions.
                     trace = args.output / f"{case['id']}-{number}-request.json"

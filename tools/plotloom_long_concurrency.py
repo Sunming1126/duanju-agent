@@ -58,7 +58,7 @@ def main():
     stages = (5,) if args.confirm_five else STAGES
     if not args.real_model:
         print(json.dumps({'dry_run': True, 'stages': stages, 'maximum_paid_jobs': sum(stages), 'words_per_chapter': 2000,
-                          'max_tokens': 12000, 'thinking': 'provider-default', 'retries': 0, 'production_cap_if_all_pass': stages[-1]}, ensure_ascii=False))
+                          'max_tokens': 'server-policy', 'thinking': 'server-policy', 'retries': 0, 'production_cap_if_all_pass': stages[-1]}, ensure_ascii=False))
         return
     base = Path('/opt/plotloom-cn')
     root = args.project_root.resolve()
@@ -94,7 +94,7 @@ def main():
     report = {'source': source, 'started_at': datetime.now(timezone.utc).isoformat(), 'phase': 'prepared', 'ok': False,
               'stages': list(stages), 'maximum_paid_jobs': sum(stages), 'submitted_jobs': 0, 'rounds': [], 'spaces': [],
               'all_qa_works': [], 'all_qa_jobs': [], 'config_backup': str(config_backup), 'database_backup': str(db_backup),
-              'initial_concurrency': initial_cap, 'validated_concurrency': validated, 'parameters': {'words_per_chapter': 2000, 'max_tokens': 12000, 'thinking': 'provider-default', 'temperature': .8}}
+              'initial_concurrency': initial_cap, 'validated_concurrency': validated, 'parameters': {'words_per_chapter': 2000, 'max_tokens': 'server-policy', 'thinking': 'server-policy', 'temperature': .8}}
     report_path = args.report_dir / 'report.json'
     def record(): save(report_path, report)
     record()

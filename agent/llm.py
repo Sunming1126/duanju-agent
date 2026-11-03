@@ -136,7 +136,27 @@ async def test_config():
     return out
 
 
-async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retries=3, err_box=None, reject_truncated=False, json_mode=False):
+def completion_diagnostics(data):
+    """Allowlisted metadata only; never retain response prose or reasoning text."""
+    info = {}
+    choices = data.get("choices") or []
+    reason = choices[0].get("finish_reason") if choices and isinstance(choices[0], dict) else None
+    if reason in {"stop", "length", "content_filter", "tool_calls", "function_call"}:
+        info["finish_reason"] = reason
+    usage = data.get("usage")
+    if isinstance(usage, dict):
+        for name in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            value = usage.get(name)
+            if type(value) is int and value >= 0:
+                info[name] = value
+        details = usage.get("completion_tokens_details")
+        value = details.get("reasoning_tokens") if isinstance(details, dict) else None
+        if type(value) is int and value >= 0:
+            info["reasoning_tokens"] = value
+    return info
+
+
+async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retries=3, err_box=None, reject_truncated=False, json_mode=False, thinking=None):
     """调用 LLM，返回文本；失败返回 None（由上层走模板兜底或挂起）。
     瞬时失败（超时/限流/5xx）自动重试，指数退避（429 限流窗口按分钟计，用 10/25/45s 长退避+随机抖动）。
     err_box 传 dict 时回传末次失败类型：{kind: rate_limit|http_error|error, status, attempts}；
@@ -154,6 +174,8 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
     # 豆包 seed 系列：关闭思维链提速（创作类任务无需 CoT，长文易超时）
     if MODEL.startswith("doubao"):
         payload["thinking"] = {"type": "disabled"}
+    if thinking is not None:
+        payload["thinking"] = {"type": "enabled" if thinking else "disabled"}
     headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
     last_err = None
     if err_box is not None:
@@ -167,14 +189,15 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
                 if reject_truncated and data["choices"][0].get("finish_reason") != "stop":
                     if err_box is not None:
                         err_box.update(kind="incomplete", status=200, attempts=attempt + 1,
-                                       finish_reason=data["choices"][0].get("finish_reason"))
+                                       **completion_diagnostics(data))
                     return None
                 if err_box is not None:
                     err_box.clear()
                 content = data["choices"][0]["message"].get("content")
                 if not isinstance(content, str) or not content.strip():
                     if err_box is not None:
-                        err_box.update(kind="empty_content", status=200, attempts=attempt + 1)
+                        err_box.update(kind="empty_content", status=200, attempts=attempt + 1,
+                                       **completion_diagnostics(data))
                     return None
                 return content
         except httpx.HTTPStatusError as e:
@@ -194,7 +217,7 @@ async def chat(messages, temperature=0.8, max_tokens=2000, timeout=150.0, retrie
             last_err = e
             if err_box is not None:
                 err_box.clear()
-                err_box.update({"kind": "error", "status": 0, "attempts": attempt + 1})
+                err_box.update({"kind": "timeout" if isinstance(e, httpx.TimeoutException) else "error", "status": 0, "attempts": attempt + 1})
             print(f"[llm] 第{attempt + 1}次调用失败: {type(e).__name__}: {e}")
             if attempt < retries - 1:
                 await asyncio.sleep(1.5 * (2 ** attempt))
