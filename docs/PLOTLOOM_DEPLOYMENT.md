@@ -389,3 +389,7 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 - 候选正式路由的小规模真实模型验收：小说正文423字符、短剧381字符，均验证保存后入队、请求键幂等、停止／继续、候选不覆盖原文、逐项采纳、第二单元保留、刷新类型与内容及空间隔离。另做一次小说灵感generate与一次analyze，真实三个方向、关闭恢复、解析回填及原草稿恢复通过；未生成整部作品、未静默重试付费请求。发布runner自身没有模型调用。报告real-report.json／inspiration-real-report.json和截图在本机Git忽略的`data/editor-handoff-qa/`。
 - 发布后直接公网HTTPS复跑两类完整手动流程和补充审计，`manual-report.json`及`audit-report.json`均ok，无页面脚本／控制台错误、无横向溢出；使用本轮创建的独立QA作品，未操作他人内容。源文件SHA、数据库quick_check与原记录保留、十份样例全文／下载／回填、匿名401和管理边界通过；current及RELEASE_COMMIT一致，中文三服务和旧站active、旧PID1948834未变、日文站200。模型配置指纹与发布前一致，Nginx／systemd／恢复码保持。
 - 临时API、候选Web及SSH转发已关闭，验收资料留在忽略目录。无已知阻断问题；Word仍为兼容HTML `.doc`，不是原生`.docx`。若需程序回滚，先确认current仍为本次release，只切回上述8141b6ef兼容版本并重启中文版三服务；保持shared/data，禁止用旧SQLite覆盖新增作品。
+
+### 2026-11-04 台湾独立创作系统
+- 已部署源码1cda21e56c40deb11b6332ba7f09ccf552b259b1至 /opt/plotloom-cn/releases/20261103T155926Z-inspiration-1cda21e5；前版 /opt/plotloom-cn/releases/20261103T070754Z-inspiration-f994b077；数据库备份 /opt/plotloom-cn/backups/studio-20261103T155926Z-inspiration.sqlite3。服务器178后端、88前端及构建通过，五语台湾首页／样例／下载和数据保留检查通过，DEPLOYMENT_OK。未调用模型；实际浏览器交互及文学质量未验收。
+- 若已产生台湾市场作品，旧版不支持该市场，应使用兼容修复版本并保留shared/data，不以旧数据库覆盖新作品。
