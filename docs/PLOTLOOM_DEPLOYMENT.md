@@ -1,5 +1,13 @@
 # Plotloom 中文版发布记录
 
+## 2026-11-03 繁體中文正式上线
+
+- 用户明确部署。常规start／HTTP1.1重试连接重置后，通过既有内存凭据只读核对GitHub官方ref与本地fcd483ad相同，再继续；未覆盖远端。运行源码 `fcd483ad874746a3408551743c5924206a0b8196`，release `/opt/plotloom-cn/releases/20261103T034335Z-inspiration-fcd483ad`，previous `20261102T153618Z-inspiration-09c6eda5`。SQLite备份 `backups/studio-20261103T034335Z-inspiration.sqlite3`（0600），日志 `/tmp/plotloom-traditional-publish.log`。
+- 已提交Git归档生成完整清单，复用已验证基包并传差异后，在服务器逐文件核对、重建同一完整固定元数据ZIP；整包SHA256 `5d7162da72290ec8bc771ef345c7091ae2bdb0f301337c3e142fca3a85235d8c`，runner SHA256 `a9f01195fd51d785ec0cc021fae9d610a4cca9cf0a266ce6984ae774aa22c2d0`。本机298后端／112前端／lint／类型通过，服务器145后端／77前端／lint／类型／webpack通过。空闲队列、备份、原子切换及发布器检查成功，DEPLOYMENT_OK，无回滚。
+- `backups/traditional-20261103-live-report.json`为ok：五语言各9页共45页lang／dir／地区／缓存头正常，繁体9页可见UI转换检查通过；十份完整TXT与原始简体文档的一次转换逐字符一致，旧阅读URL及zh-TW稳定URL均通过。港／澳／台三组可信回环IP默认繁体通过，保留手动优先、其他地区及登录限制。仅HTTP／资源／数据库验证，不是实际跨国浏览器或点击验收。
+- SQLite正常，六表／账号／头像与备份全行保持20/15/47/0/18/34/2/0，配置／恢复码指纹及正式并发5/10保持。三服务active PID1423718/1423719/1423720，旧站1948834未变，日文200。未发模型／邮件请求、改用户作品、Nginx或systemd。为安全构建仅移除20261023T173554Z与20261024T013307Z两份无账号旧版的可重装node_modules，保留源码、数据、备份及可用账号回滚版本；清单backups/traditional-dependency-cleanup.json。结束剩余约995MB。
+- 回滚须先确认current及数据情况，保留shared/data。上一版09c6eda5尚不识别zh-TW，若已有繁体作品、任务或灵感记录，不能直接回退至该程序，应使用仍支持繁体的兼容修复版本；禁止恢复旧SQLite覆盖新记录。无繁体记录时可按既有流程切回previous并重启Plotloom三服务，界面将恢复四种语言。
+
 ## 2026-11-02 一键正文JSON／灵感回填及登录闪屏修复上线
 
 - 用户明确要求检查、修复并部署。运行源码 `09c6eda5b2838da0718f16ef5fee827ce1024079`，包含f76188f登录闪屏及c4b5781／6e5d981格式修复。release `/opt/plotloom-cn/releases/20261102T153618Z-inspiration-09c6eda5`，previous `20261102T065430Z-inspiration-5e57d91c`，SQLite备份 `backups/studio-20261102T153618Z-inspiration.sqlite3`（0600）。日志 `/tmp/plotloom-generation-fix-publish.log`。
