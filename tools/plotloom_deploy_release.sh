@@ -162,7 +162,7 @@ print('Isolated backend import and inspiration route checks passed; no model cal
 PY
 
 if [[ -f "$release/tests/test_studio_auth.py" ]]; then
-    runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_taiwan_creation.py" "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+    runuser -u plotloom-cn -- env PLOTLOOM_MAX_CONCURRENT=3 PLOTLOOM_MAX_QUEUED=10 PLOTLOOM_MAX_QUEUED_PER_OWNER=10 PLOTLOOM_REQUESTS_PER_MINUTE=0 DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_taiwan_creation.py" "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
 fi
 
 cd "$release/ai-website-cloner-template"
