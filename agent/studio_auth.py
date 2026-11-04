@@ -158,6 +158,8 @@ class AuthStore:
             ident = str(uuid.uuid4())
             name = (str(google.get("name", "")) if google else "")[:80] or email.split("@")[0]
             db.execute("INSERT INTO studio_accounts VALUES(?,?,?,?,?,?)", (ident, email, name, google["sub"] if google else None, space_id, int(time.time())))
+            from .studio_membership import trial
+            trial(db, ident)
             # Permanently retire the old guest capability, including on rollback.
             db.execute("UPDATE studio_spaces SET token_hash=? WHERE id=?", (digest(secrets.token_urlsafe(32)), space_id))
             row = db.execute("SELECT * FROM studio_accounts WHERE id=?", (ident,)).fetchone()

@@ -18,6 +18,17 @@ test('creation destinations preserve query and hash and reject external, unrelat
   for(const path of ['/studio/novels/new?sample=ar-courtyard-key-novel#draft','/studio/scripts/new?mode=adapt','/studio/works/private-id?step=chapter&number=2']) assert.equal(config.creationDestination(path,origin),path);
   for(const path of ['/samples','/account','//evil.test/studio/novels/new','https://evil.test/studio/novels/new','/studio/novels/new/extra','javascript:alert(1)']) assert.equal(config.creationDestination(path,origin),null);
 });
+test('membership-required event opens a purchase-information prompt', async()=>{
+  const h=harness({id:'account'});try{
+    h.render(h.CreationAccess);h.mount();await flush();
+    h.handlers['plotloom-membership-required']();
+    const dialog=h.render(h.CreationAccess);
+    assert.equal(dialog.props.title,'需要会员');
+    assert.equal(typeof dialog.props.onClose,'function');
+    dialog.props.onClose();
+    assert.equal(h.render(h.CreationAccess),null);
+  }finally{h.restore();}
+});
 function harness(user=null, url='https://plotloom.test/', known=false) {
   let states=[], refs=[];
   const stores=new Map(), effects=[], handlers={}, calls=[], visits=[];

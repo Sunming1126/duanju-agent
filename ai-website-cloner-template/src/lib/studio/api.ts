@@ -206,6 +206,9 @@ export async function backendRequest<T>(
     if (response.status === 401 && detail === "请先登录后使用小说或剧本创作。" && typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(new CustomEvent("plotloom-login-required", { detail: window.location.href }));
     }
+    if (response.status === 402 && detail === "此操作需要有效会员，请购买会员。" && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("plotloom-membership-required"));
+    }
     const message =
       typeof detail === "string"
         ? detail

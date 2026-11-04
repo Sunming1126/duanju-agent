@@ -20,6 +20,22 @@ function load(name, dependencies = {}) {
 }
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
 
+test("membership denial triggers a prompt without retrying the action", async () => {
+  const api = load("api");
+  const originalFetch = globalThis.fetch, originalWindow = globalThis.window;
+  const events = [], calls = [];
+  try {
+    globalThis.window = { dispatchEvent: event => events.push(event.type) };
+    globalThis.fetch = async path => {
+      calls.push(path);
+      return path.endsWith('/session') ? json({ space_id:'account-a', isolated:true, user:{ id:'a' } }) : json({ detail:'此操作需要有效会员，请购买会员。' }, 402);
+    };
+    await assert.rejects(api.backendRequest('/studio/works', { method:'POST', body:'{}' }), /需要有效会员/);
+    assert.deepEqual(events, ['plotloom-membership-required']);
+    assert.equal(calls.length, 2);
+  } finally { globalThis.fetch = originalFetch; globalThis.window = originalWindow; }
+});
+
 test("concurrent page requests share one session bootstrap before accessing private records", async () => {
   const api = load("api");
   const original = globalThis.fetch;

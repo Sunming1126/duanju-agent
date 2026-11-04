@@ -170,13 +170,19 @@ async def require_identity(request: Request):
     expected_space = request.headers.get("x-plotloom-space")
     if identity and expected_space and expected_space != identity["id"]:
         raise HTTPException(409, "登录账号或空间已在其他页面切换，请先备份未保存内容并刷新页面")
-    writing_paths = ("/api/studio/works", "/api/studio/jobs", "/api/studio/inspirations", "/api/studio/inspiration-jobs")
+    writing_paths = ("/api/studio/works", "/api/studio/worlds", "/api/studio/jobs", "/api/studio/inspirations", "/api/studio/inspiration-jobs")
     writing = any(path == prefix or path.startswith(prefix + "/") for prefix in writing_paths)
     needs_login = request.method not in {"GET", "HEAD", "OPTIONS"} and (writing or path.startswith("/api/studio/history/"))
     if needs_login and not (identity and identity.get("user")):
         raise HTTPException(401, "请先登录后使用小说或剧本创作。")
     if not identity:
         raise HTTPException(401, "独立创作空间尚未建立或已失效，请刷新页面")
+    # Stopping a running job remains available after expiry, to protect user data.
+    member_action = needs_login and not (path.startswith('/api/studio/jobs/') and path.endswith('/stop'))
+    if member_action:
+        from .studio_membership import REQUIRED, active_for_space
+        if not active_for_space(service().store, identity['id']):
+            raise HTTPException(402, REQUIRED)
     token = actor.set(identity["id"])
     try:
         yield

@@ -56,14 +56,13 @@ function text(tree) {
 }
 const button = (tree, label) => nodes(tree).find(node => node.type === 'button' && text(node).includes(label));
 
-test('account settings is a full page with authenticated profile controls, real data links and unavailable membership', () => {
+test('account settings includes membership status and plan information', () => {
   const { AccountSettings } = loader()('components/studio/account-page.tsx');
   const html = renderToStaticMarkup(React.createElement(AccountSettings, { space, onUserChanged() {} }));
   assert.doesNotMatch(html, /<dialog|role="dialog"/);
-  for (const label of ['个人资料', '账号资料', '账号与空间', '数据与备份', '会员与积分', '积分余额', '即将开放', '创作服务', '退出登录', '更换头像', '编辑昵称']) assert.ok(html.includes(label), label);
+  for (const label of ['个人资料', '账号资料', '账号与空间', '数据与备份', 'Plotloom 会员', '月卡', '年卡', '创作服务', '退出登录', '更换头像', '编辑昵称']) assert.ok(html.includes(label), label);
   assert.match(html, /href="\/workspace"/); assert.match(html, /href="\/worlds"/);
-  assert.match(html, /disabled="">会员权益/); assert.match(html, /disabled="">积分明细/);
-  assert.doesNotMatch(html, /充值|购买|积分余额<\/dt><dd>0/);
+  assert.match(html, /价格及购买方式即将公布/);
   assert.ok(html.includes('正在读取服务信息')); assert.doesNotMatch(html, /3 个请求|5 个请求/);
 });
 

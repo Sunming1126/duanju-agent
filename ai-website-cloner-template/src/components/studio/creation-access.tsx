@@ -5,7 +5,8 @@ import { backendRequest, ensureStudioSpace, hasKnownStudioAccount, type StudioSp
 import { creationDestination, loginRequiredEvent } from "@/lib/studio/creation-access";
 import { LoginDialog } from "./account-menu";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/sites/storyplay/shared";
+import { Header, Modal } from "@/components/sites/storyplay/shared";
+import Link from "next/link";
 import { StudioNav } from "./navigation";
 
 import { EditorSkeleton } from "./generation-feedback";
@@ -17,8 +18,10 @@ async function verifiedSession() {
 }
 
 export function CreationAccess() {
+  const ui = useUI();
   const router = useRouter();
   const [destination, setDestination] = useState<string>();
+  const [membershipRequired, setMembershipRequired] = useState(false);
   const authenticated = useRef(false);
   useEffect(() => {
     let disposed = false;
@@ -45,13 +48,16 @@ export function CreationAccess() {
     refresh();
     window.addEventListener("focus", refresh);
     window.addEventListener(loginRequiredEvent, requestLogin);
+    const requestMembership = () => setMembershipRequired(true);
+    window.addEventListener("plotloom-membership-required", requestMembership);
     document.addEventListener("click", click, true);
-    return () => { disposed = true; window.removeEventListener("focus", refresh); window.removeEventListener(loginRequiredEvent, requestLogin); document.removeEventListener("click", click, true); };
+    return () => { disposed = true; window.removeEventListener("focus", refresh); window.removeEventListener(loginRequiredEvent, requestLogin); window.removeEventListener("plotloom-membership-required", requestMembership); document.removeEventListener("click", click, true); };
   }, []);
-  return destination ? <LoginDialog onSuccess={() => window.location.assign(destination)} onClose={() => {
+  if (destination) return <LoginDialog onSuccess={() => window.location.assign(destination)} onClose={() => {
     setDestination(undefined);
     if (creationDestination(window.location.href, window.location.origin)) router.replace("/workspace");
-  }} /> : null;
+  }} />;
+  return membershipRequired ? <Modal title={ui("需要会员")} onClose={() => setMembershipRequired(false)}><p>{ui("此操作需要有效会员，请购买会员。")}</p><p>{ui("月卡与年卡价格及购买方式即将公布。")}</p><Link className="pill light" href="/account#membership-heading" onClick={() => setMembershipRequired(false)}>{ui("查看会员")}</Link></Modal> : null;
 }
 
 export function CreationGuard({ children }: { children: ReactNode }) {

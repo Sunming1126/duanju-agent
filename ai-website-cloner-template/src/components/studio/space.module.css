@@ -69,10 +69,11 @@
 .memberFacts dt { color: #a898b8; font-size: 11px; }
 .memberFacts dd { margin: 0; color: #d5c5e5; font-variant-numeric: tabular-nums; }
 .memberFacts > div:last-child { padding-top: 16px; margin-top: 18px; border-top: 1px solid #d9bbf017; }
-.memberFacts > div:last-child dd { font-size: 28px; line-height: 1.2; }
+.memberFacts > div:last-child dd { font-size: 12px; line-height: 1.5; text-align: end; }
 .memberActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .memberActions button { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; padding: 10px; border: 1px solid #c4a9de20; border-radius: 7px; background: #ffffff03; color: #a697b5; }
 .memberActions button:disabled { opacity: .65; }
+.memberActions span { padding: 10px; border: 1px solid #c4a9de20; border-radius: 7px; color: #c9b9d7; font-size: 11px; text-align: center; }
 .memberFootnote { display: block; color: #8e7d9f; font-size: 10px; margin-top: 14px; }
 .service dl { margin: 21px 0; display: grid; gap: 15px; }
 .service dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; font-size: 11px; }

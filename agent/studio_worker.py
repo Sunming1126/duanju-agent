@@ -7,6 +7,7 @@ from .studio_jobs import JobStore, execute
 from .studio_inspiration import InspirationStore, execute as execute_inspiration
 from .studio_queue import next_job, records, policy
 from .llm_transport import worker_connections
+from .studio_membership import REQUIRED, active_for_space
 
 
 def lock_worker(path):
@@ -29,11 +30,7 @@ async def run_once(jobs, inspirations):
     claimed = claim_next(jobs, inspirations)
     if not claimed:
         return False
-    kind, job = claimed
-    if kind == "inspiration":
-        await execute_inspiration(inspirations, job)
-    else:
-        await execute(jobs, job)
+    await run_claimed(jobs, inspirations, claimed, single_step=False)
     return True
 
 
@@ -47,13 +44,22 @@ def claim_next(jobs, inspirations):
     return (kind, job) if job else None
 
 
-async def run_claimed(jobs, inspirations, claimed):
+async def run_claimed(jobs, inspirations, claimed, *, single_step=True):
     kind, job = claimed
     try:
+        if not active_for_space(jobs.store, job.get('owner_id')):
+            if kind == 'inspiration':
+                inspirations.finish(job['id'], error=REQUIRED)
+            else:
+                jobs.finish_step(job['id'], error=REQUIRED)
+            return
         if kind == "inspiration":
             await execute_inspiration(inspirations, job)
         else:
-            await execute(jobs, job, max_steps=1)
+            if single_step:
+                await execute(jobs, job, max_steps=1)
+            else:
+                await execute(jobs, job)
     except asyncio.CancelledError:
         raise
     except Exception:

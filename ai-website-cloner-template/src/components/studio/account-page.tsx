@@ -129,7 +129,7 @@ export function AccountSettings({ space, onUserChanged }: { space: StudioSpace; 
           {ui(feedback("recovery"))}
         </section>
       </div>
-      <aside className={styles.secondaryColumn} aria-label={ui("会员与创作服务")}><MembershipPanel /><CreativeService /><Link className={styles.helpLink} href="/tutorial"><BookOpen size={17} /><span>{ui("创作教程与使用说明")}</span><ArrowUpRight size={15} /></Link></aside>
+      <aside className={styles.secondaryColumn} aria-label={ui("会员与创作服务")}><MembershipPanel signedIn={!!user} /><CreativeService /><Link className={styles.helpLink} href="/tutorial"><BookOpen size={17} /><span>{ui("创作教程与使用说明")}</span><ArrowUpRight size={15} /></Link></aside>
     </div>
   </>;
 }

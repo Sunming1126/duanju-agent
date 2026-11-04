@@ -20,6 +20,8 @@ def queue(tmp_path, monkeypatch):
     store = StudioStore(tmp_path / "concurrent.sqlite3")
     monkeypatch.setattr(api, "store", store)
     monkeypatch.setattr(api, "reference_context", lambda value: [])
+    # These tests exercise scheduling with synthetic owners, not membership.
+    monkeypatch.setattr('agent.studio_worker.active_for_space', lambda store, owner: True)
     return store, JobStore(store), InspirationStore(store)
 
 

@@ -25,6 +25,8 @@ def require_chinese_site(request: Request):
 
 
 router = APIRouter(prefix="/api/studio", dependencies=[Depends(require_chinese_site), Depends(require_identity)], default_response_class=StudioJSONResponse)
+from .studio_membership import create_router as membership_router
+router.include_router(membership_router())
 
 # The child router uses the parent market boundary in both application entries.
 from .studio_inspiration import create_router as inspiration_router
