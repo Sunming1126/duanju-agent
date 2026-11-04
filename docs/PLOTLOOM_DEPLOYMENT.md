@@ -393,3 +393,11 @@ powershell -NoProfile -File .\tools\deploy_plotloom.ps1
 ### 2026-11-04 台湾独立创作系统
 - 已部署源码1cda21e56c40deb11b6332ba7f09ccf552b259b1至 /opt/plotloom-cn/releases/20261103T155926Z-inspiration-1cda21e5；前版 /opt/plotloom-cn/releases/20261103T070754Z-inspiration-f994b077；数据库备份 /opt/plotloom-cn/backups/studio-20261103T155926Z-inspiration.sqlite3。服务器178后端、88前端及构建通过，五语台湾首页／样例／下载和数据保留检查通过，DEPLOYMENT_OK。未调用模型；实际浏览器交互及文学质量未验收。
 - 若已产生台湾市场作品，旧版不支持该市场，应使用兼容修复版本并保留shared/data，不以旧数据库覆盖新作品。
+
+### 2026-11-04 会员制度与 Google Pay 占位发布
+
+- 用户明确要求部署；最终源码 `172d36f158b5c02d8d4b1ca6846cc087eb0ab666`，release `/opt/plotloom-cn/releases/20261104T100036Z-inspiration-172d36f1`，previous `/opt/plotloom-cn/releases/20261103T155926Z-inspiration-1cda21e5`；SQLite备份 `/opt/plotloom-cn/backups/studio-20261104T100036Z-inspiration.sqlite3`（0600）。源码包 SHA256 `9ace2c1529abb7a2357ad6bd71a936259eabcb7e0da87665babe603450afa79f`，runner SHA256 `931d09c55171f88ac06b95e0d48d9f65848fbd79ddad0be095fef009acc37000`；上传后哈希核验。日志 `/tmp/plotloom-20261104-gpay-retry.log`。
+- 首次源码3581611发布在会员迁移后核验阶段因服务账号不能读取 root:0600 备份失败；自动回滚至1cda21e，数据库未用备份覆盖，迁移已写2个永久会员。首次备份 `studio-20261104T093508Z-inspiration.sqlite3`；比对原有八表全部记录一致。修复 runner 为服务账号负责迁移、root 只读核对备份，GitHub连接偶发断开，经短时SSH复用正常同步172d36f后重试。
+- 最终服务器185项后端、90项前端、lint／类型／webpack构建通过，空闲队列、备份、原子切换及源码／公开页／样例／管理边界通过，`DEPLOYMENT_OK`。独立核验数据库 quick_check 正常、八表记录与最终备份逐行一致、备份中2个账号均有永久 VIP，当前永久记录共2；三个专用服务及旧站 active。未调用模型、支付或邮件，没有通过本机应用／浏览器做视觉交互验收。
+- 公网 Google Pay 标识200且与发布源码一致；其SVG内容与Google官方原文件除CRLF→LF行尾外一致。访客会话200，支付选项返回 google_pay、available=false、月年价格及币种均空，访客 checkout 401；登录后 checkout 保持503由隔离回归验证。该标识不是付款按钮，支付商户、价格及真实扣款均未接入；新账号试用到期后暂无法购买。
+- 会员迁移已写入 shared/data；回滚仅在确认 current 和兼容性后切换程序并保留现有数据库，不能用旧备份覆盖新账号、作品或永久权益。旧1cda21e不执行会员限制，回滚会暂停会员制度，应优先使用兼容修复版本。
