@@ -327,14 +327,18 @@ PY
 # Initialize the one-time permanent VIP snapshot against the live database only
 # after its backup and the release checks have passed. The transaction serializes
 # migration with new account registration and records the cutoff exactly once.
-runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$db" PYTHONPATH="$release" "$python" - "$backup" <<'PY'
-import sqlite3, sys
+runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$db" PYTHONPATH="$release" "$python" - <<'PY'
 from agent.studio_auth import AuthStore
 from agent.studio_store import StudioStore
 store = StudioStore()
 with store.transaction() as db:
     AuthStore.schema(db)
-with sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True) as before, sqlite3.connect('file:' + str(store.path) + '?mode=ro', uri=True) as after:
+PY
+# The backup is deliberately root-readable only (0600). Compare as the release
+# runner, while keeping all live schema changes under the service account.
+"$python" - "$db" "$backup" <<'PY'
+import sqlite3, sys
+with sqlite3.connect('file:' + sys.argv[2] + '?mode=ro', uri=True) as before, sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True) as after:
     existing = {r[0] for r in before.execute('SELECT id FROM studio_accounts')}
     lifetime = {r[0] for r in after.execute('SELECT account_id FROM studio_lifetime_memberships')}
     assert existing <= lifetime, 'Existing accounts missing permanent VIP'
