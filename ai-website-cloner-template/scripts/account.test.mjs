@@ -23,6 +23,7 @@ function loader({ hooks = React, api = {} } = {}) {
       if (['react/jsx-runtime', 'lucide-react'].includes(name)) return require(name);
       if (name.endsWith('.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) };
       if (name === 'next/script') return { __esModule: true, default: () => null };
+      if (name === 'next/image') return { __esModule: true, default: props => React.createElement('img', props) };
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => { delete props.prefetch; return React.createElement('a', props, children); }, useLinkStatus: () => ({ pending: false }) };
       if (name === '@/components/sites/storyplay/shared') return { Header: () => null, Modal: ({ children }) => React.createElement('dialog', null, children) };
       if (name === '@/lib/studio/api') return { jsonBody: JSON.stringify, ...api };
@@ -63,6 +64,8 @@ test('account settings includes membership status and plan information', () => {
   for (const label of ['个人资料', '账号资料', '账号与空间', '数据与备份', 'Plotloom 会员', '月卡', '年卡', '创作服务', '退出登录', '更换头像', '编辑昵称']) assert.ok(html.includes(label), label);
   assert.match(html, /href="\/workspace"/); assert.match(html, /href="\/worlds"/);
   assert.match(html, /价格及购买方式即将公布/);
+  assert.match(html, /google-pay-mark\.svg/); assert.match(html, /alt="Google Pay"/);
+  assert.doesNotMatch(html, /<button[^>]*>\s*<img[^>]*google-pay-mark/);
   assert.ok(html.includes('正在读取服务信息')); assert.doesNotMatch(html, /3 个请求|5 个请求/);
 });
 

@@ -117,6 +117,7 @@ test -f "$release/agent/studio_inspiration.py"
 test -f "$release/agent/studio_writing.py"
 test -f "$release/agent/content/taiwan_references.json"
 test -f "$release/ai-website-cloner-template/public/images/regions/taiwan.png"
+test -f "$release/ai-website-cloner-template/public/images/payments/google-pay-mark.svg"
 test -f "$release/ai-website-cloner-template/src/components/studio/inspiration.tsx"
 mv "$release/data" "$release/seed-data"
 ln -s "$base/shared/data" "$release/data"
@@ -162,7 +163,7 @@ print('Isolated backend import and inspiration route checks passed; no model cal
 PY
 
 if [[ -f "$release/tests/test_studio_auth.py" ]]; then
-    runuser -u plotloom-cn -- env PLOTLOOM_MAX_CONCURRENT=3 PLOTLOOM_MAX_QUEUED=10 PLOTLOOM_MAX_QUEUED_PER_OWNER=10 PLOTLOOM_REQUESTS_PER_MINUTE=0 DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_taiwan_creation.py" "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
+    runuser -u plotloom-cn -- env PLOTLOOM_MAX_CONCURRENT=3 PLOTLOOM_MAX_QUEUED=10 PLOTLOOM_MAX_QUEUED_PER_OWNER=10 PLOTLOOM_REQUESTS_PER_MINUTE=0 DUANJU_STUDIO_DB="$release/.deploy-checks/auth.sqlite3" PYTHONPATH="$release" "$python" -m pytest -q "$release/tests/test_taiwan_creation.py" "$release/tests/test_creation_login.py" "$release/tests/test_studio_regions.py" "$release/tests/test_studio_auth.py" "$release/tests/test_studio_isolation.py" "$release/tests/test_studio_concurrency.py" "$release/tests/test_studio_transport.py" "$release/tests/test_studio_membership.py" --basetemp "$release/.deploy-checks/auth-tests" -p no:cacheprovider
 fi
 
 cd "$release/ai-website-cloner-template"
@@ -322,6 +323,23 @@ for base in ('http://127.0.0.1:3001', 'https://jubencn.onesay.top'):
 with anonymous_open('https://juben.onesay.top', timeout=30) as response:
     assert response.status == 200
 print('Source hashes, retained database records, official samples/downloads/drafts, public pages, inspiration proxy and admin boundaries passed.')
+PY
+# Initialize the one-time permanent VIP snapshot against the live database only
+# after its backup and the release checks have passed. The transaction serializes
+# migration with new account registration and records the cutoff exactly once.
+runuser -u plotloom-cn -- env DUANJU_STUDIO_DB="$db" PYTHONPATH="$release" "$python" - "$backup" <<'PY'
+import sqlite3, sys
+from agent.studio_auth import AuthStore
+from agent.studio_store import StudioStore
+store = StudioStore()
+with store.transaction() as db:
+    AuthStore.schema(db)
+with sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True) as before, sqlite3.connect('file:' + str(store.path) + '?mode=ro', uri=True) as after:
+    existing = {r[0] for r in before.execute('SELECT id FROM studio_accounts')}
+    lifetime = {r[0] for r in after.execute('SELECT account_id FROM studio_lifetime_memberships')}
+    assert existing <= lifetime, 'Existing accounts missing permanent VIP'
+    assert after.execute('PRAGMA quick_check').fetchone()[0] == 'ok'
+    print('Existing account permanent VIP migration verified:', len(existing))
 PY
 for service in "${services[@]}"; do systemctl is-active --quiet "$service"; done
 test "$(systemctl show duanju-agent -p MainPID --value)" = "$legacy_pid"

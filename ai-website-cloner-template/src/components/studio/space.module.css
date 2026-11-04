@@ -75,6 +75,8 @@
 .memberActions button:disabled { opacity: .65; }
 .memberActions span { padding: 10px; border: 1px solid #c4a9de20; border-radius: 7px; color: #c9b9d7; font-size: 11px; text-align: center; }
 .memberFootnote { display: block; color: #8e7d9f; font-size: 10px; margin-top: 14px; }
+.paymentMethod { display: flex; align-items: center; gap: 4px; margin-top: 10px; color: #a898b8; font-size: 10px; line-height: 1.6; }
+.paymentMethod img { flex-shrink: 0; width: 98px; height: auto; }
 .service dl { margin: 21px 0; display: grid; gap: 15px; }
 .service dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; font-size: 11px; }
 .service dt { color: #8f859b; flex-shrink: 0; }

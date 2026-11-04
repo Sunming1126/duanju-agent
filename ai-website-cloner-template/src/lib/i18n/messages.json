@@ -6047,6 +6047,24 @@
     "صالحة دائمًا",
     "永久有效"
   ],
+  "支付方式": [
+    "Payment method",
+    "お支払い方法",
+    "طريقة الدفع",
+    "支付方式"
+  ],
+  "Google Pay 支付暂未开通。": [
+    "Google Pay is not available yet.",
+    "Google Pay はまだご利用いただけません。",
+    "Google Pay غير متاح بعد.",
+    "Google Pay 支付暫未開通。"
+  ],
+  "支付服务尚未开放。": [
+    "Payments are not available yet.",
+    "お支払いサービスはまだご利用いただけません。",
+    "خدمة الدفع غير متاحة بعد.",
+    "支付服務尚未開放。"
+  ],
   "月卡会员": [
     "Monthly membership",
     "月額会員",

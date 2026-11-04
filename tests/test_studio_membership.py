@@ -134,3 +134,22 @@ def test_worker_can_activate_existing_accounts_before_any_login(setup):
     assert active_for_space(store, space)
     with store.transaction() as db:
         assert effective(db, user['id'])['plan'] == 'lifetime'
+
+
+def test_google_pay_is_discoverable_but_checkout_cannot_grant_membership(setup):
+    store, client, user, _ = setup
+    options = client.get('/api/studio/payments/options')
+    assert options.status_code == 200
+    assert options.json() == {'method':'google_pay', 'available':False, 'plans':[
+        {'id':'monthly','amount':None,'currency':None}, {'id':'yearly','amount':None,'currency':None}]}
+    with store.transaction() as db:
+        before = [tuple(row) for row in db.execute('SELECT * FROM studio_membership_grants')]
+    checkout = client.post('/api/studio/payments/checkout', json={'plan':'yearly', 'price':0, 'success':True})
+    assert checkout.status_code == 503 and checkout.json()['detail'] == 'Google Pay 支付暂未开通。'
+    with store.transaction() as db:
+        assert [tuple(row) for row in db.execute('SELECT * FROM studio_membership_grants')] == before
+        assert effective(db, user['id'])['plan'] == 'trial'
+    guest = TestClient(studio_main.app, base_url='https://testserver')
+    guest.get('/api/studio/session')
+    assert guest.post('/api/studio/payments/checkout', json={}).status_code == 401
+    assert client.post('/api/studio/payments/checkout', json={}, headers={'Origin':'https://foreign.example'}).status_code == 403
