@@ -93,3 +93,44 @@ def test_worker_does_not_start_queued_generation_after_expiry(setup, monkeypatch
     result = client.get(f"/api/studio/jobs/{queued['id']}").json()
     assert result['status'] == 'failed'
     assert '需要有效会员' in result['error']
+
+
+def test_existing_accounts_get_lifetime_once_but_future_accounts_do_not(setup):
+    store, client, user, _ = setup
+    # Recreate the state of a database from before the membership feature.
+    with store.transaction() as db:
+        db.execute('DELETE FROM studio_membership_grants')
+        db.execute("DELETE FROM studio_identity_state WHERE name='membership_lifetime_existing_v1'")
+        db.execute("INSERT INTO studio_spaces(id,token_hash,created_at) VALUES('old-space','old-hash',1)")
+        db.execute("INSERT INTO studio_accounts VALUES('old-user','old@example.com','old',NULL,'old-space',1)")
+    # An existing signed-in session triggers the migration without requiring login.
+    assert client.get('/api/studio/session').status_code == 200
+    state = client.get('/api/studio/membership').json()
+    assert state['active'] and state['plan'] == 'lifetime' and state['expires_at'] is None
+    with store.transaction() as db:
+        assert {r[0] for r in db.execute('SELECT account_id FROM studio_lifetime_memberships')} == {user['id'], 'old-user'}
+        assert db.execute('SELECT COUNT(*) FROM studio_membership_grants WHERE account_id=?', (user['id'],)).fetchone()[0] == 1
+        db.execute('UPDATE studio_membership_grants SET expires_at=? WHERE account_id=?', (int(time.time()) - 1, user['id']))
+    assert client.get('/api/studio/membership').json()['plan'] == 'lifetime'
+    other = TestClient(studio_main.app, base_url='https://testserver')
+    new_space = other.get('/api/studio/session').json()['space_id']
+    with store.transaction() as db:
+        auth = AuthStore(store)
+        auth.schema(db)
+        new_user, token = auth.account(db, 'new@example.com', new_space)
+    other.cookies.set(AUTH_COOKIE, token)
+    assert other.get('/api/studio/membership').json()['plan'] == 'trial'
+    with store.transaction() as db:
+        assert db.execute('SELECT 1 FROM studio_lifetime_memberships WHERE account_id=?', (new_user['id'],)).fetchone() is None
+        assert db.execute('SELECT COUNT(*) FROM studio_membership_grants WHERE account_id=?', (user['id'],)).fetchone()[0] == 1
+
+
+def test_worker_can_activate_existing_accounts_before_any_login(setup):
+    from agent.studio_membership import active_for_space
+    store, _, user, space = setup
+    with store.transaction() as db:
+        db.execute('DELETE FROM studio_membership_grants')
+        db.execute("DELETE FROM studio_identity_state WHERE name='membership_lifetime_existing_v1'")
+    assert active_for_space(store, space)
+    with store.transaction() as db:
+        assert effective(db, user['id'])['plan'] == 'lifetime'

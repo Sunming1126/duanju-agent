@@ -16,18 +16,35 @@ def schema(db):
         created_at INTEGER NOT NULL, reason TEXT NOT NULL,
         revoked_at INTEGER, revoked_reason TEXT)""")
     db.execute("CREATE INDEX IF NOT EXISTS studio_membership_account ON studio_membership_grants(account_id, expires_at)")
+    db.execute("""CREATE TABLE IF NOT EXISTS studio_lifetime_memberships(
+        account_id TEXT PRIMARY KEY REFERENCES studio_accounts(id), source TEXT NOT NULL,
+        created_at INTEGER NOT NULL, reason TEXT NOT NULL)""")
 
 
-def trial(db, account_id, now=None):
+def grant_existing_lifetime_once(db):
+    """Snapshot existing accounts once before any account is created by this version."""
+    schema(db)
+    key = 'membership_lifetime_existing_v1'
+    if db.execute('SELECT 1 FROM studio_identity_state WHERE name=?', (key,)).fetchone():
+        return
+    now = int(time.time())
+    db.execute("""INSERT OR IGNORE INTO studio_lifetime_memberships(account_id,source,created_at,reason)
+                  SELECT id,'existing_account',?,'development testing' FROM studio_accounts""", (now,))
+    db.execute('INSERT INTO studio_identity_state(name,value) VALUES(?,?)', (key, str(now)))
+
+
+def trial(db, account_id, now=None, source='registration'):
     now = int(time.time()) if now is None else int(now)
     schema(db)
-    db.execute("INSERT INTO studio_membership_grants VALUES(?,?,?,?,?,?,?,?,NULL,NULL)",
-               (f"trial:{account_id}", account_id, 'trial', 'registration', now, now + 86400, now, 'registration'))
+    db.execute("INSERT OR IGNORE INTO studio_membership_grants VALUES(?,?,?,?,?,?,?,?,NULL,NULL)",
+               (f"trial:{account_id}", account_id, 'trial', source, now, now + 86400, now, source))
 
 
 def effective(db, account_id, now=None):
     now = int(time.time()) if now is None else int(now)
     schema(db)
+    if db.execute('SELECT 1 FROM studio_lifetime_memberships WHERE account_id=?', (account_id,)).fetchone():
+        return {"active": True, "plan": "lifetime", "expires_at": None, "last_expired_at": None}
     rows = db.execute("SELECT * FROM studio_membership_grants WHERE account_id=? AND revoked_at IS NULL ORDER BY expires_at DESC", (account_id,)).fetchall()
     active = next((r for r in rows if r['starts_at'] <= now < r['expires_at']), None)
     expiry = active['expires_at'] if active else None
@@ -83,7 +100,8 @@ def revoke(db, *, grant_id, reason, now=None):
 
 def active_for_space(store, space_id):
     with store.transaction() as db:
-        schema(db)
+        from .studio_auth import AuthStore
+        AuthStore.schema(db)
         account = db.execute('SELECT id FROM studio_accounts WHERE space_id=?', (space_id,)).fetchone()
         return bool(account and effective(db, account['id'])['active'])
 

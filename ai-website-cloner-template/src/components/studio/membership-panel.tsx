@@ -5,7 +5,7 @@ import { backendRequest } from "@/lib/studio/api";
 import { Gem } from "lucide-react";
 import styles from "./space.module.css";
 
-type Membership = { active: boolean; plan: "trial" | "monthly" | "yearly" | null; expires_at: number | null; last_expired_at: number | null };
+type Membership = { active: boolean; plan: "trial" | "monthly" | "yearly" | "lifetime" | null; expires_at: number | null; last_expired_at: number | null };
 
 export function MembershipPanel({ signedIn }: { signedIn: boolean }) {
   const ui = useUI();
@@ -18,9 +18,9 @@ export function MembershipPanel({ signedIn }: { signedIn: boolean }) {
     void backendRequest<Membership>("/studio/membership").then(value => { if (live) setMembership(value); }).catch(() => { if (live) setError(true); });
     return () => { live = false; };
   }, [signedIn]);
-  const plan = membership?.plan === "trial" ? "新用户体验会员" : membership?.plan === "monthly" ? "月卡会员" : membership?.plan === "yearly" ? "年卡会员" : "未开通";
+  const plan = membership?.plan === "lifetime" ? "永久会员" : membership?.plan === "trial" ? "体验会员" : membership?.plan === "monthly" ? "月卡会员" : membership?.plan === "yearly" ? "年卡会员" : "未开通";
   const time = membership?.expires_at ?? membership?.last_expired_at;
-  const expiry = time ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(time * 1000)) : "—";
+  const expiry = membership?.plan === "lifetime" ? ui("永久有效") : time ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(time * 1000)) : "—";
   return <section className={styles.membership} aria-labelledby="membership-heading">
     <div className={styles.membershipTop}><Gem size={24} strokeWidth={1.4} /><span>{ui(!signedIn ? "登录后查看" : error ? "读取失败" : !membership ? "正在读取…" : membership.active ? "会员有效" : "会员未生效")}</span></div>
     <h2 id="membership-heading">{ui("Plotloom 会员")}</h2>

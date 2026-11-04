@@ -86,6 +86,8 @@ class AuthStore:
         db.execute("CREATE TABLE IF NOT EXISTS studio_auth_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,expires_at INTEGER NOT NULL)")
         db.execute("CREATE TABLE IF NOT EXISTS studio_google_nonces(space_id TEXT PRIMARY KEY,nonce_hash TEXT NOT NULL,expires_at INTEGER NOT NULL)")
         db.execute("INSERT OR IGNORE INTO studio_identity_state VALUES('otp_secret',?)", (secrets.token_hex(32),))
+        from .studio_membership import grant_existing_lifetime_once
+        grant_existing_lifetime_once(db)
 
     @staticmethod
     def public(db, row):
@@ -100,6 +102,9 @@ class AuthStore:
         with self.store.transaction() as db:
             self.schema(db)
             row = db.execute("SELECT a.*,s.legacy_access FROM studio_auth_sessions t JOIN studio_accounts a ON a.id=t.account_id JOIN studio_spaces s ON s.id=a.space_id WHERE t.token_hash=? AND t.expires_at>?", (digest(token), int(time.time()))).fetchone()
+            if row:
+                from .studio_membership import trial
+                trial(db, row['id'], source='existing_account')
             return {"id": row["space_id"], "legacy_access": row["legacy_access"], "user": self.public(db, row)} if row else None
 
     @staticmethod
@@ -163,6 +168,9 @@ class AuthStore:
             # Permanently retire the old guest capability, including on rollback.
             db.execute("UPDATE studio_spaces SET token_hash=? WHERE id=?", (digest(secrets.token_urlsafe(32)), space_id))
             row = db.execute("SELECT * FROM studio_accounts WHERE id=?", (ident,)).fetchone()
+        else:
+            from .studio_membership import trial
+            trial(db, row['id'], source='existing_account')
         token = secrets.token_urlsafe(32)
         db.execute("DELETE FROM studio_auth_sessions WHERE expires_at<=?", (int(time.time()),))
         db.execute("INSERT INTO studio_auth_sessions VALUES(?,?,?)", (digest(token), row["id"], int(time.time()) + SESSION_TTL))
